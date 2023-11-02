@@ -10,7 +10,6 @@ plugins {
     id 'kotlin-parcelize'
     alias libs.plugins.dokka
     alias libs.plugins.dependency.license.report
-    alias libs.plugins.spotless
     id 'maven-publish'
     id 'signing'
 }
@@ -111,15 +110,6 @@ task androidSourcesJar(type: Jar) {
         // For pure kotlin libraries, in case you have them
         from sourceSets.main.java.srcDirs
         from sourceSets.main.kotlin.srcDirs
-    }
-}
-
-spotless {
-    def ktlintVersion = libs.versions.ktlint.get()
-    kotlin {
-        ktlint(ktlintVersion)
-        target '**/*.kt'
-        licenseHeaderFile(rootProject.file('license-header.txt'))
     }
 }
 
