@@ -101,6 +101,19 @@ dependencies {
     androidTestImplementation libs.espresso.core
 }
 
+task androidSourcesJar(type: Jar) {
+    archiveClassifier.set('sources')
+    if (project.plugins.findPlugin("com.android.library")) {
+        // For android libraries
+        from android.sourceSets.main.java.srcDirs
+        from android.sourceSets.main.kotlin.srcDirs
+    } else {
+        // For pure kotlin libraries, in case you have them
+        from sourceSets.main.java.srcDirs
+        from sourceSets.main.kotlin.srcDirs
+    }
+}
+
 spotless {
     def ktlintVersion = libs.versions.ktlint.get()
     kotlin {
