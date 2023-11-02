@@ -12,8 +12,6 @@ junit = "4.13.2"
 junit-android = "1.1.5"
 mockk = "1.13.5"
 espresso-core = "3.5.1"
-spotless = "6.22.0"
-ktlint = "0.50.0"
 
 [libraries]
 identity-credential = { module = "com.android.identity:identity-credential", version.ref = "identity-credential" }
@@ -32,4 +30,3 @@ android-library = { id = "com.android.library", version.ref = "gradle-plugin" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "kotlin" }
 dependency-license-report = { id = "com.github.jk1.dependency-license-report", version.ref = "dependency-license-report" }
-spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
