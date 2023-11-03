@@ -100,7 +100,7 @@ dependencies {
     androidTestImplementation libs.espresso.core
 }
 
-task androidSourcesJar(type: Jar) {
+tasks.register('androidSourcesJar', Jar) {
     archiveClassifier.set('sources')
     if (project.plugins.findPlugin("com.android.library")) {
         // For android libraries
