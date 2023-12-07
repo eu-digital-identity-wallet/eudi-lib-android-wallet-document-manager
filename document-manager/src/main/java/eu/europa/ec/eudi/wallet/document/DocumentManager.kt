@@ -284,8 +284,6 @@ interface IssuanceRequest {
      *
      * Available algorithms are:
      * - [Algorithm.SHA256withECDSA]
-     * - [Algorithm.SHA384withECDSA]
-     * - [Algorithm.SHA512withECDSA]
      *
      * @param data to be signed
      * @param alg algorithm to be used for signing the data (example: "SHA256withECDSA")
