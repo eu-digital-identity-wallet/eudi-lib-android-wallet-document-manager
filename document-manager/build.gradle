@@ -68,6 +68,8 @@ dependencies {
     implementation libs.identity.credential
     implementation libs.android.identity.credential
 
+    implementation libs.biometric.ktx
+
     // CBOR
     implementation libs.cbor
     implementation libs.cose

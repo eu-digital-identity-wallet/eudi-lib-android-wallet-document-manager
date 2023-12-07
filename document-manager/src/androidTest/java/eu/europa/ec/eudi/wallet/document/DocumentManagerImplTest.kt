@@ -28,7 +28,9 @@ import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.IOException
+import java.security.Signature
 import java.util.UUID
+import kotlin.random.Random
 
 @RunWith(AndroidJUnit4::class)
 class DocumentManagerImplTest {
@@ -98,5 +100,21 @@ class DocumentManagerImplTest {
 
         val documents = documentManager.getDocuments()
         Assert.assertTrue(documents.isEmpty())
+
+        val data = Random.nextBytes(32)
+        val proofResult = request.signWithAuthKey(data)
+        Assert.assertTrue(proofResult is SignedWithAuthKeyResult.Success)
+
+        proofResult as SignedWithAuthKeyResult.Success
+
+        val proof = proofResult.signature
+        val publicKey = request.publicKey
+
+        val sig = Signature.getInstance(Algorithm.SHA256withECDSA).apply {
+            initVerify(publicKey)
+            update(data)
+        }
+        Assert.assertTrue(sig.verify(proof))
+
     }
 }

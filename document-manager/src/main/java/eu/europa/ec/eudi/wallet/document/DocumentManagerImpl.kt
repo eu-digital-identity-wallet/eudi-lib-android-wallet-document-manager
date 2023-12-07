@@ -141,18 +141,8 @@ class DocumentManagerImpl(
             ?.takeUnless { it.isEmpty() }
             ?: Random.nextBytes(10)
         val keySettings = createKeySettings(nonEmptyChallenge, strongBoxed)
-        val certificate = credentialStore
-            .createCredential(documentId, keySettings)
-            .createPendingAuthenticationKey(keySettings, null)
-            .attestation.first()
-        val request = IssuanceRequest(
-            documentId = documentId,
-            docType = docType,
-            hardwareBacked = strongBoxed,
-            name = docType,
-            requiresUserAuth = userAuth,
-            certificateNeedAuth = certificate,
-        )
+        val credential = credentialStore.createCredential(documentId, keySettings)
+        val request = IssuanceRequest(docType, credential, keySettings)
         CreateIssuanceRequestResult.Success(request)
     } catch (e: Exception) {
         CreateIssuanceRequestResult.Failure(e)

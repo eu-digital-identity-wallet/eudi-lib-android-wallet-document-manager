@@ -3,4 +3,5 @@
 # requiresUserAuth
 
 [androidJvm]\
+abstract
 val [requiresUserAuth](requires-user-auth.md): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)
