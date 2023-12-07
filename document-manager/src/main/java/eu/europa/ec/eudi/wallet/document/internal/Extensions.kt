@@ -30,7 +30,7 @@ internal val Context.isDeviceSecure: Boolean
 @get:JvmSynthetic
 internal val Context.supportsStrongBox: Boolean
     get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
-        packageManager.hasSystemFeature(PackageManager.FEATURE_STRONGBOX_KEYSTORE)
+            packageManager.hasSystemFeature(PackageManager.FEATURE_STRONGBOX_KEYSTORE)
 
 @JvmSynthetic
 internal fun ByteArray.getEmbeddedCBORObject(): CBORObject {
@@ -62,21 +62,17 @@ private fun CBORObject.parse(): Any? {
     if (isFalse) return false
 
     return when (this.type) {
-        CBORType.Number -> when {
-            CanValueFitInInt32() -> ToObject(Int::class.java)
-            CanValueFitInInt64() -> ToObject(Long::class.java)
-            else -> ToObject(Double::class.java)
-        }
         CBORType.Boolean, CBORType.SimpleValue -> isTrue
         CBORType.ByteString -> Base64.getEncoder().encodeToString(GetByteString())
         CBORType.TextString -> AsString()
         CBORType.Array -> values.map { it.parse() }.toList()
         CBORType.Map -> keys.associate { it.parse() to this[it].parse() }
-        CBORType.Integer -> when {
+        CBORType.Number, CBORType.Integer -> when {
             CanValueFitInInt32() -> ToObject(Int::class.java)
             CanValueFitInInt64() -> ToObject(Long::class.java)
             else -> ToObject(Double::class.java)
         }
+
         CBORType.FloatingPoint -> ToObject(Float::class.java)
         else -> null
     }

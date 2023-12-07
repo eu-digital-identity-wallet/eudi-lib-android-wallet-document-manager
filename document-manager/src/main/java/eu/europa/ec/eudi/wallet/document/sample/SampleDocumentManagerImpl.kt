@@ -106,7 +106,7 @@ class SampleDocumentManagerImpl(
                     is CreateIssuanceRequestResult.Success -> {
                         val request = requestResult.issuanceRequest
                         request.name = context.docTypeName(docType) ?: docType
-                        val authKey = request.certificateNeedAuth.publicKey
+                        val authKey = request.publicKey
 
                         val mso = generateMso(docType, authKey, nameSpaces)
                         val issuerAuth = signMso(mso)

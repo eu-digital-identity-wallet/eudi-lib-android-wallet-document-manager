@@ -10,18 +10,25 @@ Success result containing the issuance request. The issuance request can be then
 
 androidJvm
 
-| |
-|---|
+|                 |
+|-----------------|
 | issuanceRequest |
 
 ## Constructors
 
-| | |
-|---|---|
+|                        |                                                                                                   |
+|------------------------|---------------------------------------------------------------------------------------------------|
 | [Success](-success.md) | [androidJvm]<br>constructor(issuanceRequest: [IssuanceRequest](../../-issuance-request/index.md)) |
+
+## Functions
+
+| Name                          | Summary                                                                                                                                                                                                                                                                                                                            |
+|-------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [onFailure](../on-failure.md) | [androidJvm]<br>open fun [onFailure](../on-failure.md)(block: ([Throwable](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html)) -&gt; [Unit](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)): [CreateIssuanceRequestResult](../index.md)<br>Execute block if the result is a failure |
+| [onSuccess](../on-success.md) | [androidJvm]<br>open fun [onSuccess](../on-success.md)(block: ([IssuanceRequest](../../-issuance-request/index.md)) -&gt; [Unit](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)): [CreateIssuanceRequestResult](../index.md)<br>Execute block if the result is successful                                   |
 
 ## Properties
 
-| Name | Summary |
-|---|---|
+| Name                                   | Summary                                                                                                         |
+|----------------------------------------|-----------------------------------------------------------------------------------------------------------------|
 | [issuanceRequest](issuance-request.md) | [androidJvm]<br>val [issuanceRequest](issuance-request.md): [IssuanceRequest](../../-issuance-request/index.md) |

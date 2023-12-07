@@ -1,4 +1,5 @@
 [versions]
+biometric-ktx = "1.2.0-alpha05"
 json = "20210307"
 kotlin = "1.8.10"
 java = "1.8"
@@ -18,6 +19,7 @@ dependencycheck = "8.4.2"
 sonarqube = "4.4.1.3373"
 
 [libraries]
+biometric-ktx = { module = "androidx.biometric:biometric-ktx", version.ref = "biometric-ktx" }
 identity-credential = { module = "com.android.identity:identity-credential", version.ref = "identity-credential" }
 android-identity-credential = { module = "com.android.identity:identity-credential-android", version.ref = "identity-credential-android" }
 cbor = { module = "com.upokecenter:cbor", version.ref = "cbor" }
