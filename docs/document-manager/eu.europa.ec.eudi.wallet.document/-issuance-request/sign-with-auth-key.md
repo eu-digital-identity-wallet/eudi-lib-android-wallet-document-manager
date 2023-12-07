@@ -13,12 +13,7 @@ Sign given data with authentication key
 Available algorithms are:
 
 -
-
 [Algorithm.SHA256withECDSA](../-algorithm/-companion/-s-h-a256with-e-c-d-s-a.md)
--
-[Algorithm.SHA384withECDSA](../-algorithm/-companion/-s-h-a384with-e-c-d-s-a.md)
--
-[Algorithm.SHA512withECDSA](../-algorithm/-companion/-s-h-a512with-e-c-d-s-a.md)
 
 #### Return
 

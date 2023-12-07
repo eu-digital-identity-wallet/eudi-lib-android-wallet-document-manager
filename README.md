@@ -94,7 +94,6 @@ To retrieve a document by its id, use the `getDocumentById` method:
 
 ```kotlin
 import eu.europa.ec.eudi.wallet.document.Document
-import eu.europa.ec.eudi.wallet.document.DocumentId
 
 val documentId = "some document id"
 val document: Document = documentManager.getDocumentById(documentId)
@@ -104,7 +103,6 @@ DocumentManager also provides the `deleteDocumentById` method to delete a docume
 
 ```kotlin
 import eu.europa.ec.eudi.wallet.document.Document
-import eu.europa.ec.eudi.wallet.document.DocumentId
 import eu.europa.ec.eudi.wallet.document.DeleteDocumentResult
 
 val documentId = "some document id"
@@ -159,52 +157,73 @@ IssuerAuth = COSE_Sign1 ; The payload is MobileSecurityObjectBytes
 See the code below for an example of how to add a new document in `DocumentManager`:
 
 ```kotlin
-import eu.europa.ec.eudi.wallet.document.AddDocumentResult
-import eu.europa.ec.eudi.wallet.document.CreateIssuanceRequestResult
-import eu.europa.ec.eudi.wallet.document.sample.SampleDocumentManager
-
 val docType = "eu.europa.ec.eudiw.pid.1"
 val hardwareBacked = false
 val attestationChallenge = byteArrayOf(
-    // attestation challenge bytes
-    // provided by the issuer
+   // attestation challenge bytes
+   // provided by the issuer
 )
 val requestResult =
-    documentManager.createIssuanceRequest(docType, hardwareBacked, attestationChallenge)
+   documentManager.createIssuanceRequest(docType, hardwareBacked, attestationChallenge)
 when (requestResult) {
-    is CreateIssuanceRequestResult.Failure -> {
-        val error = requestResult.throwable
-        // handle error while creating issuance request
-    }
-    is CreateIssuanceRequestResult.Success -> {
-        val request = requestResult.issuanceRequest
-        val docType = request.docType
-        // the device certificate that will be used in the signing of the document
-        // from the issuer while creating the MSO (Mobile Security Object)
-        val certificateNeedAuth = request.certificateNeedAuth
+   is CreateIssuanceRequestResult.Failure -> {
+      val error = requestResult.throwable
+      // handle error while creating issuance request
+   }
 
-        // ... code that sends docType and certificates to issuer
+   is CreateIssuanceRequestResult.Success -> {
+      val request = requestResult.issuanceRequest
+      val docType = request.docType
+      // the device certificate that will be used in the signing of the document
+      // from the issuer while creating the MSO (Mobile Security Object)
+      val certificateNeedAuth = request.certificateNeedAuth
 
-        // after receiving the MSO from the issuer, the user can start the issuance process
-        val issuerData: ByteArray = byteArrayOf(
-            // CBOR bytes of the document
-        )
+      // if the issuer requires the user to prove possession of the private key corresponding to the certificateNeedAuth
+      // then user can use the method below to sign issuer's data and send the signature to the issuer
+      val signingInputFromIssuer = byteArrayOf(
+         // signing input bytes from the issuer
+         // provided by the issuer
+      )
+      val signatureResult = request.signWithAuthKey(signingInputFromIssuer)
+      when (signatureResult) {
+         is SignedWithAuthKeyResult.Success -> {
+            val signature = signatureResult.signature
+            // signature for the issuer
+         }
+         is SignedWithAuthKeyResult.Failure -> {
+            val error = signatureResult.throwable
+            // handle error while signing with auth key
+         }
+         is SignedWithAuthKeyResult.UserAuthRequired -> {
+            // user authentication is required to sign with auth key
+            val cryptoObject = signatureResult.cryptoObject
+            // use cryptoObject to authenticate the user
+            // after user authentication, the user can sign with auth key again
+         }
+      }
 
-        val addResult = documentManager.addDocument(request, issuerData)
+      // ... code that sends docType and certificates to issuer and signature if required
 
-        when (addResult) {
-            is AddDocumentResult.Failure -> {
-                val error = addResult.throwable
-                // handle error while adding document
-            }
-            is AddDocumentResult.Success -> {
-                val documentId = addResult.documentId
-                // the documentId of the newly added document
-                // use the documentId to retrieve the document
-                documentManager.getDocumentById(documentId)
-            }
-        }
-    }
+      // after receiving the MSO from the issuer, the user can start the issuance process
+      val issuerData: ByteArray = byteArrayOf(
+         // CBOR bytes of the document
+      )
+
+      val addResult = documentManager.addDocument(request, issuerData)
+
+      when (addResult) {
+         is AddDocumentResult.Failure -> {
+            val error = addResult.throwable
+            // handle error while adding document
+         }
+         is AddDocumentResult.Success -> {
+            val documentId = addResult.documentId
+            // the documentId of the newly added document
+            // use the documentId to retrieve the document
+            documentManager.getDocumentById(documentId)
+         }
+      }
+   }
 }
 ```
 
@@ -218,8 +237,6 @@ the `SampleDocumentManager.Builder` class:
 
 ```kotlin
 import eu.europa.ec.eudi.wallet.document.sample.SampleDocumentManager
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 
 val sampleDocumentManager = SampleDocumentManager.Builder(context)
     .documentManager(documentManager) // optional if a DocumentManager instance is already created, else a default DocumentManager instance will be created
@@ -232,7 +249,6 @@ the `loadSampleData` method like shown below:
 
 ```kotlin
 import android.util.Base64
-import kotlinx.coroutines.runBlocking
 
 // Assuming that the sample data is stored in a file named sample_data.json in the raw resources directory
 // in base64 encoded format and context is an instance of android.content.Context
