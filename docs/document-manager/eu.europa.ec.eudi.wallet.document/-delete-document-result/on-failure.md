@@ -3,9 +3,7 @@
 # onFailure
 
 [androidJvm]\
-open fun [onFailure](on-failure.md)(
-block: ([Throwable](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html))
--&gt; [Unit](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)): [DeleteDocumentResult](index.md)
+open fun [onFailure](on-failure.md)(block: ([Throwable](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html)) -&gt; [Unit](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)): [DeleteDocumentResult](index.md)
 
 Execute block if the result is a failure
 
@@ -17,6 +15,6 @@ Execute block if the result is a failure
 
 androidJvm
 
-|       |
-|-------|
+| |
+|---|
 | block |

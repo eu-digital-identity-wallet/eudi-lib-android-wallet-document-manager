@@ -3,9 +3,7 @@
 # onUserAuthRequired
 
 [androidJvm]\
-open fun [onUserAuthRequired](on-user-auth-required.md)(
-block: ([BiometricPrompt.CryptoObject](https://developer.android.com/reference/kotlin/androidx/biometric/BiometricPrompt.CryptoObject.html)?)
--&gt; [Unit](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)): [SignedWithAuthKeyResult](index.md)
+open fun [onUserAuthRequired](on-user-auth-required.md)(block: ([BiometricPrompt.CryptoObject](https://developer.android.com/reference/kotlin/androidx/biometric/BiometricPrompt.CryptoObject.html)?) -&gt; [Unit](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)): [SignedWithAuthKeyResult](index.md)
 
 Execute block if the result requires user authentication
 
@@ -17,6 +15,6 @@ Execute block if the result requires user authentication
 
 androidJvm
 
-|       |
-|-------|
+| |
+|---|
 | block |

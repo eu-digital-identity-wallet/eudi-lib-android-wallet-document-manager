@@ -3,9 +3,7 @@
 # onSuccess
 
 [androidJvm]\
-open fun [onSuccess](on-success.md)(
-block: ([ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html))
--&gt; [Unit](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)): [SignedWithAuthKeyResult](index.md)
+open fun [onSuccess](on-success.md)(block: ([ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html)) -&gt; [Unit](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)): [SignedWithAuthKeyResult](index.md)
 
 Execute block if the result is successful
 
@@ -17,6 +15,6 @@ Execute block if the result is successful
 
 androidJvm
 
-|       |
-|-------|
+| |
+|---|
 | block |

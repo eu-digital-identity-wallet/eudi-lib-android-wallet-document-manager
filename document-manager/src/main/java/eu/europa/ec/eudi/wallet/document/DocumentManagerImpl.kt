@@ -19,6 +19,7 @@ import COSE.Message
 import COSE.MessageTag
 import COSE.Sign1Message
 import android.content.Context
+import android.util.Log
 import com.android.identity.android.securearea.AndroidKeystoreSecureArea
 import com.android.identity.android.securearea.AndroidKeystoreSecureArea.KEY_PURPOSE_SIGN
 import com.android.identity.android.securearea.AndroidKeystoreSecureArea.USER_AUTHENTICATION_TYPE_BIOMETRIC
@@ -54,6 +55,7 @@ import kotlin.random.Random
  * @property secureArea secure area used to store documents' keys
  * @property userAuth flag that indicates if the document requires user authentication to be accessed
  * @property userAuthTimeoutInMillis timeout in milliseconds for user authentication
+ * @property checkPublicKeyBeforeAdding flag that indicates if the public key in the [IssuanceRequest] must match the public key in MSO
  *
  * @constructor
  * @param context
@@ -87,6 +89,8 @@ class DocumentManagerImpl(
 
     var userAuthTimeoutInMillis: Long = AUTH_TIMEOUT
 
+    var checkPublicKeyBeforeAdding: Boolean = true
+
     /**
      * Sets whether to require user authentication to access the document.
      *
@@ -103,6 +107,19 @@ class DocumentManagerImpl(
      */
     fun userAuthTimeout(timeoutInMillis: Long) =
         apply { this.userAuthTimeoutInMillis = timeoutInMillis }
+
+    /**
+     * Sets whether to check public key in MSO before adding document to storage.
+     * By default this is set to true.
+     * This check is done to prevent adding documents with public key that is not in MSO.
+     * The public key from the [IssuanceRequest] must match the public key in MSO.
+     *
+     * @see [DocumentManager.addDocument]
+     *
+     * @param check
+     */
+    fun checkPublicKeyBeforeAdding(check: Boolean) =
+        apply { this.checkPublicKeyBeforeAdding = check }
 
     override fun getDocuments(): List<Document> =
         credentialStore.listCredentials().mapNotNull { credentialName ->
@@ -122,14 +139,6 @@ class DocumentManagerImpl(
         }
     }
 
-    /**
-     * {inheritDoc}
-     *
-     * @param docType
-     * @param hardwareBacked
-     * @param attestationChallenge optional challenge to be used for key generation. If not provided, a default random challenge will be used.
-     * @return
-     */
     override fun createIssuanceRequest(
         docType: String,
         hardwareBacked: Boolean,
@@ -166,11 +175,19 @@ class DocumentManagerImpl(
                 val issuerAuth = Message
                     .DecodeFromBytes(issuerAuthBytes, MessageTag.Sign1) as Sign1Message
 
+                val msoBytes = issuerAuth.GetContent().getEmbeddedCBORObject().EncodeToBytes()
+
                 val mso = MobileSecurityObjectParser()
-                    .setMobileSecurityObject(
-                        issuerAuth.GetContent().getEmbeddedCBORObject().EncodeToBytes(),
-                    )
+                    .setMobileSecurityObject(msoBytes)
                     .parse()
+
+                if (mso.deviceKey != request.publicKey) {
+                    val msg = "Public key in MSO does not match the one in the request"
+                    Log.d(TAG, msg)
+                    if (checkPublicKeyBeforeAdding) {
+                        return AddDocumentResult.Failure(IllegalArgumentException(msg))
+                    }
+                }
 
                 applicationData.setString(DOCUMENT_NAME, request.name)
                 applicationData.setNumber(DOCUMENT_CREATED_AT, Instant.now().toEpochMilli())
@@ -217,6 +234,8 @@ class DocumentManagerImpl(
     }
 
     companion object {
+        private const val TAG = "DocumentManagerImpl"
+
         @JvmStatic
         val AUTH_TIMEOUT = 30_000L
         private const val AUTH_TYPE =
