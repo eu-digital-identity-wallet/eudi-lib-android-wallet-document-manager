@@ -9,7 +9,7 @@ identity-credential = "20231002"
 identity-credential-android = "20231002"
 cbor = "4.5.2"
 cose = "1.1.0"
-bouncy-castle = "1.67"
+bouncy-castle = "1.77"
 junit = "4.13.2"
 junit-android = "1.1.5"
 mockk = "1.13.5"
@@ -24,8 +24,8 @@ identity-credential = { module = "com.android.identity:identity-credential", ver
 android-identity-credential = { module = "com.android.identity:identity-credential-android", version.ref = "identity-credential-android" }
 cbor = { module = "com.upokecenter:cbor", version.ref = "cbor" }
 cose = { module = "com.augustcellars.cose:cose-java", version.ref = "cose" }
-bouncy-castle-prov = { module = "org.bouncycastle:bcprov-jdk15on", version.ref = "bouncy-castle" }
-bouncy-castle-pkix = { module = "org.bouncycastle:bcpkix-jdk15on", version.ref = "bouncy-castle" }
+bouncy-castle-prov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncy-castle" }
+bouncy-castle-pkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncy-castle" }
 json = { module = "org.json:json", version.ref = "json" }
 junit = { module = "junit:junit", version.ref = "junit" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
