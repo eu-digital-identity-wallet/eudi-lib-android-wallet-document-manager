@@ -3,8 +3,7 @@
 # onSuccess
 
 [androidJvm]\
-open fun [onSuccess](on-success.md)(block: ([IssuanceRequest](../-issuance-request/index.md))
--&gt; [Unit](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)): [CreateIssuanceRequestResult](index.md)
+open fun [onSuccess](on-success.md)(block: ([IssuanceRequest](../-issuance-request/index.md)) -&gt; [Unit](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)): [CreateIssuanceRequestResult](index.md)
 
 Execute block if the result is successful
 
@@ -16,6 +15,6 @@ Execute block if the result is successful
 
 androidJvm
 
-|       |                                                  |
-|-------|--------------------------------------------------|
+| | |
+|---|---|
 | block | block to be executed if the result is successful |

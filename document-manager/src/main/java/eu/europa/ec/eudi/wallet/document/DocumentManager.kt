@@ -132,7 +132,7 @@ interface DocumentManager {
      * @property storageDir the directory to store data files in. By default the [Context.getNoBackupFilesDir] is used.
      * @property userAuth flag that indicates if the document requires user authentication to be accessed. By default this is set to true if the device is secured with a PIN, password or pattern.
      * @property userAuthTimeoutInMillis timeout in milliseconds for user authentication. By default this is set to 30 seconds.
-     *
+     * @property checkPublicKeyBeforeAdding flag that indicates if the public key from the [IssuanceRequest] must match the public key in MSO. By default this is set to true.
      * @constructor
      *
      * @param context [Context] used to instantiate the DocumentManager
@@ -143,6 +143,7 @@ interface DocumentManager {
         var storageDir: File = _context.noBackupFilesDir
         var userAuth: Boolean = context.isDeviceSecure
         var userAuthTimeoutInMillis: Long = DocumentManagerImpl.AUTH_TIMEOUT
+        var checkPublicKeyBeforeAdding: Boolean = true
 
         /**
          * Sets whether to encrypt the values stored on disk.
@@ -179,6 +180,19 @@ interface DocumentManager {
          */
         fun userAuthTimeout(timeoutInMillis: Long) =
             apply { this.userAuthTimeoutInMillis = timeoutInMillis }
+
+        /**
+         * Sets whether to check public key in MSO before adding document to storage.
+         * By default this is set to true.
+         * This check is done to prevent adding documents with public key that is not in MSO.
+         * The public key from the [IssuanceRequest] must match the public key in MSO.
+         *
+         * @see [DocumentManager.addDocument]
+         *
+         * @param checkPublicKeyBeforeAdding
+         */
+        fun checkPublicKeyBeforeAdding(checkPublicKeyBeforeAdding: Boolean) =
+            apply { this.checkPublicKeyBeforeAdding = checkPublicKeyBeforeAdding }
 
         /**
          * Build the DocumentManager
@@ -459,6 +473,16 @@ sealed interface CreateIssuanceRequestResult {
      */
     fun onFailure(block: (Throwable) -> Unit): CreateIssuanceRequestResult = apply {
         if (this is Failure) block(throwable)
+    }
+
+    /**
+     * Get issuance request or throw the throwable that caused the failure
+     *
+     * @return [IssuanceRequest]
+     */
+    fun getOrThrow(): IssuanceRequest = when (this) {
+        is Success -> issuanceRequest
+        is Failure -> throw throwable
     }
 }
 

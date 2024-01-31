@@ -3,5 +3,4 @@
 # SHA384withECDSA
 
 [androidJvm]\
-const
-val [SHA384withECDSA](-s-h-a384with-e-c-d-s-a.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)
+const val [SHA384withECDSA](-s-h-a384with-e-c-d-s-a.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)

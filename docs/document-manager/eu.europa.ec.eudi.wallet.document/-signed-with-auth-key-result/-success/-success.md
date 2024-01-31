@@ -3,5 +3,4 @@
 # Success
 
 [androidJvm]\
-constructor(
-signature: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html))
+constructor(signature: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html))
