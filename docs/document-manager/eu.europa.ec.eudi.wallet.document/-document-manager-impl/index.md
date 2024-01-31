@@ -56,6 +56,6 @@ androidJvm
 
 | Name | Summary |
 |---|---|
-| [checkPublicKeyBeforeAdding](check-public-key-before-adding.md) | [androidJvm]<br>var [checkPublicKeyBeforeAdding](check-public-key-before-adding.md): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html) |
+| [checkPublicKeyBeforeAdding](check-public-key-before-adding.md) | [androidJvm]<br>var [checkPublicKeyBeforeAdding](check-public-key-before-adding.md): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)<br>flag that indicates if the public key in the [IssuanceRequest](../-issuance-request/index.md) must match the public key in MSO |
 | [userAuth](user-auth.md) | [androidJvm]<br>var [userAuth](user-auth.md): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)<br>flag that indicates if the document requires user authentication to be accessed |
 | [userAuthTimeoutInMillis](user-auth-timeout-in-millis.md) | [androidJvm]<br>var [userAuthTimeoutInMillis](user-auth-timeout-in-millis.md): [Long](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html)<br>timeout in milliseconds for user authentication |
