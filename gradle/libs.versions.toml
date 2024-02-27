@@ -15,7 +15,7 @@ junit-android = "1.1.5"
 mockk = "1.13.5"
 espresso-core = "3.5.1"
 mavenPublish = "0.25.3"
-dependencycheck = "8.4.2"
+dependencycheck = "9.0.9"
 sonarqube = "4.4.1.3373"
 
 [libraries]
