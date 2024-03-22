@@ -37,9 +37,10 @@ import eu.europa.ec.eudi.wallet.document.internal.getEmbeddedCBORObject
 import eu.europa.ec.eudi.wallet.document.internal.isDeviceSecure
 import eu.europa.ec.eudi.wallet.document.internal.supportsStrongBox
 import eu.europa.ec.eudi.wallet.document.internal.withTag24
+import java.security.SecureRandom
 import java.time.Instant
 import java.util.UUID
-import kotlin.random.Random
+
 
 /**
  * A [DocumentManager] implementation that uses [StorageEngine] to store documents and [AndroidKeystoreSecureArea] for key management.
@@ -148,7 +149,7 @@ class DocumentManagerImpl(
         val strongBoxed = hardwareBacked && context.supportsStrongBox
         val nonEmptyChallenge = attestationChallenge
             ?.takeUnless { it.isEmpty() }
-            ?: Random.nextBytes(10)
+            ?: generateRandomBytes(10)
         val keySettings = createKeySettings(nonEmptyChallenge, strongBoxed)
         val credential = credentialStore.createCredential(documentId, keySettings)
         val request = IssuanceRequest(docType, credential, keySettings)
@@ -283,4 +284,11 @@ class DocumentManagerImpl(
                 },
             )
         }
+
+    private fun generateRandomBytes(size: Int): ByteArray {
+        val secureRandom = SecureRandom()
+        val randomBytes = ByteArray(size)
+        secureRandom.nextBytes(randomBytes)
+        return randomBytes
+    }
 }
