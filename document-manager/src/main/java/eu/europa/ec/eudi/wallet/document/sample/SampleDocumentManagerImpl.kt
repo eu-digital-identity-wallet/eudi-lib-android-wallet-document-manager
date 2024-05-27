@@ -25,13 +25,7 @@ import com.upokecenter.cbor.CBORObject
 import eu.europa.ec.eudi.wallet.document.AddDocumentResult
 import eu.europa.ec.eudi.wallet.document.CreateIssuanceRequestResult
 import eu.europa.ec.eudi.wallet.document.DocumentManager
-import eu.europa.ec.eudi.wallet.document.internal.docTypeName
-import eu.europa.ec.eudi.wallet.document.internal.getEmbeddedCBORObject
-import eu.europa.ec.eudi.wallet.document.internal.issuerCertificate
-import eu.europa.ec.eudi.wallet.document.internal.issuerPrivateKey
-import eu.europa.ec.eudi.wallet.document.internal.oneKey
-import eu.europa.ec.eudi.wallet.document.internal.supportsStrongBox
-import eu.europa.ec.eudi.wallet.document.internal.withTag24
+import eu.europa.ec.eudi.wallet.document.internal.*
 import java.security.MessageDigest
 import java.security.PublicKey
 
@@ -58,36 +52,6 @@ class SampleDocumentManagerImpl(
      */
     fun hardwareBacked(flag: Boolean) = apply { hardwareBacked = flag }
 
-    /**
-     * Loads the sample data into the document manager.
-     *
-     * The sample data is a CBOR bytearray that has the following structure:
-     *
-     * ```cddl
-     * Data = {
-     *  "documents" : [+Document], ; Returned documents
-     * }
-     * Document = {
-     *  "docType" : DocType, ; Document type returned
-     *  "issuerSigned" : IssuerSigned, ; Returned data elements signed by the issuer
-     * }
-     * IssuerSigned = {
-     *  "nameSpaces" : IssuerNameSpaces, ; Returned data elements
-     * }
-     * IssuerNameSpaces = { ; Returned data elements for each namespace
-     *  + NameSpace => [ + IssuerSignedItemBytes ]
-     * }
-     * IssuerSignedItem = {
-     *  "digestID" : uint, ; Digest ID for issuer data authentication
-     *  "random" : bstr, ; Random value for issuer data authentication
-     *  "elementIdentifier" : DataElementIdentifier, ; Data element identifier
-     *  "elementValue" : DataElementValue ; Data element value
-     * }
-     * ```
-     *
-     * @param sampleData
-     * @return [LoadSampleResult.Success] if the sample data has been loaded successfully. Otherwise, returns [LoadSampleResult.Error], with the error message.
-     */
     override fun loadSampleData(sampleData: ByteArray): LoadSampleResult {
         try {
             val cbor = CBORObject.DecodeFromBytes(sampleData)
@@ -110,7 +74,7 @@ class SampleDocumentManagerImpl(
 
                         val mso = generateMso(docType, authKey, nameSpaces)
                         val issuerAuth = signMso(mso)
-                        val data = generateData(docType, nameSpaces, issuerAuth)
+                        val data = generateData(nameSpaces, issuerAuth)
 
                         when (val addResult = addDocument(request, data)) {
                             is AddDocumentResult.Failure -> return LoadSampleResult.Error(addResult.throwable)
@@ -168,20 +132,12 @@ class SampleDocumentManagerImpl(
         }.EncodeToCBORObject()
 
         private fun generateData(
-            docType: String,
             issuerNameSpaces: CBORObject,
             issuerAuth: CBORObject,
         ): ByteArray {
             return mapOf(
-                "documents" to arrayOf(
-                    mapOf(
-                        "docType" to docType,
-                        "issuerSigned" to mapOf(
-                            "nameSpaces" to issuerNameSpaces,
-                            "issuerAuth" to issuerAuth,
-                        ),
-                    ),
-                ),
+                "nameSpaces" to issuerNameSpaces,
+                "issuerAuth" to issuerAuth,
             ).let { CBORObject.FromObject(it).EncodeToBytes() }
         }
     }

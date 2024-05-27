@@ -18,16 +18,23 @@ The library is written in Kotlin and is available for Android.
 
 ## :heavy_exclamation_mark: Disclaimer
 
-The released software is a initial development release version: 
--  The initial development release is an early endeavor reflecting the efforts of a short timeboxed period, and by no means can be considered as the final product.  
--  The initial development release may be changed substantially over time, might introduce new features but also may change or remove existing ones, potentially breaking compatibility with your existing code.
--  The initial development release is limited in functional scope.
--  The initial development release may contain errors or design flaws and other problems that could cause system or other failures and data loss.
--  The initial development release has reduced security, privacy, availability, and reliability standards relative to future releases. This could make the software slower, less reliable, or more vulnerable to attacks than mature software.
--  The initial development release is not yet comprehensively documented. 
--  Users of the software must perform sufficient engineering and additional testing in order to properly evaluate their application and determine whether any of the open-sourced components is suitable for use in that application.
--  We strongly recommend not putting this version of the software into production use.
--  Only the latest version of the software will be supported
+The released software is a initial development release version:
+
+- The initial development release is an early endeavor reflecting the efforts of a short timeboxed period, and by no
+  means can be considered as the final product.
+- The initial development release may be changed substantially over time, might introduce new features but also may
+  change or remove existing ones, potentially breaking compatibility with your existing code.
+- The initial development release is limited in functional scope.
+- The initial development release may contain errors or design flaws and other problems that could cause system or other
+  failures and data loss.
+- The initial development release has reduced security, privacy, availability, and reliability standards relative to
+  future releases. This could make the software slower, less reliable, or more vulnerable to attacks than mature
+  software.
+- The initial development release is not yet comprehensively documented.
+- Users of the software must perform sufficient engineering and additional testing in order to properly evaluate their
+  application and determine whether any of the open-sourced components is suitable for use in that application.
+- We strongly recommend not putting this version of the software into production use.
+- Only the latest version of the software will be supported
 
 ## Requirements
 
@@ -40,7 +47,7 @@ file.
 
 ```groovy
 dependencies {
-    implementation "eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager:0.2.3-SNAPSHOT"
+    implementation "eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager:0.3.0-SNAPSHOT"
 }
 ```
 
@@ -76,7 +83,7 @@ Document is an object that contains the following information:
 
 - `id` document's unique identifier
 - `docType` document's docType (example: "eu.europa.ec.eudiw.pid.1")
-- `name` document's name. This is a human readable name.
+- `name` document's name. This is a human-readable name.
 - `hardwareBacked` document's storage is hardware backed
 - `createdAt` document's creation date
 - `requiresUserAuth` flag that indicates if the document requires user authentication to be accessed
@@ -127,16 +134,10 @@ In order to add a new document in `DocumentManager`, the following steps should 
 2. Send the issuance request to the issuer.
 3. Add the document to the `DocumentManager` using the `addDocument` method.
 
-In order to use with the `addDocument` method, document's data must be in CBOR bytes that has the following structure:
+In order to use with the `addDocument` method, document's data must be in CBOR bytes that has the IssuerSigned structure
+according to ISO 23220-4 :
 
 ```cddl
-Data = {
- "documents" : [+Document], ; Returned documents
-}
-Document = {
- "docType" : DocType, ; Document type returned
- "issuerSigned" : IssuerSigned, ; Returned data elements signed by the issuer
-}
 IssuerSigned = {
  "nameSpaces" : IssuerNameSpaces, ; Returned data elements
  "issuerAuth" : IssuerAuth ; Contains the mobile security object (MSO) for issuer data authentication
@@ -160,71 +161,80 @@ See the code below for an example of how to add a new document in `DocumentManag
 val docType = "eu.europa.ec.eudiw.pid.1"
 val hardwareBacked = false
 val attestationChallenge = byteArrayOf(
-   // attestation challenge bytes
-   // provided by the issuer
+    // attestation challenge bytes
+    // provided by the issuer
 )
 val requestResult =
-   documentManager.createIssuanceRequest(docType, hardwareBacked, attestationChallenge)
+    documentManager.createIssuanceRequest(docType, hardwareBacked, attestationChallenge)
 when (requestResult) {
-   is CreateIssuanceRequestResult.Failure -> {
-      val error = requestResult.throwable
-      // handle error while creating issuance request
-   }
+    is CreateIssuanceRequestResult.Failure -> {
+        val error = requestResult.throwable
+        // handle error while creating issuance request
+    }
 
-   is CreateIssuanceRequestResult.Success -> {
-      val request = requestResult.issuanceRequest
-      val docType = request.docType
-      // the device certificate that will be used in the signing of the document
-      // from the issuer while creating the MSO (Mobile Security Object)
-      val certificateNeedAuth = request.certificateNeedAuth
+    is CreateIssuanceRequestResult.Success -> {
+        val request = requestResult.issuanceRequest
+        val docType = request.docType
+        // the device certificate that will be used in the signing of the document
+        // from the issuer while creating the MSO (Mobile Security Object)
+        val certificateNeedAuth = request.certificateNeedAuth
 
-      // if the issuer requires the user to prove possession of the private key corresponding to the certificateNeedAuth
-      // then user can use the method below to sign issuer's data and send the signature to the issuer
-      val signingInputFromIssuer = byteArrayOf(
-         // signing input bytes from the issuer
-         // provided by the issuer
-      )
-      val signatureResult = request.signWithAuthKey(signingInputFromIssuer)
-      when (signatureResult) {
-         is SignedWithAuthKeyResult.Success -> {
-            val signature = signatureResult.signature
-            // signature for the issuer
-         }
-         is SignedWithAuthKeyResult.Failure -> {
-            val error = signatureResult.throwable
-            // handle error while signing with auth key
-         }
-         is SignedWithAuthKeyResult.UserAuthRequired -> {
-            // user authentication is required to sign with auth key
-            val cryptoObject = signatureResult.cryptoObject
-            // use cryptoObject to authenticate the user
-            // after user authentication, the user can sign with auth key again
-         }
-      }
+        // if the issuer requires the user to prove possession of the private key corresponding to the certificateNeedAuth
+        // then user can use the method below to sign issuer's data and send the signature to the issuer
+        val signingInputFromIssuer = byteArrayOf(
+            // signing input bytes from the issuer
+            // provided by the issuer
+        )
+        val signatureResult = request.signWithAuthKey(signingInputFromIssuer)
+        when (signatureResult) {
+            is SignedWithAuthKeyResult.Success -> {
+                val signature = signatureResult.signature
+                // signature for the issuer
+            }
+            is SignedWithAuthKeyResult.Failure -> {
+                val error = signatureResult.throwable
+                // handle error while signing with auth key
+            }
+            is SignedWithAuthKeyResult.UserAuthRequired -> {
+                // user authentication is required to sign with auth key
+                val cryptoObject = signatureResult.cryptoObject
+                // use cryptoObject to authenticate the user
+                // after user authentication, the user can sign with auth key again
+            }
+        }
 
-      // ... code that sends docType and certificates to issuer and signature if required
+        // ... code that sends docType and certificates to issuer and signature if required
 
-      // after receiving the MSO from the issuer, the user can start the issuance process
-      val issuerData: ByteArray = byteArrayOf(
-         // CBOR bytes of the document
-      )
+        // after receiving the MSO from the issuer, the user can start the issuance process
+        val issuerData: ByteArray = byteArrayOf(
+            // CBOR bytes of the document
+        )
 
-      val addResult = documentManager.addDocument(request, issuerData)
+        val addResult = documentManager.addDocument(request, issuerData)
 
-      when (addResult) {
-         is AddDocumentResult.Failure -> {
-            val error = addResult.throwable
-            // handle error while adding document
-         }
-         is AddDocumentResult.Success -> {
-            val documentId = addResult.documentId
-            // the documentId of the newly added document
-            // use the documentId to retrieve the document
-            documentManager.getDocumentById(documentId)
-         }
-      }
-   }
+        when (addResult) {
+            is AddDocumentResult.Failure -> {
+                val error = addResult.throwable
+                // handle error while adding document
+            }
+            is AddDocumentResult.Success -> {
+                val documentId = addResult.documentId
+                // the documentId of the newly added document
+                // use the documentId to retrieve the document
+                documentManager.getDocumentById(documentId)
+            }
+        }
+    }
 }
+```
+
+Library provides also an extension method on Document class to retrieve the document's data as JSONObject.
+
+```kotlin
+import org.json.JSONObject
+
+val document = documentManager.getDocumentById("some_document_id")
+val documentDataAsJson: JSONObject? = document?.nameSpacedDataJSONObject
 ```
 
 ### Working with sample documents
@@ -262,7 +272,7 @@ documentManager.loadSampleData(sampleDocumentsByteArray)
 Sample documents must be in CBOR format with the following structure:
 
 ```cddl
-Data = {
+SampleData = {
  "documents" : [+Document], ; Returned documents
 }
 Document = {

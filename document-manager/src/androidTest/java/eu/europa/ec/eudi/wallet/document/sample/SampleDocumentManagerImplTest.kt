@@ -15,7 +15,6 @@
  */
 package eu.europa.ec.eudi.wallet.document.sample
 
-import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.identity.android.securearea.AndroidKeystoreSecureArea
@@ -33,35 +32,72 @@ import com.android.identity.mdoc.util.MdocUtil
 import com.android.identity.securearea.SecureArea
 import com.android.identity.securearea.SecureArea.KeyLockedException
 import com.android.identity.securearea.SecureAreaRepository
-import com.android.identity.storage.StorageEngine
 import com.android.identity.util.Constants
 import com.upokecenter.cbor.CBORObject
 import eu.europa.ec.eudi.wallet.document.Document
+import eu.europa.ec.eudi.wallet.document.DocumentManager
 import eu.europa.ec.eudi.wallet.document.DocumentManagerImpl
 import eu.europa.ec.eudi.wallet.document.test.R
-import org.junit.AfterClass
-import org.junit.Assert
-import org.junit.BeforeClass
-import org.junit.Test
+import org.junit.*
+import org.junit.Assert.*
 import org.junit.runner.RunWith
-import java.io.IOException
-import java.util.Base64
+import java.util.*
 
 @RunWith(AndroidJUnit4::class)
 class SampleDocumentManagerImplTest {
+
+    val context
+        get() = InstrumentationRegistry.getInstrumentation().targetContext
+
+    lateinit var storageEngine: AndroidStorageEngine
+
+    lateinit var secureArea: AndroidKeystoreSecureArea
+
+    lateinit var delegate: DocumentManager
+
+    lateinit var documentManager: SampleDocumentManager
+
+    val sampleData
+        get() = context.resources.openRawResource(R.raw.sample_data).use { raw ->
+            Base64.getDecoder().decode(raw.readBytes())
+        }
+
+    @Before
+    fun setup() {
+        storageEngine = AndroidStorageEngine.Builder(context, context.cacheDir)
+            .setUseEncryption(false)
+            .build()
+            .apply {
+                deleteAll()
+            }
+        secureArea = AndroidKeystoreSecureArea(context, storageEngine)
+
+        delegate = DocumentManagerImpl(context, storageEngine, secureArea)
+            .userAuth(false)
+
+        documentManager = SampleDocumentManagerImpl(context, delegate)
+    }
+
+    @After
+    fun tearDown() {
+        storageEngine.deleteAll()
+    }
+
     @Test
     fun test_loadSampleData() {
+        documentManager.loadSampleData(sampleData)
         val documents = documentManager.getDocuments()
-        Assert.assertEquals(2, documents.size)
-        Assert.assertEquals("eu.europa.ec.eudiw.pid.1", documents[0].docType)
-        Assert.assertEquals("org.iso.18013.5.1.mDL", documents[1].docType)
+        assertEquals(2, documents.size)
+        assertEquals("eu.europa.ec.eudiw.pid.1", documents[0].docType)
+        assertEquals("org.iso.18013.5.1.mDL", documents[1].docType)
     }
 
     @Test
     @Throws(KeyLockedException::class)
     fun test_sampleDocuments() {
+        documentManager.loadSampleData(sampleData)
         val documents = documentManager.getDocuments()
-        Assert.assertEquals(2, documents.size)
+        assertEquals(2, documents.size)
         for (document in documents) {
             val dataElements = document.nameSpaces.flatMap { (nameSpace, elementIdentifiers) ->
                 elementIdentifiers.map { elementIdentifier ->
@@ -94,16 +130,16 @@ class SampleDocumentManagerImplTest {
                 .setSessionTranscript(transcript)
                 .setDeviceResponse(response)
                 .parse()
-            Assert.assertEquals("Documents in response", 1, responseObj.documents.size)
-            Assert.assertTrue(
+            assertEquals("Documents in response", 1, responseObj.documents.size)
+            assertTrue(
                 "IssuerSigned authentication",
                 responseObj.documents[0].issuerSignedAuthenticated,
             )
-            Assert.assertTrue(
+            assertTrue(
                 "DeviceSigned authentication",
                 responseObj.documents[0].deviceSignedAuthenticated,
             )
-            Assert.assertEquals(
+            assertEquals(
                 "Digest Matching",
                 0,
                 responseObj.documents[0].numIssuerEntryDigestMatchFailures,
@@ -116,57 +152,18 @@ class SampleDocumentManagerImplTest {
         var staticAuthData: StaticAuthData,
     )
 
-    companion object {
-        private lateinit var context: Context
-        private lateinit var secureArea: AndroidKeystoreSecureArea
-        private lateinit var storageEngine: StorageEngine
-        private lateinit var documentManager: SampleDocumentManagerImpl
-        private lateinit var sampleData: ByteArray
 
-        @JvmStatic
-        @BeforeClass
-        @Throws(IOException::class)
-        fun setUp() {
-            context = InstrumentationRegistry.getInstrumentation().targetContext
-            storageEngine = AndroidStorageEngine.Builder(context, context.cacheDir)
-                .setUseEncryption(false)
-                .build()
-                .apply {
-                    deleteAll()
-                }
-            secureArea = AndroidKeystoreSecureArea(context, storageEngine)
-            val delegate = DocumentManagerImpl(context, storageEngine, secureArea)
-                .userAuth(false)
-            documentManager = SampleDocumentManagerImpl(context, delegate)
-            try {
-                context.resources.openRawResource(R.raw.sample_data).use { raw ->
-                    sampleData = Base64.getDecoder().decode(raw.readBytes())
-                }
-            } catch (e: Exception) {
-                throw IOException(e)
-            }
-            val result = documentManager.loadSampleData(sampleData)
-            Assert.assertTrue(result is LoadSampleResult.Success)
-        }
-
-        @JvmStatic
-        @AfterClass
-        fun tearDown() {
-            storageEngine.deleteAll()
-        }
-
-        private fun getStaticAuthDataFromDocument(document: Document): DocumentIssuerData {
-            val secureAreaRepository = SecureAreaRepository()
-            secureAreaRepository.addImplementation(secureArea)
-            val credentialStore = CredentialStore(storageEngine, secureAreaRepository)
-            val credential = credentialStore.lookupCredential(document.id)
-            Assert.assertNotNull(credential)
-            val authKey = credential!!.authenticationKeys[0]
-            Assert.assertNotNull(authKey)
-            return DocumentIssuerData(
-                staticAuthData = StaticAuthDataParser(authKey.issuerProvidedData).parse(),
-                keyAlias = authKey.alias,
-            )
-        }
+    private fun getStaticAuthDataFromDocument(document: Document): DocumentIssuerData {
+        val secureAreaRepository = SecureAreaRepository()
+        secureAreaRepository.addImplementation(secureArea)
+        val credentialStore = CredentialStore(storageEngine, secureAreaRepository)
+        val credential = credentialStore.lookupCredential(document.id)
+        assertNotNull(credential)
+        val authKey = credential!!.authenticationKeys[0]
+        assertNotNull(authKey)
+        return DocumentIssuerData(
+            staticAuthData = StaticAuthDataParser(authKey.issuerProvidedData).parse(),
+            keyAlias = authKey.alias,
+        )
     }
 }
