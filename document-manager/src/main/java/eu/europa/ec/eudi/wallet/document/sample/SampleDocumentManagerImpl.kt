@@ -15,19 +15,12 @@
  */
 package eu.europa.ec.eudi.wallet.document.sample
 
-import COSE.AlgorithmID.ECDSA_256
-import COSE.HeaderKeys.Algorithm
-import COSE.Sign1Message
 import android.content.Context
-import com.android.identity.mdoc.mso.MobileSecurityObjectGenerator
-import com.android.identity.util.Timestamp
 import com.upokecenter.cbor.CBORObject
 import eu.europa.ec.eudi.wallet.document.AddDocumentResult
 import eu.europa.ec.eudi.wallet.document.CreateIssuanceRequestResult
 import eu.europa.ec.eudi.wallet.document.DocumentManager
 import eu.europa.ec.eudi.wallet.document.internal.*
-import java.security.MessageDigest
-import java.security.PublicKey
 
 /**
  * A [SampleDocumentManager] implementation that composes a [DocumentManager] and provides methods to load sample data.
@@ -72,7 +65,7 @@ class SampleDocumentManagerImpl(
                         request.name = context.docTypeName(docType) ?: docType
                         val authKey = request.publicKey
 
-                        val mso = generateMso(docType, authKey, nameSpaces)
+                        val mso = generateMso(DIGEST_ALG, docType, authKey, nameSpaces)
                         val issuerAuth = signMso(mso)
                         val data = generateData(nameSpaces, issuerAuth)
 
@@ -94,51 +87,5 @@ class SampleDocumentManagerImpl(
 
     private companion object {
         private const val DIGEST_ALG = "SHA-256"
-
-        private fun generateMso(
-            docType: String,
-            authKey: PublicKey,
-            nameSpaces: CBORObject,
-        ) =
-            MobileSecurityObjectGenerator(DIGEST_ALG, docType, authKey)
-                .apply {
-                    val now = Timestamp.now().toEpochMilli()
-                    val signed = Timestamp.ofEpochMilli(now)
-                    val validFrom = Timestamp.ofEpochMilli(now)
-                    val validUntil = Timestamp.ofEpochMilli(now + 1000L * 60L * 60L * 24L * 365L)
-                    setValidityInfo(signed, validFrom, validUntil, null)
-
-                    nameSpaces.entries.forEach { (nameSpace, issuerSignedItems) ->
-                        val digestIds = calculateDigests(issuerSignedItems)
-                        addDigestIdsForNamespace(nameSpace.AsString(), digestIds)
-                    }
-                }
-                .generate()
-
-        private fun calculateDigests(issuerSignedItems: CBORObject): Map<Long, ByteArray> {
-            return issuerSignedItems.values.associate { issuerSignedItemBytes ->
-                val issuerSignedItem = issuerSignedItemBytes.getEmbeddedCBORObject()
-                val digest = MessageDigest.getInstance(DIGEST_ALG)
-                    .digest(issuerSignedItemBytes.EncodeToBytes())
-                issuerSignedItem["digestID"].AsInt32().toLong() to digest
-            }
-        }
-
-        private fun signMso(mso: ByteArray) = Sign1Message(false, true).apply {
-            protectedAttributes.Add(Algorithm.AsCBOR(), ECDSA_256.AsCBOR())
-            unprotectedAttributes.Add(33L, issuerCertificate.encoded)
-            SetContent(mso.withTag24())
-            sign(issuerPrivateKey.oneKey)
-        }.EncodeToCBORObject()
-
-        private fun generateData(
-            issuerNameSpaces: CBORObject,
-            issuerAuth: CBORObject,
-        ): ByteArray {
-            return mapOf(
-                "nameSpaces" to issuerNameSpaces,
-                "issuerAuth" to issuerAuth,
-            ).let { CBORObject.FromObject(it).EncodeToBytes() }
-        }
     }
 }

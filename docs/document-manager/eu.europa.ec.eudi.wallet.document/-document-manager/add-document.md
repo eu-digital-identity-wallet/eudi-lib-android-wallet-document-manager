@@ -11,7 +11,7 @@ Expected data format is CBOR. The CBOR data must be in the following structure:
 
 ```cddl
 IssuerSigned = {
-  "nameSpaces" : IssuerNameSpaces, ; Returned data elements
+  ?"nameSpaces" : IssuerNameSpaces, ; Returned data elements
   "issuerAuth" : IssuerAuth ; Contains the mobile security object (MSO) for issuer data authentication
 }
 IssuerNameSpaces = { ; Returned data elements for each namespace
@@ -26,6 +26,8 @@ IssuerSignedItem = {
 }
 IssuerAuth = COSE_Sign1 ; The payload is MobileSecurityObjectBytes
 ```
+
+**Important** Currently `nameSpaces` field should exist and must not be empty.
 
 The document is added in the storage and can be retrieved using the DocumentManager::getDocumentById method.
 

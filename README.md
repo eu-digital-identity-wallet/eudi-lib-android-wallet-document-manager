@@ -135,11 +135,11 @@ In order to add a new document in `DocumentManager`, the following steps should 
 3. Add the document to the `DocumentManager` using the `addDocument` method.
 
 In order to use with the `addDocument` method, document's data must be in CBOR bytes that has the IssuerSigned structure
-according to ISO 23220-4 :
+according to ISO 23220-4 __*__ :
 
 ```cddl
 IssuerSigned = {
- "nameSpaces" : IssuerNameSpaces, ; Returned data elements
+ ?"nameSpaces" : IssuerNameSpaces, ; Returned data elements
  "issuerAuth" : IssuerAuth ; Contains the mobile security object (MSO) for issuer data authentication
 }
 IssuerNameSpaces = { ; Returned data elements for each namespace
@@ -154,6 +154,8 @@ IssuerSignedItem = {
 }
 IssuerAuth = COSE_Sign1 ; The payload is MobileSecurityObjectBytes
 ```
+
+__*__**Important note**: Currently, the library does not support IssuerSigned structure without the `nameSpaces` field.
 
 See the code below for an example of how to add a new document in `DocumentManager`:
 
