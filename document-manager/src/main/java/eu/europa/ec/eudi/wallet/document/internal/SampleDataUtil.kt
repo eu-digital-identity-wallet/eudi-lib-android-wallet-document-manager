@@ -15,11 +15,19 @@
  */
 package eu.europa.ec.eudi.wallet.document.internal
 
+import COSE.AlgorithmID.ECDSA_256
+import COSE.HeaderKeys.Algorithm
 import COSE.OneKey
+import COSE.Sign1Message
+import com.android.identity.mdoc.mso.MobileSecurityObjectGenerator
+import com.android.identity.util.Timestamp
+import com.upokecenter.cbor.CBORObject
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.util.io.pem.PemReader
 import java.security.KeyFactory
+import java.security.MessageDigest
 import java.security.PrivateKey
+import java.security.PublicKey
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import java.security.spec.PKCS8EncodedKeySpec
@@ -72,3 +80,56 @@ internal val issuerCertificate: X509Certificate = PemReader(SAMPLE_ISSUER_DS.rea
 @get:JvmSynthetic
 internal val PrivateKey.oneKey
     get() = OneKey(null, this)
+
+@JvmSynthetic
+internal fun generateMso(
+    digestAlg: String,
+    docType: String,
+    authKey: PublicKey,
+    nameSpaces: CBORObject,
+) =
+    MobileSecurityObjectGenerator(digestAlg, docType, authKey)
+        .apply {
+            val now = Timestamp.now().toEpochMilli()
+            val signed = Timestamp.ofEpochMilli(now)
+            val validFrom = Timestamp.ofEpochMilli(now)
+            val validUntil = Timestamp.ofEpochMilli(now + 1000L * 60L * 60L * 24L * 365L)
+            setValidityInfo(signed, validFrom, validUntil, null)
+
+            val digestIds = nameSpaces.entries.associate { (nameSpace, issuerSignedItems) ->
+                nameSpace.AsString() to calculateDigests(digestAlg, issuerSignedItems)
+            }
+            digestIds.forEach { (nameSpace, digestIds) ->
+                addDigestIdsForNamespace(nameSpace, digestIds)
+            }
+        }
+        .generate()
+
+@JvmSynthetic
+internal fun calculateDigests(digestAlg: String, issuerSignedItems: CBORObject): Map<Long, ByteArray> {
+    return issuerSignedItems.values.associate { issuerSignedItemBytes ->
+        val issuerSignedItem = issuerSignedItemBytes.getEmbeddedCBORObject()
+        val digest = MessageDigest.getInstance(digestAlg)
+            .digest(issuerSignedItemBytes.EncodeToBytes())
+        issuerSignedItem["digestID"].AsInt32().toLong() to digest
+    }
+}
+
+@JvmSynthetic
+internal fun signMso(mso: ByteArray) = Sign1Message(false, true).apply {
+    protectedAttributes.Add(Algorithm.AsCBOR(), ECDSA_256.AsCBOR())
+    unprotectedAttributes.Add(33L, issuerCertificate.encoded)
+    SetContent(mso.withTag24())
+    sign(issuerPrivateKey.oneKey)
+}.EncodeToCBORObject()
+
+@JvmSynthetic
+internal fun generateData(
+    issuerNameSpaces: CBORObject,
+    issuerAuth: CBORObject,
+): ByteArray {
+    return mapOf(
+        "nameSpaces" to issuerNameSpaces,
+        "issuerAuth" to issuerAuth,
+    ).let { CBORObject.FromObject(it).EncodeToBytes() }
+}
