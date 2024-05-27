@@ -21,9 +21,7 @@ import COSE.Sign1Message
 import android.content.Context
 import android.util.Log
 import com.android.identity.android.securearea.AndroidKeystoreSecureArea
-import com.android.identity.android.securearea.AndroidKeystoreSecureArea.KEY_PURPOSE_SIGN
-import com.android.identity.android.securearea.AndroidKeystoreSecureArea.USER_AUTHENTICATION_TYPE_BIOMETRIC
-import com.android.identity.android.securearea.AndroidKeystoreSecureArea.USER_AUTHENTICATION_TYPE_LSKF
+import com.android.identity.android.securearea.AndroidKeystoreSecureArea.*
 import com.android.identity.credential.Credential
 import com.android.identity.credential.CredentialStore
 import com.android.identity.credential.NameSpacedData
@@ -39,7 +37,7 @@ import eu.europa.ec.eudi.wallet.document.internal.supportsStrongBox
 import eu.europa.ec.eudi.wallet.document.internal.withTag24
 import java.security.SecureRandom
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 
 
 /**
@@ -162,16 +160,9 @@ class DocumentManagerImpl(
         try {
             val credential = credentialStore.lookupCredential(request.documentId)
                 ?: return AddDocumentResult.Failure(IllegalArgumentException("No credential found for ${request.documentId}"))
-            val cbor = CBORObject.DecodeFromBytes(data)
-
-            val documentCbor =
-                cbor["documents"].values.firstOrNull { it["docType"].AsString() == request.docType }
-                    ?: return AddDocumentResult.Failure(
-                        IllegalArgumentException("No document found for ${request.docType}"),
-                    )
+            val issuerSigned = CBORObject.DecodeFromBytes(data)
 
             credential.apply {
-                val issuerSigned = documentCbor["issuerSigned"]
                 val issuerAuthBytes = issuerSigned["issuerAuth"].EncodeToBytes()
                 val issuerAuth = Message
                     .DecodeFromBytes(issuerAuthBytes, MessageTag.Sign1) as Sign1Message

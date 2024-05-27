@@ -10,13 +10,6 @@ Add document to the document manager.
 Expected data format is CBOR. The CBOR data must be in the following structure:
 
 ```cddl
-Data = {
-  "documents" : [+Document], ; Returned documents
-}
-Document = {
-  "docType" : DocType, ; Document type returned
-  "issuerSigned" : IssuerSigned, ; Returned data elements signed by the issuer
-}
 IssuerSigned = {
   "nameSpaces" : IssuerNameSpaces, ; Returned data elements
   "issuerAuth" : IssuerAuth ; Contains the mobile security object (MSO) for issuer data authentication
