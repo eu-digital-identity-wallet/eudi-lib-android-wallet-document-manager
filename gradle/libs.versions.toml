@@ -1,10 +1,10 @@
 [versions]
 biometric-ktx = "1.2.0-alpha05"
-json = "20210307"
+json = "20231013"
 kotlin = "1.8.10"
 java = "1.8"
 gradle-plugin = "7.4.0"
-dependency-license-report = "2.4"
+dependency-license-report = "2.8"
 identity-credential = "20231002"
 identity-credential-android = "20231002"
 cbor = "4.5.2"

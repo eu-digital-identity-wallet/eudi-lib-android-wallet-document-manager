@@ -42,12 +42,28 @@ The released software is a initial development release version:
 
 ### Dependencies
 
+In order to use snapshot versions add the following to your project's settings.gradle file:
+
+```groovy
+
+dependencyResolutionManagement {
+    repositories {
+        // ...
+        maven {
+            url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+            mavenContent { snapshotsOnly() }
+        }
+        // ...
+    }
+}
+```
+
 To include the library in your project, add the following dependencies to your app's build.gradle
 file.
 
 ```groovy
 dependencies {
-    implementation "eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager:0.3.0-SNAPSHOT"
+    implementation "eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager:0.4.0-SNAPSHOT"
 }
 ```
 
@@ -79,22 +95,59 @@ val documentManager = DocumentManager.Builder(context)
 
 ### Managing documents
 
-Document is an object that contains the following information:
+A document can be in one of the three following states:
 
-- `id` document's unique identifier
-- `docType` document's docType (example: "eu.europa.ec.eudiw.pid.1")
-- `name` document's name. This is a human-readable name.
-- `hardwareBacked` document's storage is hardware backed
-- `createdAt` document's creation date
-- `requiresUserAuth` flag that indicates if the document requires user authentication to be accessed
-- `nameSpacedData` retrieves the document's data, grouped by nameSpace. Values are in CBOR bytes
+- **Unsigned** the document is not yet issued and has no data from issuer. Contains only the keys that will be used for
+  issuance
+- **Deferred** the document is not yet received from the issuer, but the issuers has received the document's public key
+  and
+  proof of possession. It also holds some related to the deferred issuance process, that can be used for the completion
+  of issuance.
+- **Issued** the document is issued and contains the data received from the issuer
 
-To retrieve the list of documents, use the `getDocuments` method:
+The following diagram depicts the class hierarchy of the Document classes:
+
+```mermaid
+classDiagram
+    Document <|.. UnsignedDocument
+    Document <|.. DeferredDocument
+    UnsignedDocument <|-- DeferredDocument
+    Document <|.. IssuedDocument
+    class Document {
+        +id String
+        +docType String
+        +name String
+        +usesStrongBox Boolean
+        +requiresUserAuth Boolean
+        +createdAt Instant
+        +state  Document.State
+        +isUnsigned Boolean
+        +isDeferred Boolean
+        +isIssued Boolean
+    }
+    class UnsignedDocument {
+      +certificatesNeedAuth List< X509Certificate >
+      +publicKey  PublicKey
+      +signWithAuthKey( data  ByteArray, alg  String ) SignedWithAuthKeyResult
+    }
+    class DeferredDocument {
+       +relatedData ByteArray
+    }
+    class IssuedDocument {
+        +issuedAt  Instant
+        +nameSpacedData  Map< String, Map< String, ByteArray > >
+        +nameSpaces Map< String, List< String > >
+        +nameSpacedDataValues Map< String, Map< String, Any? > >
+    }
+```
+
+To retrieve the list of documents, use the `getDocuments` method. The method receives an optional argument `state` to
+filter the documents by their state. In the following example, the method is used to retrieve all issued documents:
 
 ```kotlin
 import eu.europa.ec.eudi.wallet.document.Document
 
-val documents: List<Document> = documentManager.getDocuments()
+val documents: List<Document> = documentManager.getDocuments(state = Document.State.ISSUED)
 ```
 
 To retrieve a document by its id, use the `getDocumentById` method:
@@ -129,13 +182,16 @@ when (deleteResult) {
 
 In order to add a new document in `DocumentManager`, the following steps should be followed:
 
-1. Create an issuance request using the `createIssuanceRequest` method of the `DocumentManager`
-   class.
-2. Send the issuance request to the issuer.
-3. Add the document to the `DocumentManager` using the `addDocument` method.
+1. Create a new document using the `createDocument` method of the `DocumentManager`
+   class. From the return result of this method you can get the `UnsignedDocument` object.
+2. Use the `publicKey` property for the issuer and the `signWithAuthKey` method of the `UnsignedDocument` object to sign
+   the proof of possession of the document's public key.
+3. When the document's cbor data are received from the issuer, use the `DocumentManager.storeIssuedDocument` to store
+   the issued document. If the issuer responds with a deferred issuance, use the `DocumentManager.storeDeferredDocument`
+   to store the deferred document and related data from the issuer's response.
 
-In order to use with the `addDocument` method, document's data must be in CBOR bytes that has the IssuerSigned structure
-according to ISO 23220-4 __*__ :
+In order to use with the `storeIssuedDocument` method, document's data must be in CBOR bytes that has the IssuerSigned
+structure according to ISO 23220-4 __*__ :
 
 ```cddl
 IssuerSigned = {
@@ -160,26 +216,27 @@ __*__**Important note**: Currently, the library does not support IssuerSigned st
 See the code below for an example of how to add a new document in `DocumentManager`:
 
 ```kotlin
-val docType = "eu.europa.ec.eudiw.pid.1"
+val docType = "eu.europa.ec.eudi.pid.1"
 val hardwareBacked = false
 val attestationChallenge = byteArrayOf(
     // attestation challenge bytes
     // provided by the issuer
 )
-val requestResult =
-    documentManager.createIssuanceRequest(docType, hardwareBacked, attestationChallenge)
-when (requestResult) {
+val result = documentManager.createDocument(docType, hardwareBacked, attestationChallenge)
+when (result) {
     is CreateIssuanceRequestResult.Failure -> {
-        val error = requestResult.throwable
-        // handle error while creating issuance request
+        val error = result.throwable
+        // handle error
     }
 
     is CreateIssuanceRequestResult.Success -> {
-        val request = requestResult.issuanceRequest
-        val docType = request.docType
+        val unsignedDocument = result.issuanceRequest
+        val docType = unsignedDocument.docType
         // the device certificate that will be used in the signing of the document
         // from the issuer while creating the MSO (Mobile Security Object)
-        val certificateNeedAuth = request.certificateNeedAuth
+        val certificateNeedAuth = unsignedDocument.certificateNeedAuth
+        // or
+        val publicKey = unsignedDocument.publicKey
 
         // if the issuer requires the user to prove possession of the private key corresponding to the certificateNeedAuth
         // then user can use the method below to sign issuer's data and send the signature to the issuer
@@ -187,7 +244,7 @@ when (requestResult) {
             // signing input bytes from the issuer
             // provided by the issuer
         )
-        val signatureResult = request.signWithAuthKey(signingInputFromIssuer)
+        val signatureResult = unsignedDocument.signWithAuthKey(signingInputFromIssuer)
         when (signatureResult) {
             is SignedWithAuthKeyResult.Success -> {
                 val signature = signatureResult.signature
@@ -212,15 +269,15 @@ when (requestResult) {
             // CBOR bytes of the document
         )
 
-        val addResult = documentManager.addDocument(request, issuerData)
+        val storeResult = documentManager.storeIssuedDocument(unsignedDocument, issuerData)
 
-        when (addResult) {
+        when (storeResult) {
             is AddDocumentResult.Failure -> {
-                val error = addResult.throwable
+                val error = storeResult.throwable
                 // handle error while adding document
             }
             is AddDocumentResult.Success -> {
-                val documentId = addResult.documentId
+                val documentId = storeResult.documentId
                 // the documentId of the newly added document
                 // use the documentId to retrieve the document
                 documentManager.getDocumentById(documentId)

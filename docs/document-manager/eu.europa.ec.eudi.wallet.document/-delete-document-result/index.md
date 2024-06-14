@@ -4,7 +4,7 @@
 
 interface [DeleteDocumentResult](index.md)
 
-Delete document result sealed interface
+The result of [DocumentManager.deleteDocumentById](../-document-manager/delete-document-by-id.md) method
 
 #### Inheritors
 

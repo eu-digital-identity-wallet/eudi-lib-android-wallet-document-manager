@@ -1,33 +1,26 @@
 /*
- * Copyright (c) 2023 European Commission
+ *  Copyright (c) 2023-2024 European Commission
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
-@file:JvmMultifileClass
-
 package eu.europa.ec.eudi.wallet.document
 
 import android.content.Context
-import androidx.biometric.BiometricPrompt.CryptoObject
 import com.android.identity.android.securearea.AndroidKeystoreSecureArea
 import com.android.identity.android.storage.AndroidStorageEngine
-import com.android.identity.credential.Credential
-import com.android.identity.securearea.SecureArea
 import com.android.identity.storage.StorageEngine
 import eu.europa.ec.eudi.wallet.document.internal.isDeviceSecure
 import java.io.File
-import java.security.PublicKey
-import java.security.cert.X509Certificate
 
 /**
  * Document manager object is the entry point to access documents.
@@ -41,9 +34,10 @@ interface DocumentManager {
     /**
      * Retrieve all documents
      *
+     * @param state optional state of the document
      * @return list of documents
      */
-    fun getDocuments(): List<Document>
+    fun getDocuments(state: Document.State? = null): List<Document>
 
     /**
      * Get document by id
@@ -62,19 +56,21 @@ interface DocumentManager {
     fun deleteDocumentById(documentId: DocumentId): DeleteDocumentResult
 
     /**
-     * Create an issuance request for a given docType. The issuance request can be then used to issue the document
-     * from the issuer. The issuance request contains the certificate that must be sent to the issuer.
+     * Creates a [UnsignedDocument] for a given docType which can be then used to issue the document
+     * from the issuer. The [UnsignedDocument] contains the certificate that must be sent to the issuer
+     * and implements [UnsignedDocument.signWithAuthKey] to sign the proof of possession if needed by the
+     * issuer.
      *
-     * @param docType document's docType (example: "eu.europa.ec.eudiw.pid.1")
-     * @param hardwareBacked whether the document should be stored in hardware backed storage
+     * @param docType document's docType (example: "eu.europa.ec.eudi.pid.1")
+     * @param useStrongBox whether the document should be stored in hardware backed storage
      * @param attestationChallenge optional attestationChallenge to check provided by the issuer
-     * @return [CreateIssuanceRequestResult.Success] containing the issuance request if successful, [CreateIssuanceRequestResult.Failure] otherwise
+     * @return [CreateDocumentResult.Success] containing the issuance request if successful, [CreateDocumentResult.Failure] otherwise
      */
-    fun createIssuanceRequest(
+    fun createDocument(
         docType: String,
-        hardwareBacked: Boolean,
+        useStrongBox: Boolean,
         attestationChallenge: ByteArray? = null,
-    ): CreateIssuanceRequestResult
+    ): CreateDocumentResult
 
     /**
      * Add document to the document manager.
@@ -102,13 +98,23 @@ interface DocumentManager {
      * **Important** Currently `nameSpaces` field should exist and must not be empty.
      *
      * The document is added in the storage and can be retrieved using the
-     * [DocumentManager::getDocumentById] method.
+     * [DocumentManager.getDocumentById] method.
      *
-     * @param request [IssuanceRequest] containing necessary information of the issued the document
-     * @param data in CBOR format containing the document's data
-     * @return [AddDocumentResult.Success] containing the documentId and the proof of provisioning if successful, [AddDocumentResult.Failure] otherwise
+     * @param unsignedDocument [UnsignedDocument] containing necessary information of the issued the document
+     * @param issuerDocumentData in CBOR format containing the document's data
+     * @return [StoreDocumentResult.Success] containing the documentId and the proof of provisioning if successful, [StoreDocumentResult.Failure] otherwise
      */
-    fun addDocument(request: IssuanceRequest, data: ByteArray): AddDocumentResult
+    fun storeIssuedDocument(unsignedDocument: UnsignedDocument, issuerDocumentData: ByteArray): StoreDocumentResult
+
+    /**
+     * Stores a [UnsignedDocument] as [DeferredDocument]. The document can be retrieved using the [DocumentManager.getDocumentById] method.
+     * Also, the relatedData can be used later for the issuance process.
+     *
+     * @param unsignedDocument [UnsignedDocument] containing necessary information of the issued the document
+     * @param relatedData related data to deferred process to be stored with the document
+     * @return [StoreDocumentResult.Success] containing the documentId if successful, [StoreDocumentResult.Failure] otherwise
+     */
+    fun storeDeferredDocument(unsignedDocument: UnsignedDocument, relatedData: ByteArray): StoreDocumentResult
 
     /**
      * Builder class to instantiate the default DocumentManager implementation.
@@ -127,7 +133,7 @@ interface DocumentManager {
      * @property storageDir the directory to store data files in. By default the [Context.getNoBackupFilesDir] is used.
      * @property userAuth flag that indicates if the document requires user authentication to be accessed. By default this is set to true if the device is secured with a PIN, password or pattern.
      * @property userAuthTimeoutInMillis timeout in milliseconds for user authentication. By default this is set to 30 seconds.
-     * @property checkPublicKeyBeforeAdding flag that indicates if the public key from the [IssuanceRequest] must match the public key in MSO. By default this is set to true.
+     * @property checkPublicKeyBeforeAdding flag that indicates if the public key from the [UnsignedDocument] must match the public key in MSO. By default this is set to true.
      * @constructor
      *
      * @param context [Context] used to instantiate the DocumentManager
@@ -143,7 +149,7 @@ interface DocumentManager {
         /**
          * Sets whether to encrypt the values stored on disk.
          * Note that keys are not encrypted, only values.
-         * By default this is set to true.
+         * By default, this is set to true.
          *
          * @param useEncryption
          * @return [DocumentManager.Builder]
@@ -152,7 +158,7 @@ interface DocumentManager {
 
         /**
          * The directory to store data files in.
-         * By default the [Context.getNoBackupFilesDir] is used.
+         * By default, the [Context.getNoBackupFilesDir] is used.
          *
          * @param storageDir
          * @return [DocumentManager.Builder]
@@ -178,11 +184,11 @@ interface DocumentManager {
 
         /**
          * Sets whether to check public key in MSO before adding document to storage.
-         * By default this is set to true.
+         * By default, this is set to true.
          * This check is done to prevent adding documents with public key that is not in MSO.
-         * The public key from the [IssuanceRequest] must match the public key in MSO.
+         * The public key from the [UnsignedDocument] must match the public key in MSO.
          *
-         * @see [DocumentManager.addDocument]
+         * @see [DocumentManager.storeIssuedDocument]
          *
          * @param checkPublicKeyBeforeAdding
          */
@@ -211,333 +217,3 @@ interface DocumentManager {
 }
 
 
-/**
- * Add document result sealed interface
- */
-sealed interface AddDocumentResult {
-
-    /**
-     * Success result containing the documentId.
-     * DocumentId can be then used to retrieve the document from the [DocumentManager::getDocumentById] method
-     *
-     * @property documentId document's unique identifier
-     * @property proofOfProvisioning proof of provisioning
-     * @constructor
-     *
-     * @param documentId document's unique identifier
-     * @param proofOfProvisioning proof of provisioning
-     */
-    class Success(val documentId: DocumentId, val proofOfProvisioning: ByteArray) :
-        AddDocumentResult
-
-    /**
-     * Failure while adding the document. Contains the throwable that caused the failure
-     *
-     * @property throwable throwable that caused the failure
-     * @constructor
-     * @param throwable throwable that caused the failure
-     */
-    data class Failure(val throwable: Throwable) : AddDocumentResult
-
-    /**
-     * Success result containing the documentId and the proof of provisioning if successful
-     *
-     * @param block block to be executed if the result is successful
-     * @return [AddDocumentResult]
-     */
-    fun onSuccess(block: (DocumentId, ByteArray) -> Unit): AddDocumentResult = apply {
-        if (this is Success) block(documentId, proofOfProvisioning)
-    }
-
-    /**
-     * Failure while adding the document. Contains the throwable that caused the failure
-     *
-     * @param block block to be executed if the result is a failure
-     * @return [AddDocumentResult]
-     */
-    fun onFailure(block: (Throwable) -> Unit): AddDocumentResult = apply {
-        if (this is Failure) block(throwable)
-    }
-}
-
-/**
- * Issuance request class. Contains the necessary information to issue a document.
- * Use the [DocumentManager::createIssuanceRequest] method to create an issuance request.
- *
- * @property documentId document's unique identifier
- * @property docType document's docType (example: "eu.europa.ec.eudiw.pid.1")
- * @property name document's name
- * @property hardwareBacked whether the document's keys should be stored in hardware backed storage
- * @property requiresUserAuth whether the document requires user authentication to be accessed
- * @property certificatesNeedAuth list of certificates that will be used for issuing the document
- * @property publicKey public key of the first certificate in [certificatesNeedAuth] list to be included in mobile security object that it will be signed from issuer
- *
- */
-interface IssuanceRequest {
-    val documentId: DocumentId
-    val docType: String
-    var name: String
-    val hardwareBacked: Boolean
-    val requiresUserAuth: Boolean
-    val certificatesNeedAuth: List<X509Certificate>
-
-    /**
-     * Public key of the first certificate in [certificatesNeedAuth] list
-     * to be included in mobile security object that it will be signed from issuer
-     */
-    val publicKey: PublicKey
-        get() = certificatesNeedAuth.first().publicKey
-
-    /**
-     * Sign given data with authentication key
-     *
-     * Available algorithms are:
-     * - [Algorithm.SHA256withECDSA]
-     *
-     * @param data to be signed
-     * @param alg algorithm to be used for signing the data (example: "SHA256withECDSA")
-     * @return [SignedWithAuthKeyResult.Success] containing the signature if successful,
-     * [SignedWithAuthKeyResult.UserAuthRequired] if user authentication is required to sign data,
-     * [SignedWithAuthKeyResult.Failure] if an error occurred while signing the data
-     */
-    fun signWithAuthKey(
-        data: ByteArray,
-        @Algorithm alg: String = Algorithm.SHA256withECDSA
-    ): SignedWithAuthKeyResult
-
-    companion object {
-
-        /**
-         * Create issuance request
-         *
-         * @param docType document's docType (example: "eu.europa.ec.eudiw.pid.1")
-         * @param credential [Credential] used to create the issuance request
-         * @param keySettings [AndroidKeystoreSecureArea.CreateKeySettings] used to create the issuance request
-         * @return [IssuanceRequest]
-         */
-        internal operator fun invoke(
-            docType: String,
-            credential: Credential,
-            keySettings: AndroidKeystoreSecureArea.CreateKeySettings
-        ): IssuanceRequest {
-            val pendingAuthKey = credential.createPendingAuthenticationKey(keySettings, null)
-            return object : IssuanceRequest {
-                override val documentId = credential.name
-                override val docType = docType
-                override val hardwareBacked = keySettings.useStrongBox
-                override var name = docType
-                override val requiresUserAuth = keySettings.userAuthenticationRequired
-                override val certificatesNeedAuth = pendingAuthKey.attestation
-
-                override fun signWithAuthKey(
-                    data: ByteArray,
-                    @Algorithm alg: String
-                ): SignedWithAuthKeyResult {
-                    val keyUnlockData =
-                        AndroidKeystoreSecureArea.KeyUnlockData(pendingAuthKey.alias)
-                    return try {
-                        credential.credentialSecureArea.sign(
-                            pendingAuthKey.alias,
-                            alg.algorithm,
-                            data,
-                            keyUnlockData
-                        ).let {
-                            SignedWithAuthKeyResult.Success(it)
-                        }
-                    } catch (e: Exception) {
-                        when (e) {
-                            is SecureArea.KeyLockedException -> SignedWithAuthKeyResult.UserAuthRequired(
-                                keyUnlockData.getCryptoObjectForSigning(alg.algorithm)
-                            )
-
-                            else -> SignedWithAuthKeyResult.Failure(e)
-                        }
-                    }
-
-                }
-            }
-        }
-    }
-}
-
-sealed interface SignedWithAuthKeyResult {
-    /**
-     * Success result containing the signature of data
-     *
-     * @property signature
-     */
-    data class Success(val signature: ByteArray) : SignedWithAuthKeyResult {
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as Success
-
-            return signature.contentEquals(other.signature)
-        }
-
-        override fun hashCode(): Int {
-            return signature.contentHashCode()
-        }
-    }
-
-    /**
-     * User authentication is required to sign data
-     *
-     * @property cryptoObject
-     */
-    data class UserAuthRequired(val cryptoObject: CryptoObject?) : SignedWithAuthKeyResult
-
-    /**
-     * Failure while signing the data. Contains the throwable that caused the failure
-     *
-     * @property throwable
-     */
-    data class Failure(val throwable: Throwable) : SignedWithAuthKeyResult
-
-    /**
-     * Execute block if the result is successful
-     *
-     * @param block
-     * @return [SignedWithAuthKeyResult]
-     */
-    fun onSuccess(block: (ByteArray) -> Unit): SignedWithAuthKeyResult = apply {
-        if (this is Success) block(signature)
-    }
-
-    /**
-     * Execute block if the result is a failure
-     *
-     * @param block
-     * @return [SignedWithAuthKeyResult]
-     */
-    fun onFailure(block: (Throwable) -> Unit): SignedWithAuthKeyResult = apply {
-        if (this is Failure) block(throwable)
-    }
-
-    /**
-     * Execute block if the result requires user authentication
-     *
-     * @param block
-     * @return [SignedWithAuthKeyResult]
-     */
-    fun onUserAuthRequired(block: (CryptoObject?) -> Unit): SignedWithAuthKeyResult = apply {
-        if (this is UserAuthRequired) block(cryptoObject)
-    }
-}
-
-/**
- * Create issuance request result sealed interface
- */
-sealed interface CreateIssuanceRequestResult {
-
-    /**
-     * Success result containing the issuance request. The issuance request can be then used to issue the document
-     * from the issuer. The issuance request contains the certificate chain that must be sent to the issuer.
-     *
-     * @property issuanceRequest
-     *
-     * @constructor
-     * @param issuanceRequest
-     */
-    data class Success(val issuanceRequest: IssuanceRequest) : CreateIssuanceRequestResult
-
-    /**
-     * Failure while creating the issuance request. Contains the throwable that caused the failure
-     *
-     * @property throwable
-     * @constructor Create empty Failure
-     */
-    data class Failure(val throwable: Throwable) : CreateIssuanceRequestResult
-
-    /**
-     * Execute block if the result is successful
-     *
-     * @param block block to be executed if the result is successful
-     * @return [CreateIssuanceRequestResult]
-     */
-    fun onSuccess(block: (IssuanceRequest) -> Unit): CreateIssuanceRequestResult = apply {
-        if (this is Success) block(issuanceRequest)
-    }
-
-    /**
-     * Execute block if the result is a failure
-     *
-     * @param block block to be executed if the result is a failure
-     * @return [CreateIssuanceRequestResult]
-     */
-    fun onFailure(block: (Throwable) -> Unit): CreateIssuanceRequestResult = apply {
-        if (this is Failure) block(throwable)
-    }
-
-    /**
-     * Get issuance request or throw the throwable that caused the failure
-     *
-     * @return [IssuanceRequest]
-     */
-    fun getOrThrow(): IssuanceRequest = when (this) {
-        is Success -> issuanceRequest
-        is Failure -> throw throwable
-    }
-}
-
-/**
- * Delete document result sealed interface
- */
-sealed interface DeleteDocumentResult {
-    /**
-     * Success result containing the proof of deletion
-     *
-     * @property proofOfDeletion
-     * @constructor
-     * @param proofOfDeletion
-     */
-    data class Success(val proofOfDeletion: ByteArray?) : DeleteDocumentResult {
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as Success
-
-            if (proofOfDeletion != null) {
-                if (other.proofOfDeletion == null) return false
-                if (!proofOfDeletion.contentEquals(other.proofOfDeletion)) return false
-            } else if (other.proofOfDeletion != null) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            return proofOfDeletion?.contentHashCode() ?: 0
-        }
-    }
-
-    /**
-     * Failure while deleting the document. Contains the throwable that caused the failure
-     *
-     * @property throwable throwable that caused the failure
-     * @constructor
-     * @param throwable throwable that caused the failure
-     */
-    data class Failure(val throwable: Throwable) : DeleteDocumentResult
-
-    /**
-     * Execute block if the result is successful
-     *
-     * @param block
-     * @return [DeleteDocumentResult]
-     */
-    fun onSuccess(block: (ByteArray?) -> Unit): DeleteDocumentResult = apply {
-        if (this is Success) block(proofOfDeletion)
-    }
-
-    /**
-     * Execute block if the result is a failure
-     *
-     * @param block
-     * @return [DeleteDocumentResult]
-     */
-    fun onFailure(block: (Throwable) -> Unit): DeleteDocumentResult = apply {
-        if (this is Failure) block(throwable)
-    }
-}

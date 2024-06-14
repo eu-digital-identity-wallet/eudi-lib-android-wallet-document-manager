@@ -1,31 +1,31 @@
 /*
- * Copyright (c) 2023 European Commission
+ *  Copyright (c) 2023-2024 European Commission
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package eu.europa.ec.eudi.wallet.document.sample
 
 import android.content.Context
 import com.upokecenter.cbor.CBORObject
-import eu.europa.ec.eudi.wallet.document.AddDocumentResult
-import eu.europa.ec.eudi.wallet.document.CreateIssuanceRequestResult
+import eu.europa.ec.eudi.wallet.document.CreateDocumentResult
 import eu.europa.ec.eudi.wallet.document.DocumentManager
+import eu.europa.ec.eudi.wallet.document.StoreDocumentResult
 import eu.europa.ec.eudi.wallet.document.internal.*
 
 /**
  * A [SampleDocumentManager] implementation that composes a [DocumentManager] and provides methods to load sample data.
  *
- * @property hardwareBacked Indicates that hardware-backed keys should be used. Default is true if device supports it, false otherwise.
+ * @property useStrongBox Indicates that hardware-backed keys should be used. Default is true if device supports it, false otherwise.
  *
  * @constructor
  * @param context the application context
@@ -36,14 +36,14 @@ class SampleDocumentManagerImpl(
     documentManager: DocumentManager,
 ) : DocumentManager by documentManager, SampleDocumentManager {
     private val context = context.applicationContext
-    var hardwareBacked: Boolean = context.supportsStrongBox
+    var useStrongBox: Boolean = context.supportsStrongBox
 
     /**
-     * Instructs the document manager to use hardware-backed keys for the sample documents.
+     * Instructs the document manager to use strong box for sample document's keys.
      *
      * @param flag true if hardware-backed keys should be used, false otherwise
      */
-    fun hardwareBacked(flag: Boolean) = apply { hardwareBacked = flag }
+    fun useStrongBox(flag: Boolean) = apply { useStrongBox = flag }
 
     override fun loadSampleData(sampleData: ByteArray): LoadSampleResult {
         try {
@@ -54,25 +54,24 @@ class SampleDocumentManagerImpl(
 
                 val issuerSigned = documentCbor["issuerSigned"]
                 val nameSpaces = issuerSigned["nameSpaces"]
-
-                when (val requestResult = createIssuanceRequest(docType, hardwareBacked)) {
-                    is CreateIssuanceRequestResult.Failure -> {
+                when (val requestResult = createDocument(docType, useStrongBox)) {
+                    is CreateDocumentResult.Failure -> {
                         return LoadSampleResult.Error(requestResult.throwable)
                     }
 
-                    is CreateIssuanceRequestResult.Success -> {
-                        val request = requestResult.issuanceRequest
-                        request.name = context.docTypeName(docType) ?: docType
+                    is CreateDocumentResult.Success -> {
+                        val request = requestResult.unsignedDocument
+                        request.name = context.getDocumentNameFromResourcesOrDocType(docType)
                         val authKey = request.publicKey
 
                         val mso = generateMso(DIGEST_ALG, docType, authKey, nameSpaces)
                         val issuerAuth = signMso(mso)
                         val data = generateData(nameSpaces, issuerAuth)
 
-                        when (val addResult = addDocument(request, data)) {
-                            is AddDocumentResult.Failure -> return LoadSampleResult.Error(addResult.throwable)
+                        when (val addResult = storeIssuedDocument(request, data)) {
+                            is StoreDocumentResult.Failure -> return LoadSampleResult.Error(addResult.throwable)
 
-                            is AddDocumentResult.Success -> {
+                            is StoreDocumentResult.Success -> {
                                 // proceed to next document
                             }
                         }

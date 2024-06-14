@@ -5,8 +5,10 @@
 [androidJvm]\
 annotation class [Algorithm](index.md)
 
+Algorithm used to sign the document
+
 ## Types
 
-| Name | Summary |
-|---|---|
-| [Companion](-companion/index.md) | [androidJvm]<br>object [Companion](-companion/index.md) |
+| Name                             | Summary                                                                         |
+|----------------------------------|---------------------------------------------------------------------------------|
+| [Companion](-companion/index.md) | [androidJvm]<br>object [Companion](-companion/index.md)<br>Supported algorithms |

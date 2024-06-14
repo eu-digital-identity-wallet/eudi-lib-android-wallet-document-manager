@@ -9,8 +9,7 @@ Loads the sample data into the document manager.
 
 #### Return
 
-[LoadSampleResult.Success](../-load-sample-result/-success/index.md) if the sample data has been loaded successfully.
-Otherwise, returns [LoadSampleResult.Error](../-load-sample-result/-error/index.md), with the error message.
+[LoadSampleResult.Success](../-load-sample-result/-success/index.md) if the sample data has been loaded successfully. Otherwise, returns [LoadSampleResult.Error](../-load-sample-result/-error/index.md), with the error message.
 
 Expected sampleData format is CBOR. The CBOR data must be in the following structure:
 
@@ -43,6 +42,6 @@ IssuerAuth = COSE_Sign1 ; The payload is MobileSecurityObjectBytes
 
 androidJvm
 
-|            |                                             |
-|------------|---------------------------------------------|
+| | |
+|---|---|
 | sampleData | the sample data to be loaded in cbor format |

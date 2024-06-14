@@ -3,4 +3,5 @@
 # createdAt
 
 [androidJvm]\
+abstract
 val [createdAt](created-at.md): [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html)
