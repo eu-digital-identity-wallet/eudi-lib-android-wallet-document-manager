@@ -5,6 +5,8 @@
 [androidJvm]\
 object [Companion](index.md)
 
+Supported algorithms
+
 ## Properties
 
 | Name | Summary |

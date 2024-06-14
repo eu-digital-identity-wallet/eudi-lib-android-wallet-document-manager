@@ -3,7 +3,5 @@
 # AUTH_TIMEOUT
 
 [androidJvm]\
-
-@[JvmStatic](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.jvm/-jvm-static/index.html)
-
+const
 val [AUTH_TIMEOUT](-a-u-t-h_-t-i-m-e-o-u-t.md): [Long](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html)

@@ -42,6 +42,6 @@ IssuerAuth = COSE_Sign1 ; The payload is MobileSecurityObjectBytes
 
 androidJvm
 
-|            |                                             |
-|------------|---------------------------------------------|
+| | |
+|---|---|
 | sampleData | the sample data to be loaded in cbor format |

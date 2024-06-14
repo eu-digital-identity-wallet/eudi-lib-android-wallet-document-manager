@@ -5,7 +5,8 @@
 [androidJvm]\
 fun [useEncryption](use-encryption.md)(useEncryption: [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)): [DocumentManager.Builder](index.md)
 
-Sets whether to encrypt the values stored on disk. Note that keys are not encrypted, only values. By default this is set to true.
+Sets whether to encrypt the values stored on disk. Note that keys are not encrypted, only values. By default, this is
+set to true.
 
 #### Return
 
