@@ -26,10 +26,17 @@ class TestGetDocumentsExtension {
 
     @Test
     fun `test getDocuments extension returns the correct documents`() {
-        val issued = IssuedDocument(mockk())
-        val deferred = DeferredDocument(mockk())
-        val unsigned = UnsignedDocument(mockk())
+        val issued = mockk<IssuedDocument> {
+            every { state } returns Document.State.ISSUED
+        }
+        val deferred = mockk<DeferredDocument> {
+            every { state } returns Document.State.DEFERRED
+        }
+        val unsigned = mockk<UnsignedDocument> {
+            every { state } returns Document.State.UNSIGNED
+        }
         val documentManager = mockk<DocumentManager>()
+
         every {
             documentManager.getDocuments(null)
         } returns listOf(issued, deferred, unsigned)

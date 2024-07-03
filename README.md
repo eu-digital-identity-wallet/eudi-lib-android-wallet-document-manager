@@ -63,7 +63,7 @@ file.
 
 ```groovy
 dependencies {
-    implementation "eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager:0.4.0-SNAPSHOT"
+    implementation "eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager:0.4.1-SNAPSHOT"
 }
 ```
 
@@ -100,9 +100,8 @@ A document can be in one of the three following states:
 - **Unsigned** the document is not yet issued and has no data from issuer. Contains only the keys that will be used for
   issuance
 - **Deferred** the document is not yet received from the issuer, but the issuers has received the document's public key
-  and
-  proof of possession. It also holds some related to the deferred issuance process, that can be used for the completion
-  of issuance.
+  and proof of possession. It also holds some related to the deferred issuance process, that can be used for the
+  completion of issuance.
 - **Issued** the document is issued and contains the data received from the issuer
 
 The following diagram depicts the class hierarchy of the Document classes:

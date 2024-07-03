@@ -10,6 +10,7 @@ A document.
 
 |                                                    |
 |----------------------------------------------------|
+| [DeferredDocument](../-deferred-document/index.md) |
 | [IssuedDocument](../-issued-document/index.md)     |
 | [UnsignedDocument](../-unsigned-document/index.md) |
 

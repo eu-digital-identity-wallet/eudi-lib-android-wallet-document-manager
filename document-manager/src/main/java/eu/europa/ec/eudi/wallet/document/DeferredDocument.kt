@@ -17,7 +17,10 @@
 package eu.europa.ec.eudi.wallet.document
 
 import com.android.identity.credential.Credential
-import eu.europa.ec.eudi.wallet.document.internal.deferredRelatedData
+import eu.europa.ec.eudi.wallet.document.Document.State
+import eu.europa.ec.eudi.wallet.document.internal.*
+import java.security.cert.X509Certificate
+import java.time.Instant
 
 /**
  * A [DeferredDocument] is as [UnsignedDocument] with extra [relatedData] that can be used later on
@@ -26,8 +29,70 @@ import eu.europa.ec.eudi.wallet.document.internal.deferredRelatedData
  *
  * @property relatedData the related data
  */
-class DeferredDocument internal constructor(private val credential: Credential) :
-    UnsignedDocument(credential) {
+class DeferredDocument(
+    id: DocumentId,
+    docType: String,
+    usesStrongBox: Boolean,
+    requiresUserAuth: Boolean,
+    createdAt: Instant,
+    certificatesNeedAuth: List<X509Certificate>,
     val relatedData: ByteArray
-        get() = credential.deferredRelatedData
+) : Document, UnsignedDocument(
+    id,
+    docType,
+    usesStrongBox,
+    requiresUserAuth,
+    createdAt,
+    certificatesNeedAuth,
+) {
+
+    override val state: State
+        get() = credential?.state ?: State.DEFERRED
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as DeferredDocument
+
+        if (id != other.id) return false
+        if (docType != other.docType) return false
+        if (name != other.name) return false
+        if (usesStrongBox != other.usesStrongBox) return false
+        if (requiresUserAuth != other.requiresUserAuth) return false
+        if (createdAt != other.createdAt) return false
+        if (state != other.state) return false
+        if (!relatedData.contentEquals(other.relatedData)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + docType.hashCode()
+        result = 31 * result + name.hashCode()
+        result = 31 * result + usesStrongBox.hashCode()
+        result = 31 * result + requiresUserAuth.hashCode()
+        result = 31 * result + createdAt.hashCode()
+        result = 31 * result + state.hashCode()
+        result = 31 * result + relatedData.contentHashCode()
+        return result
+    }
+
+    override fun toString(): String {
+        return "DeferredDocument(id='$id', docType='$docType', name='$name', usesStrongBox=$usesStrongBox, requiresUserAuth=$requiresUserAuth, createdAt=$createdAt, state=$state, relatedData=${relatedData.contentToString()})"
+    }
+
+    internal companion object {
+        @JvmSynthetic
+        operator fun invoke(credential: Credential) = DeferredDocument(
+            id = credential.name,
+            docType = credential.docType,
+            usesStrongBox = credential.usesStrongBox,
+            requiresUserAuth = credential.requiresUserAuth,
+            createdAt = credential.createdAt,
+            certificatesNeedAuth = credential.pendingAuthenticationKeys.first().attestation,
+            relatedData = credential.deferredRelatedData,
+        )
+    }
 }

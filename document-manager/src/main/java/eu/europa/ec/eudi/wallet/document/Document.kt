@@ -49,13 +49,13 @@ sealed interface Document {
     val state: State
 
     val isUnsigned: Boolean
-        get() = state == State.UNSIGNED
+        get() = state == UNSIGNED
 
     val isDeferred: Boolean
-        get() = state == State.DEFERRED
+        get() = state == DEFERRED
 
     val isIssued: Boolean
-        get() = state == State.ISSUED
+        get() = state == ISSUED
 
     /**
      * The state of the document.
@@ -73,9 +73,9 @@ sealed interface Document {
     companion object {
 
         internal operator fun invoke(credential: Credential) = when (credential.state) {
-            State.UNSIGNED -> UnsignedDocument(credential)
-            State.DEFERRED -> DeferredDocument(credential)
-            State.ISSUED -> IssuedDocument(credential)
+            UNSIGNED -> UnsignedDocument(credential)
+            DEFERRED -> DeferredDocument(credential)
+            ISSUED -> IssuedDocument(credential)
         }
     }
 }

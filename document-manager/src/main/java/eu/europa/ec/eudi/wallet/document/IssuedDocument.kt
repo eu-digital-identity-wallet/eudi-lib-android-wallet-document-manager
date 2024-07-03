@@ -18,8 +18,8 @@
 package eu.europa.ec.eudi.wallet.document
 
 import com.android.identity.credential.Credential
-import eu.europa.ec.eudi.wallet.document.internal.issuedAt
-import eu.europa.ec.eudi.wallet.document.internal.toObject
+import eu.europa.ec.eudi.wallet.document.Document.State
+import eu.europa.ec.eudi.wallet.document.internal.*
 import java.time.Instant
 
 /**
@@ -32,20 +32,20 @@ import java.time.Instant
  * @property nameSpaces retrieves the document's nameSpaces and elementIdentifiers
  * @property nameSpacedDataValues retrieves the document's data, grouped by nameSpace. Values are in their original type
  */
-class IssuedDocument internal constructor(
-    private val credential: Credential,
-) : Document by DocumentImpl(credential) {
+data class IssuedDocument(
+    override val id: DocumentId,
+    override val docType: String,
+    override val name: String,
+    override val usesStrongBox: Boolean,
+    override val requiresUserAuth: Boolean,
+    override val createdAt: Instant,
+    val issuedAt: Instant,
+    val nameSpacedData: Map<NameSpace, Map<ElementIdentifier, ByteArray>>,
+) : Document {
 
-    val issuedAt: Instant
-        get() = credential.issuedAt
-
-    val nameSpacedData: Map<NameSpace, Map<ElementIdentifier, ByteArray>>
-        get() = credential.nameSpacedData.nameSpaceNames.associateWith { nameSpace ->
-            credential.nameSpacedData.getDataElementNames(nameSpace)
-                .associateWith { elementIdentifier ->
-                    credential.nameSpacedData.getDataElement(nameSpace, elementIdentifier)
-                }
-        }
+    @set:JvmSynthetic
+    override var state: State = State.ISSUED
+        internal set
 
     val nameSpaces: Map<NameSpace, List<ElementIdentifier>>
         get() = nameSpacedData.mapValues { it.value.keys.toList() }
@@ -62,5 +62,24 @@ class IssuedDocument internal constructor(
             }
             return map.toMap()
         }
+
+    internal companion object {
+        @JvmSynthetic
+        operator fun invoke(credential: Credential) = IssuedDocument(
+            id = credential.name,
+            docType = credential.docType,
+            name = credential.documentName,
+            usesStrongBox = credential.usesStrongBox,
+            requiresUserAuth = credential.requiresUserAuth,
+            createdAt = credential.createdAt,
+            issuedAt = credential.issuedAt,
+            nameSpacedData = credential.nameSpacedData.nameSpaceNames.associateWith { nameSpace ->
+                credential.nameSpacedData.getDataElementNames(nameSpace)
+                    .associateWith { elementIdentifier ->
+                        credential.nameSpacedData.getDataElement(nameSpace, elementIdentifier)
+                    }
+            }
+        ).also { it.state = credential.state }
+    }
 }
 

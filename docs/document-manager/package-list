@@ -41,7 +41,12 @@ $dokka.location:eu.europa.ec.eudi.wallet.document/CreateDocumentResult/getOrThro
 $dokka.location:eu.europa.ec.eudi.wallet.document/CreateDocumentResult/onFailure/#kotlin.Function1[kotlin.Throwable,kotlin.Unit]/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-create-document-result/on-failure.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/CreateDocumentResult/onSuccess/#kotlin.Function1[eu.europa.ec.eudi.wallet.document.UnsignedDocument,kotlin.Unit]/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-create-document-result/on-success.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/DeferredDocument///PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-deferred-document/index.md
+$dokka.location:eu.europa.ec.eudi.wallet.document/DeferredDocument/DeferredDocument/#kotlin.String#kotlin.String#kotlin.Boolean#kotlin.Boolean#java.time.Instant#kotlin.collections.List[java.security.cert.X509Certificate]#kotlin.ByteArray/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-deferred-document/-deferred-document.md
+$dokka.location:eu.europa.ec.eudi.wallet.document/DeferredDocument/equals/#kotlin.Any?/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-deferred-document/equals.md
+$dokka.location:eu.europa.ec.eudi.wallet.document/DeferredDocument/hashCode/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-deferred-document/hash-code.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/DeferredDocument/relatedData/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-deferred-document/related-data.md
+$dokka.location:eu.europa.ec.eudi.wallet.document/DeferredDocument/state/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-deferred-document/state.md
+$dokka.location:eu.europa.ec.eudi.wallet.document/DeferredDocument/toString/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-deferred-document/to-string.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/DeleteDocumentResult.Failure///PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-delete-document-result/-failure/index.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/DeleteDocumentResult.Failure/Failure/#kotlin.Throwable/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-delete-document-result/-failure/-failure.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/DeleteDocumentResult.Failure/throwable/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-delete-document-result/-failure/throwable.md
@@ -109,10 +114,18 @@ $dokka.location:eu.europa.ec.eudi.wallet.document/DocumentManagerImpl/userAuth/#
 $dokka.location:eu.europa.ec.eudi.wallet.document/DocumentManagerImpl/userAuthTimeout/#kotlin.Long/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager-impl/user-auth-timeout.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/DocumentManagerImpl/userAuthTimeoutInMillis/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager-impl/user-auth-timeout-in-millis.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/IssuedDocument///PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-issued-document/index.md
+$dokka.location:eu.europa.ec.eudi.wallet.document/IssuedDocument/IssuedDocument/#kotlin.String#kotlin.String#kotlin.String#kotlin.Boolean#kotlin.Boolean#java.time.Instant#java.time.Instant#kotlin.collections.Map[kotlin.String,kotlin.collections.Map[kotlin.String,kotlin.ByteArray]]/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-issued-document/-issued-document.md
+$dokka.location:eu.europa.ec.eudi.wallet.document/IssuedDocument/createdAt/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-issued-document/created-at.md
+$dokka.location:eu.europa.ec.eudi.wallet.document/IssuedDocument/docType/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-issued-document/doc-type.md
+$dokka.location:eu.europa.ec.eudi.wallet.document/IssuedDocument/id/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-issued-document/id.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/IssuedDocument/issuedAt/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-issued-document/issued-at.md
+$dokka.location:eu.europa.ec.eudi.wallet.document/IssuedDocument/name/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-issued-document/name.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/IssuedDocument/nameSpacedData/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-issued-document/name-spaced-data.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/IssuedDocument/nameSpacedDataValues/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-issued-document/name-spaced-data-values.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/IssuedDocument/nameSpaces/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-issued-document/name-spaces.md
+$dokka.location:eu.europa.ec.eudi.wallet.document/IssuedDocument/requiresUserAuth/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-issued-document/requires-user-auth.md
+$dokka.location:eu.europa.ec.eudi.wallet.document/IssuedDocument/state/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-issued-document/state.md
+$dokka.location:eu.europa.ec.eudi.wallet.document/IssuedDocument/usesStrongBox/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-issued-document/uses-strong-box.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/SignedWithAuthKeyResult.Failure///PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-signed-with-auth-key-result/-failure/index.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/SignedWithAuthKeyResult.Failure/Failure/#kotlin.Throwable/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-signed-with-auth-key-result/-failure/-failure.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/SignedWithAuthKeyResult.Failure/throwable/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-signed-with-auth-key-result/-failure/throwable.md
@@ -141,10 +154,18 @@ $dokka.location:eu.europa.ec.eudi.wallet.document/StoreDocumentResult///Pointing
 $dokka.location:eu.europa.ec.eudi.wallet.document/StoreDocumentResult/onFailure/#kotlin.Function1[kotlin.Throwable,kotlin.Unit]/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-store-document-result/on-failure.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/StoreDocumentResult/onSuccess/#kotlin.Function2[kotlin.String,kotlin.ByteArray?,kotlin.Unit]/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-store-document-result/on-success.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/UnsignedDocument///PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-unsigned-document/index.md
+$dokka.location:eu.europa.ec.eudi.wallet.document/UnsignedDocument/UnsignedDocument/#kotlin.String#kotlin.String#kotlin.Boolean#kotlin.Boolean#java.time.Instant#kotlin.collections.List[java.security.cert.X509Certificate]/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-unsigned-document/-unsigned-document.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/UnsignedDocument/certificatesNeedAuth/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-unsigned-document/certificates-need-auth.md
+$dokka.location:eu.europa.ec.eudi.wallet.document/UnsignedDocument/createdAt/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-unsigned-document/created-at.md
+$dokka.location:eu.europa.ec.eudi.wallet.document/UnsignedDocument/docType/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-unsigned-document/doc-type.md
+$dokka.location:eu.europa.ec.eudi.wallet.document/UnsignedDocument/id/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-unsigned-document/id.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/UnsignedDocument/name/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-unsigned-document/name.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/UnsignedDocument/publicKey/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-unsigned-document/public-key.md
+$dokka.location:eu.europa.ec.eudi.wallet.document/UnsignedDocument/requiresUserAuth/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-unsigned-document/requires-user-auth.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/UnsignedDocument/signWithAuthKey/#kotlin.ByteArray#kotlin.String/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-unsigned-document/sign-with-auth-key.md
+$dokka.location:eu.europa.ec.eudi.wallet.document/UnsignedDocument/state/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-unsigned-document/state.md
+$dokka.location:eu.europa.ec.eudi.wallet.document/UnsignedDocument/toString/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-unsigned-document/to-string.md
+$dokka.location:eu.europa.ec.eudi.wallet.document/UnsignedDocument/usesStrongBox/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-unsigned-document/uses-strong-box.md
 eu.europa.ec.eudi.wallet.document
 eu.europa.ec.eudi.wallet.document.sample
 
