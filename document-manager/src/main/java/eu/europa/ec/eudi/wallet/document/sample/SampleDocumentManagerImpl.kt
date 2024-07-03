@@ -54,21 +54,21 @@ class SampleDocumentManagerImpl(
 
                 val issuerSigned = documentCbor["issuerSigned"]
                 val nameSpaces = issuerSigned["nameSpaces"]
-                when (val requestResult = createDocument(docType, useStrongBox)) {
+                when (val createDocumentResult = createDocument(docType, useStrongBox)) {
                     is CreateDocumentResult.Failure -> {
-                        return LoadSampleResult.Error(requestResult.throwable)
+                        return LoadSampleResult.Error(createDocumentResult.throwable)
                     }
 
                     is CreateDocumentResult.Success -> {
-                        val request = requestResult.unsignedDocument
-                        request.name = context.getDocumentNameFromResourcesOrDocType(docType)
-                        val authKey = request.publicKey
+                        val usignedDocument = createDocumentResult.unsignedDocument
+                        usignedDocument.name = context.getDocumentNameFromResourcesOrDocType(docType)
+                        val authKey = usignedDocument.publicKey
 
                         val mso = generateMso(DIGEST_ALG, docType, authKey, nameSpaces)
                         val issuerAuth = signMso(mso)
                         val data = generateData(nameSpaces, issuerAuth)
 
-                        when (val addResult = storeIssuedDocument(request, data)) {
+                        when (val addResult = storeIssuedDocument(usignedDocument, data)) {
                             is StoreDocumentResult.Failure -> return LoadSampleResult.Error(addResult.throwable)
 
                             is StoreDocumentResult.Success -> {
