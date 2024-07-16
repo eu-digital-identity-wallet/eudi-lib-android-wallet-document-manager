@@ -42,7 +42,7 @@ The released software is a initial development release version:
 
 ### Dependencies
 
-In order to use snapshot versions add the following to your project's settings.gradle file:
+To use snapshot versions add the following to your project's settings.gradle file:
 
 ```groovy
 
@@ -63,7 +63,7 @@ file.
 
 ```groovy
 dependencies {
-    implementation "eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager:0.4.1-SNAPSHOT"
+    implementation "eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager:0.4.1"
 }
 ```
 
@@ -75,11 +75,11 @@ For source code documentation, see in [docs](docs/index.md) directory.
 
 ### Instantiating the DocumentManager
 
-The library provides a `DocumentManager` class implementation to manage documents.
-To create an instance of
-the [DocumentManager](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/index.md),
-library provides
-a [Builder](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/-builder/index.md),
+The library provides
+a [`DocumentManager`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/index.md) class
+implementation to manage documents. To create an instance of
+the [`DocumentManager`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/index.md), the library
+provides a [`Builder`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/-builder/index.md),
 that can be used to get a default implementation of the `DocumentManager`.
 
 ```kotlin
@@ -97,9 +97,10 @@ val documentManager = DocumentManager.Builder(context)
 
 A document can be in one of the three following states:
 
-- **Unsigned** the document is not yet issued and has no data from issuer. Contains only the keys that will be used for
+- **Unsigned** the document is not yet issued and has no data from the issuer. Contains only the keys that will be used
+  for
   issuance
-- **Deferred** the document is not yet received from the issuer, but the issuers has received the document's public key
+- **Deferred** the document is not yet received from the issuer, but the issuer has received the document's public key
   and proof of possession. It also holds some related to the deferred issuance process, that can be used for the
   completion of issuance.
 - **Issued** the document is issued and contains the data received from the issuer
@@ -140,8 +141,14 @@ classDiagram
     }
 ```
 
-To retrieve the list of documents, use the `getDocuments` method. The method receives an optional argument `state` to
-filter the documents by their state. In the following example, the method is used to retrieve all issued documents:
+To retrieve the list of documents, use
+the [`DocumentManager.getDocuments`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/get-documents.md)
+method.
+The method receives an optional
+argument [`state`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document/-state/index.md) to filter the
+documents by
+their state. In the following example, the
+method is used to retrieve all issued documents:
 
 ```kotlin
 import eu.europa.ec.eudi.wallet.document.Document
@@ -149,7 +156,9 @@ import eu.europa.ec.eudi.wallet.document.Document
 val documents: List<Document> = documentManager.getDocuments(state = Document.State.ISSUED)
 ```
 
-To retrieve a document by its id, use the `getDocumentById` method:
+To retrieve a document by its id, use
+the [`DocumentManager.getDocumentById`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/get-document-by-id.md)
+method:
 
 ```kotlin
 import eu.europa.ec.eudi.wallet.document.Document
@@ -158,7 +167,9 @@ val documentId = "some document id"
 val document: Document = documentManager.getDocumentById(documentId)
 ```
 
-DocumentManager also provides the `deleteDocumentById` method to delete a document by its id:
+DocumentManager also provides
+the [`DocumentManager.deleteDocumentById`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/delete-document-by-id.md)
+method to delete a document by its id:
 
 ```kotlin
 import eu.europa.ec.eudi.wallet.document.Document
@@ -179,18 +190,28 @@ when (deleteResult) {
 
 ```
 
-In order to add a new document in `DocumentManager`, the following steps should be followed:
+To add a new document
+in [`DocumentManager`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/index.md), the
+following
+steps should be followed:
 
-1. Create a new document using the `createDocument` method of the `DocumentManager`
-   class. From the return result of this method you can get the `UnsignedDocument` object.
-2. Use the `publicKey` property for the issuer and the `signWithAuthKey` method of the `UnsignedDocument` object to sign
-   the proof of possession of the document's public key.
-3. When the document's cbor data are received from the issuer, use the `DocumentManager.storeIssuedDocument` to store
-   the issued document. If the issuer responds with a deferred issuance, use the `DocumentManager.storeDeferredDocument`
+1. Create a new document using
+   the [`DocumentManager.createDocument`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/create-document.md)
+   From the return result of this method you can get
+   the [`UnsignedDocument`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-unsigned-document/index.md) object.
+2. Use
+   the [`UnsignedDocument.publicKey`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-unsigned-document/public-key.md)
+   property for the issuer and
+   the [`UnsignedDocument.signWithAuthKey`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-unsigned-document/sign-with-auth-key.md)
+   method to sign the proof of possession for the document's public key.
+3. When the document's cbor data is received from the issuer, use
+   the [`DocumentManager.storeIssuedDocument`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/store-issued-document.md)
+   to store the issued document. If the issuer responds with a deferred issuance, use
+   the [`DocumentManager.storeDeferredDocument`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/store-deferred-document.md)
    to store the deferred document and related data from the issuer's response.
 
-In order to use with the `storeIssuedDocument` method, document's data must be in CBOR bytes that has the IssuerSigned
-structure according to ISO 23220-4 __*__ :
+[`DocumentManager.storeIssuedDocument`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/store-issued-document.md)
+method expects document's data to be in CBOR bytes and have the IssuerSigned structure according to ISO 23220-4 __*__ :
 
 ```cddl
 IssuerSigned = {
@@ -212,7 +233,8 @@ IssuerAuth = COSE_Sign1 ; The payload is MobileSecurityObjectBytes
 
 __*__**Important note**: Currently, the library does not support IssuerSigned structure without the `nameSpaces` field.
 
-See the code below for an example of how to add a new document in `DocumentManager`:
+See the code below for an example of how to add a new document
+in [`DocumentManager`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/index.md):
 
 ```kotlin
 val docType = "eu.europa.ec.eudi.pid.1"
@@ -237,8 +259,8 @@ when (result) {
         // or
         val publicKey = unsignedDocument.publicKey
 
-        // if the issuer requires the user to prove possession of the private key corresponding to the certificateNeedAuth
-        // then user can use the method below to sign issuer's data and send the signature to the issuer
+        // if the issuer requires the user to prove possession of the private key corresponding to the certificateNeedAuth,
+        // then the user can use the method below to sign issuer's data and send the signature to the issuer
         val signingInputFromIssuer = byteArrayOf(
             // signing input bytes from the issuer
             // provided by the issuer
@@ -251,13 +273,13 @@ when (result) {
             }
             is SignedWithAuthKeyResult.Failure -> {
                 val error = signatureResult.throwable
-                // handle error while signing with auth key
+                // handle error while signing with an auth key
             }
             is SignedWithAuthKeyResult.UserAuthRequired -> {
-                // user authentication is required to sign with auth key
+                // user authentication is required to sign with an auth key
                 val cryptoObject = signatureResult.cryptoObject
                 // use cryptoObject to authenticate the user
-                // after user authentication, the user can sign with auth key again
+                // after user authentication, the user can sign with an auth key again
             }
         }
 
@@ -273,7 +295,7 @@ when (result) {
         when (storeResult) {
             is AddDocumentResult.Failure -> {
                 val error = storeResult.throwable
-                // handle error while adding document
+                // handle error while adding a document
             }
             is AddDocumentResult.Success -> {
                 val documentId = storeResult.documentId
@@ -286,34 +308,42 @@ when (result) {
 }
 ```
 
-Library provides also an extension method on Document class to retrieve the document's data as JSONObject.
+The library provides the extension
+method [`IssuedDocument.nameSpacedDataJSONObject`](docs/document-manager/eu.europa.ec.eudi.wallet.document/name-spaced-data-j-s-o-n-object.md)
+that returns the document's nameSpaced data as JSONObject.
 
 ```kotlin
 import org.json.JSONObject
 
-val document = documentManager.getDocumentById("some_document_id")
+val document = documentManager.getDocumentById("some_document_id") as IssuedDocument
 val documentDataAsJson: JSONObject? = document?.nameSpacedDataJSONObject
 ```
 
 ### Working with sample documents
 
-The library, also provides a `SampleDocumentManager` class implementation that can be used to load
-sample documents and test the library easily.
+The library also provides
+a [`SampleDocumentManager`](docs/document-manager/eu.europa.ec.eudi.wallet.document.sample/-sample-document-manager/index.md)
+implementation that can be used to load sample documents and test the library easily.
 
-To create a new instance of the `SampleDocumentManager` class, use
-the `SampleDocumentManager.Builder` class:
+To create a new instance of
+the [`SampleDocumentManager`](docs/document-manager/eu.europa.ec.eudi.wallet.document.sample/-sample-document-manager/index.md)
+class, use
+the [`SampleDocumentManager.Builder`](docs/document-manager/eu.europa.ec.eudi.wallet.document.sample/-sample-document-manager/-builder/index.md)
+class:
 
 ```kotlin
 import eu.europa.ec.eudi.wallet.document.sample.SampleDocumentManager
 
 val sampleDocumentManager = SampleDocumentManager.Builder(context)
-    .documentManager(documentManager) // optional if a DocumentManager instance is already created, else a default DocumentManager instance will be created
-    .hardwareBacked(false) // documents' keys should be stored in hardware backed keystore if supported by the device. The default value is true if device supports hardware backed keystore, else false
+    .documentManager(documentManager) // optional, if a DocumentManager instance is already created, else a default DocumentManager instance will be created
+    .hardwareBacked(false) // Documents' keys should be stored in a hardware-backed keystore if supported by the device. The default value is true if the device supports a hardware-backed keystore, else false
     .build()
 ```
 
-After creating an instance of `SampleDocumentManager`, you can load the sample documents using
-the `loadSampleData` method like shown below:
+You can load the sample documents
+using
+the [`SampleDocumentManager.loadSampleData`](docs/document-manager/eu.europa.ec.eudi.wallet.document.sample/-sample-document-manager/load-sample-data.md)
+method like shown below:
 
 ```kotlin
 import android.util.Base64
