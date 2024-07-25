@@ -42,6 +42,7 @@ import java.time.Instant
  */
 open class UnsignedDocument(
     override val id: DocumentId,
+    name: String,
     final override val docType: String,
     override val usesStrongBox: Boolean,
     override val requiresUserAuth: Boolean,
@@ -52,7 +53,7 @@ open class UnsignedDocument(
     @JvmSynthetic
     internal var credential: Credential? = null
 
-    override var name: String = credential?.documentName ?: docType
+    override var name: String = name
         set(value) {
             field = value
             credential?.let { it.documentName = value }
@@ -118,6 +119,7 @@ open class UnsignedDocument(
         @JvmSynthetic
         operator fun invoke(credential: Credential) = UnsignedDocument(
             id = credential.name,
+            name = credential.documentName,
             docType = credential.docType,
             usesStrongBox = credential.usesStrongBox,
             requiresUserAuth = credential.requiresUserAuth,
