@@ -96,6 +96,8 @@ class DeferredDocument(
             createdAt = credential.createdAt,
             certificatesNeedAuth = credential.pendingAuthenticationKeys.first().attestation,
             relatedData = credential.deferredRelatedData,
-        )
+        ).apply {
+            this.credential = credential
+        }
     }
 }
