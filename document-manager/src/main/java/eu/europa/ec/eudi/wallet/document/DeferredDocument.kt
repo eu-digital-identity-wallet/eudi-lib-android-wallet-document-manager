@@ -31,6 +31,7 @@ import java.time.Instant
  */
 class DeferredDocument(
     id: DocumentId,
+    name: String,
     docType: String,
     usesStrongBox: Boolean,
     requiresUserAuth: Boolean,
@@ -39,6 +40,7 @@ class DeferredDocument(
     val relatedData: ByteArray
 ) : Document, UnsignedDocument(
     id,
+    name,
     docType,
     usesStrongBox,
     requiresUserAuth,
@@ -87,6 +89,7 @@ class DeferredDocument(
         @JvmSynthetic
         operator fun invoke(credential: Credential) = DeferredDocument(
             id = credential.name,
+            name = credential.documentName,
             docType = credential.docType,
             usesStrongBox = credential.usesStrongBox,
             requiresUserAuth = credential.requiresUserAuth,
