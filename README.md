@@ -63,7 +63,7 @@ file.
 
 ```groovy
 dependencies {
-    implementation "eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager:0.4.2"
+    implementation "eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager:0.4.3"
 }
 ```
 
