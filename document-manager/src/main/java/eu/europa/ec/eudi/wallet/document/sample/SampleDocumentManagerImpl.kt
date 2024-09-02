@@ -21,6 +21,8 @@ import eu.europa.ec.eudi.wallet.document.CreateDocumentResult
 import eu.europa.ec.eudi.wallet.document.DocumentManager
 import eu.europa.ec.eudi.wallet.document.StoreDocumentResult
 import eu.europa.ec.eudi.wallet.document.internal.*
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+import java.security.Security
 
 /**
  * A [SampleDocumentManager] implementation that composes a [DocumentManager] and provides methods to load sample data.
@@ -37,6 +39,11 @@ class SampleDocumentManagerImpl(
 ) : DocumentManager by documentManager, SampleDocumentManager {
     private val context = context.applicationContext
     var useStrongBox: Boolean = context.supportsStrongBox
+
+    init {
+        Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME)
+        Security.insertProviderAt(BouncyCastleProvider(), 1)
+    }
 
     /**
      * Instructs the document manager to use strong box for sample document's keys.
@@ -60,16 +67,19 @@ class SampleDocumentManagerImpl(
                     }
 
                     is CreateDocumentResult.Success -> {
-                        val usignedDocument = createDocumentResult.unsignedDocument
-                        usignedDocument.name = context.getDocumentNameFromResourcesOrDocType(docType)
-                        val authKey = usignedDocument.publicKey
-
+                        val unsignedDocument = createDocumentResult.unsignedDocument
+                        unsignedDocument.name =
+                            context.getDocumentNameFromResourcesOrDocType(docType)
+                        val authKey = unsignedDocument.ecPublicKey
+                        checkNotNull(authKey) { "Public key not found" }
                         val mso = generateMso(DIGEST_ALG, docType, authKey, nameSpaces)
                         val issuerAuth = signMso(mso)
                         val data = generateData(nameSpaces, issuerAuth)
 
-                        when (val addResult = storeIssuedDocument(usignedDocument, data)) {
-                            is StoreDocumentResult.Failure -> return LoadSampleResult.Error(addResult.throwable)
+                        when (val addResult = storeIssuedDocument(unsignedDocument, data)) {
+                            is StoreDocumentResult.Failure -> return LoadSampleResult.Error(
+                                addResult.throwable
+                            )
 
                             is StoreDocumentResult.Success -> {
                                 // proceed to next document

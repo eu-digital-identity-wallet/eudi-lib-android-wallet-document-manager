@@ -16,14 +16,23 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import com.android.identity.android.securearea.AndroidKeystoreSecureArea
-import com.android.identity.credential.Credential
-import com.android.identity.securearea.SecureArea
+import com.android.identity.android.securearea.AndroidKeystoreKeyUnlockData
+import com.android.identity.credential.SecureAreaBoundCredential
+import com.android.identity.crypto.EcPublicKey
+import com.android.identity.crypto.javaX509Certificates
+import com.android.identity.crypto.toDer
+import com.android.identity.securearea.KeyLockedException
 import eu.europa.ec.eudi.wallet.document.Document.State
-import eu.europa.ec.eudi.wallet.document.internal.*
+import eu.europa.ec.eudi.wallet.document.internal.createdAt
+import eu.europa.ec.eudi.wallet.document.internal.docType
+import eu.europa.ec.eudi.wallet.document.internal.documentName
+import eu.europa.ec.eudi.wallet.document.internal.requiresUserAuth
+import eu.europa.ec.eudi.wallet.document.internal.state
+import eu.europa.ec.eudi.wallet.document.internal.usesStrongBox
 import java.security.PublicKey
 import java.security.cert.X509Certificate
 import java.time.Instant
+import com.android.identity.document.Document as BaseDocument
 
 /**
  * A [UnsignedDocument] is a document that is in the process of being issued.
@@ -51,16 +60,23 @@ open class UnsignedDocument(
 ) : Document {
 
     @JvmSynthetic
-    internal var credential: Credential? = null
+    internal var base: BaseDocument? = null
+
+    internal val ecPublicKey: EcPublicKey?
+        get() = base?.pendingCredentials
+            ?.firstOrNull() { it is SecureAreaBoundCredential }
+            ?.let { it as SecureAreaBoundCredential }
+            ?.attestation
+            ?.publicKey
 
     override var name: String = name
         set(value) {
             field = value
-            credential?.let { it.documentName = value }
+            base?.let { it.documentName = value }
         }
 
     override val state: State
-        get() = credential?.state ?: State.UNSIGNED
+        get() = base?.state ?: State.UNSIGNED
 
     val publicKey: PublicKey
         get() = certificatesNeedAuth.first().publicKey
@@ -81,24 +97,25 @@ open class UnsignedDocument(
         data: ByteArray,
         @Algorithm alg: String = Algorithm.SHA256withECDSA
     ): SignedWithAuthKeyResult {
-        return when (val cred = credential) {
+        return when (val cred = base?.pendingCredentials
+            ?.firstOrNull { it is SecureAreaBoundCredential }
+            ?.let { it as SecureAreaBoundCredential }) {
+
             null -> SignedWithAuthKeyResult.Failure(Exception("Not initialized correctly. Use DocumentManager.createDocument method."))
             else -> {
-                val pendingAuthKey = cred.pendingAuthenticationKeys.first()
-                val keyUnlockData =
-                    AndroidKeystoreSecureArea.KeyUnlockData(pendingAuthKey.alias)
+                val keyUnlockData = AndroidKeystoreKeyUnlockData(cred.alias)
                 try {
-                    cred.credentialSecureArea.sign(
-                        pendingAuthKey.alias,
+                    cred.secureArea.sign(
+                        cred.alias,
                         alg.algorithm,
                         data,
                         keyUnlockData
                     ).let {
-                        SignedWithAuthKeyResult.Success(it)
+                        SignedWithAuthKeyResult.Success(it.toDer())
                     }
                 } catch (e: Exception) {
                     when (e) {
-                        is SecureArea.KeyLockedException -> SignedWithAuthKeyResult.UserAuthRequired(
+                        is KeyLockedException -> SignedWithAuthKeyResult.UserAuthRequired(
                             keyUnlockData.getCryptoObjectForSigning(alg.algorithm)
                         )
 
@@ -117,15 +134,20 @@ open class UnsignedDocument(
 
     internal companion object {
         @JvmSynthetic
-        operator fun invoke(credential: Credential) = UnsignedDocument(
-            id = credential.name,
-            name = credential.documentName,
-            docType = credential.docType,
-            usesStrongBox = credential.usesStrongBox,
-            requiresUserAuth = credential.requiresUserAuth,
-            createdAt = credential.createdAt,
-            certificatesNeedAuth = credential.pendingAuthenticationKeys.first().attestation
-        ).also { it.credential = credential }
+        operator fun invoke(baseDocument: BaseDocument) = UnsignedDocument(
+            id = baseDocument.name,
+            name = baseDocument.documentName,
+            docType = baseDocument.docType,
+            usesStrongBox = baseDocument.usesStrongBox,
+            requiresUserAuth = baseDocument.requiresUserAuth,
+            createdAt = baseDocument.createdAt,
+            certificatesNeedAuth = baseDocument.pendingCredentials.firstOrNull() { it is SecureAreaBoundCredential }
+                ?.let { it as SecureAreaBoundCredential }
+                ?.attestation
+                ?.certChain
+                ?.javaX509Certificates
+                ?: emptyList(),
+        ).also { it.base = baseDocument }
     }
 
 

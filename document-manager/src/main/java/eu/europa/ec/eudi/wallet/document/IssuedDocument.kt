@@ -17,7 +17,7 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import com.android.identity.credential.Credential
+import com.android.identity.document.Document as BaseDocument
 import eu.europa.ec.eudi.wallet.document.Document.State
 import eu.europa.ec.eudi.wallet.document.internal.*
 import java.time.Instant
@@ -65,21 +65,21 @@ data class IssuedDocument(
 
     internal companion object {
         @JvmSynthetic
-        operator fun invoke(credential: Credential) = IssuedDocument(
-            id = credential.name,
-            docType = credential.docType,
-            name = credential.documentName,
-            usesStrongBox = credential.usesStrongBox,
-            requiresUserAuth = credential.requiresUserAuth,
-            createdAt = credential.createdAt,
-            issuedAt = credential.issuedAt,
-            nameSpacedData = credential.nameSpacedData.nameSpaceNames.associateWith { nameSpace ->
-                credential.nameSpacedData.getDataElementNames(nameSpace)
+        operator fun invoke(baseDocument: BaseDocument) = IssuedDocument(
+            id = baseDocument.name,
+            docType = baseDocument.docType,
+            name = baseDocument.documentName,
+            usesStrongBox = baseDocument.usesStrongBox,
+            requiresUserAuth = baseDocument.requiresUserAuth,
+            createdAt = baseDocument.createdAt,
+            issuedAt = baseDocument.issuedAt,
+            nameSpacedData = baseDocument.nameSpacedData.nameSpaceNames.associateWith { nameSpace ->
+                baseDocument.nameSpacedData.getDataElementNames(nameSpace)
                     .associateWith { elementIdentifier ->
-                        credential.nameSpacedData.getDataElement(nameSpace, elementIdentifier)
+                        baseDocument.nameSpacedData.getDataElement(nameSpace, elementIdentifier)
                     }
             }
-        ).also { it.state = credential.state }
+        ).also { it.state = baseDocument.state }
     }
 }
 

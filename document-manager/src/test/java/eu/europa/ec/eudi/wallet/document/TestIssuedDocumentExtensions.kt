@@ -16,8 +16,8 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import com.android.identity.credential.Credential
-import com.android.identity.credential.NameSpacedData
+import com.android.identity.document.Document
+import com.android.identity.document.NameSpacedData
 import com.upokecenter.cbor.CBORObject
 import io.mockk.every
 import io.mockk.mockk
@@ -62,11 +62,11 @@ class TestIssuedDocumentExtensions {
                 )
             ).EncodeToBytes()
         }
-        val mockCredential = mockk<Credential>(relaxed = true) {
-            every { nameSpacedData } returns mockNameSpacedData
+        val mockBaseDocument = mockk<Document>(relaxed = true) {
+            every { applicationData.getNameSpacedData("nameSpacedData") } returns mockNameSpacedData
         }
 
-        val issuedDocument = IssuedDocument(mockCredential)
+        val issuedDocument = IssuedDocument(mockBaseDocument)
 
         val json = issuedDocument.nameSpacedDataJSONObject
         println(json.toString(2))
@@ -85,7 +85,8 @@ class TestIssuedDocumentExtensions {
         )
         Assert.assertEquals(
             5.4f,
-            json.getJSONObject("namespace2").getJSONObject("element4").getDouble("subelement2").toFloat(),
+            json.getJSONObject("namespace2").getJSONObject("element4").getDouble("subelement2")
+                .toFloat(),
             0.0001f
         )
 

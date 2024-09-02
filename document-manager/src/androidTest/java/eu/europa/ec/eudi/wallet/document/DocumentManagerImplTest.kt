@@ -88,11 +88,6 @@ class DocumentManagerImplTest {
         assertFalse(toBeIssued.usesStrongBox)
         assertTrue(documentId.isNotBlank())
         assertEquals(docType, toBeIssued.name)
-        val stored = storageEngine.enumerate().toSet().filter { it.contains(toBeIssued.id) }
-        assertEquals(3, stored.size)
-        assertNotNull(stored.firstOrNull { it.contains("AuthenticationKey_$documentId") })
-        assertNotNull(stored.firstOrNull { it.contains("Credential_$documentId") })
-        assertNotNull(stored.firstOrNull { it.contains("CredentialKey_$documentId") })
 
         // assert that document manager never returns an incomplete document
         val document = documentManager.getDocumentById(documentId) as Document
