@@ -16,7 +16,7 @@
 
 apply plugin: 'jacoco'
 jacoco {
-    toolVersion = "0.8.9"
+    toolVersion = libs.versions.jacoco.get()
 }
 project.afterEvaluate {
     if (android.hasProperty("applicationVariants")) {

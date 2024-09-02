@@ -15,22 +15,24 @@
  */
 package eu.europa.ec.eudi.wallet.document.sample
 
+import android.security.keystore.UserNotAuthenticatedException
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.identity.android.securearea.AndroidKeystoreSecureArea
 import com.android.identity.android.storage.AndroidStorageEngine
-import com.android.identity.credential.CredentialRequest
-import com.android.identity.credential.CredentialRequest.DataElement
-import com.android.identity.credential.CredentialStore
-import com.android.identity.credential.NameSpacedData
+import com.android.identity.credential.CredentialFactory
+import com.android.identity.credential.SecureAreaBoundCredential
+import com.android.identity.crypto.Algorithm
+import com.android.identity.document.DocumentRequest
+import com.android.identity.document.DocumentStore
+import com.android.identity.document.NameSpacedData
+import com.android.identity.mdoc.credential.MdocCredential
 import com.android.identity.mdoc.mso.StaticAuthDataParser
 import com.android.identity.mdoc.mso.StaticAuthDataParser.StaticAuthData
 import com.android.identity.mdoc.response.DeviceResponseGenerator
 import com.android.identity.mdoc.response.DeviceResponseParser
 import com.android.identity.mdoc.response.DocumentGenerator
 import com.android.identity.mdoc.util.MdocUtil
-import com.android.identity.securearea.SecureArea
-import com.android.identity.securearea.SecureArea.KeyLockedException
 import com.android.identity.securearea.SecureAreaRepository
 import com.android.identity.util.Constants
 import com.upokecenter.cbor.CBORObject
@@ -38,9 +40,15 @@ import eu.europa.ec.eudi.wallet.document.DocumentManager
 import eu.europa.ec.eudi.wallet.document.DocumentManagerImpl
 import eu.europa.ec.eudi.wallet.document.IssuedDocument
 import eu.europa.ec.eudi.wallet.document.test.R
-import org.junit.*
-import org.junit.Assert.*
+import kotlinx.io.files.Path
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.File
 import java.util.*
 
 @RunWith(AndroidJUnit4::class)
@@ -64,7 +72,10 @@ class SampleIssuedDocumentManagerImplTest {
 
     @Before
     fun setup() {
-        storageEngine = AndroidStorageEngine.Builder(context, context.cacheDir)
+        storageEngine = AndroidStorageEngine.Builder(
+            context,
+            Path(File(context.cacheDir, "eudi-identity.bin").path)
+        )
             .setUseEncryption(false)
             .build()
             .apply {
@@ -90,12 +101,18 @@ class SampleIssuedDocumentManagerImplTest {
         assertEquals(2, documents.size)
         assertEquals("eu.europa.ec.eudi.pid.1", documents[0].docType)
         assertEquals("org.iso.18013.5.1.mDL", documents[1].docType)
-        assertEquals(context.getString(eu.europa.ec.eudi.wallet.document.R.string.eu_pid_doctype_name), documents[0].name)
-        assertEquals(context.getString(eu.europa.ec.eudi.wallet.document.R.string.mdl_doctype_name), documents[1].name)
+        assertEquals(
+            context.getString(eu.europa.ec.eudi.wallet.document.R.string.eu_pid_doctype_name),
+            documents[0].name
+        )
+        assertEquals(
+            context.getString(eu.europa.ec.eudi.wallet.document.R.string.mdl_doctype_name),
+            documents[1].name
+        )
     }
 
     @Test
-    @Throws(KeyLockedException::class)
+    @Throws(UserNotAuthenticatedException::class)
     fun test_sampleDocuments() {
         documentManager.loadSampleData(sampleData)
         val documents = documentManager.getDocuments()
@@ -104,14 +121,19 @@ class SampleIssuedDocumentManagerImplTest {
             document as IssuedDocument
             val dataElements = document.nameSpaces.flatMap { (nameSpace, elementIdentifiers) ->
                 elementIdentifiers.map { elementIdentifier ->
-                    DataElement(nameSpace, elementIdentifier, false)
+                    DocumentRequest.DataElement(nameSpace, elementIdentifier, false)
                 }
             }
-            val request = CredentialRequest(dataElements)
+            val request = DocumentRequest(dataElements)
             val transcript = CBORObject.FromObject(ByteArray(0)).EncodeToBytes()
-            val nameSpacedData = NameSpacedData.fromEncodedCbor(
-                CBORObject.FromObject(document.nameSpacedData).EncodeToBytes(),
-            )
+            val nameSpacedData = NameSpacedData.Builder().apply {
+                document.nameSpacedData.forEach { (nameSpace, elements) ->
+                    elements.forEach { (elementIdentifier, value) ->
+                        putEntry(nameSpace, elementIdentifier, value)
+                    }
+                }
+            }.build()
+
             val issuerData = getStaticAuthDataFromDocument(document)
             val staticAuthData = issuerData.staticAuthData
             val mergedIssuerNameSpaces =
@@ -123,15 +145,13 @@ class SampleIssuedDocumentManagerImplTest {
                     secureArea,
                     issuerData.keyAlias,
                     null,
-                    SecureArea.ALGORITHM_ES256,
+                    Algorithm.ES256,
                 )
                 .generate()
             val response =
                 DeviceResponseGenerator(Constants.DEVICE_RESPONSE_STATUS_OK).addDocument(data)
                     .generate()
-            val responseObj = DeviceResponseParser()
-                .setSessionTranscript(transcript)
-                .setDeviceResponse(response)
+            val responseObj = DeviceResponseParser(response, transcript)
                 .parse()
             assertEquals("Documents in response", 1, responseObj.documents.size)
             assertTrue(
@@ -159,14 +179,18 @@ class SampleIssuedDocumentManagerImplTest {
     private fun getStaticAuthDataFromDocument(issuedDocument: IssuedDocument): DocumentIssuerData {
         val secureAreaRepository = SecureAreaRepository()
         secureAreaRepository.addImplementation(secureArea)
-        val credentialStore = CredentialStore(storageEngine, secureAreaRepository)
-        val credential = credentialStore.lookupCredential(issuedDocument.id)
-        assertNotNull(credential)
-        val authKey = credential!!.authenticationKeys[0]
-        assertNotNull(authKey)
+        val credentialFactory = CredentialFactory().apply {
+            addCredentialImplementation(MdocCredential::class) { document, dataItem ->
+                MdocCredential(document, dataItem)
+            }
+        }
+        val credentialStore = DocumentStore(storageEngine, secureAreaRepository, credentialFactory)
+        val baseDocument = credentialStore.lookupDocument(issuedDocument.id)
+        assertNotNull(baseDocument)
+        val credential = (baseDocument!!.certifiedCredentials[0] as SecureAreaBoundCredential)
         return DocumentIssuerData(
-            staticAuthData = StaticAuthDataParser(authKey.issuerProvidedData).parse(),
-            keyAlias = authKey.alias,
+            staticAuthData = StaticAuthDataParser(credential.issuerProvidedData).parse(),
+            keyAlias = credential.alias,
         )
     }
 }

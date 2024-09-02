@@ -16,10 +16,10 @@
 
 package eu.europa.ec.eudi.wallet.document.internal
 
-import com.android.identity.credential.NameSpacedData
+import com.android.identity.document.NameSpacedData
 import com.upokecenter.cbor.CBORObject
 import com.upokecenter.cbor.CBORType
-import java.util.*
+import java.util.Base64
 
 
 @JvmSynthetic

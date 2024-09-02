@@ -1,27 +1,33 @@
 [versions]
 biometric-ktx = "1.2.0-alpha05"
-json = "20231013"
-kotlin = "1.8.10"
+json = "20240303"
+kotlin = "2.0.0"
+kotlinx-datetime = "0.6.0"
+kotlinx-io = "0.4.0"
+dokka = "1.8.10"
+jacoco = "0.8.12"
 java = "1.8"
-gradle-plugin = "7.4.0"
+gradle-plugin = "7.4.2"
 dependency-license-report = "2.8"
-identity-credential = "20231002"
-identity-credential-android = "20231002"
+google-identity = "202408.1"
+google-identity-android = "202408.1"
+google-identity-mdoc = "202408.1"
 cbor = "4.5.2"
 cose = "1.1.0"
-bouncy-castle = "1.77"
+bouncy-castle = "1.78.1"
 junit = "4.13.2"
-junit-android = "1.1.5"
+junit-android = "1.2.1"
 mockk = "1.13.5"
-espresso-core = "3.5.1"
+espresso-core = "3.6.1"
 mavenPublish = "0.25.3"
 dependencycheck = "9.0.9"
 sonarqube = "4.4.1.3373"
 
 [libraries]
 biometric-ktx = { module = "androidx.biometric:biometric-ktx", version.ref = "biometric-ktx" }
-identity-credential = { module = "com.android.identity:identity-credential", version.ref = "identity-credential" }
-android-identity-credential = { module = "com.android.identity:identity-credential-android", version.ref = "identity-credential-android" }
+google-identity = { module = "com.android.identity:identity", version.ref = "google-identity" }
+google-identity-android = { module = "com.android.identity:identity-android", version.ref = "google-identity-android" }
+google-identity-mdoc = { module = "com.android.identity:identity-mdoc", version.ref = "google-identity-mdoc" }
 cbor = { module = "com.upokecenter:cbor", version.ref = "cbor" }
 cose = { module = "com.augustcellars.cose:cose-java", version.ref = "cose" }
 bouncy-castle-prov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncy-castle" }
@@ -31,11 +37,15 @@ junit = { module = "junit:junit", version.ref = "junit" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 android-junit = { module = "androidx.test.ext:junit", version.ref = "junit-android" }
 espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso-core" }
+kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinx-datetime"}
+kotlinx-io-bytestring = { group = "org.jetbrains.kotlinx", name = "kotlinx-io-bytestring", version.ref = "kotlinx-io"}
+kotlinx-io-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-io-core", version.ref = "kotlinx-io"}
+
 
 [plugins]
 android-library = { id = "com.android.library", version.ref = "gradle-plugin" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-dokka = { id = "org.jetbrains.dokka", version.ref = "kotlin" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 dependency-license-report = { id = "com.github.jk1.dependency-license-report", version.ref = "dependency-license-report" }
 dependencycheck = { id = "org.owasp.dependencycheck", version.ref = "dependencycheck" }
 maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "mavenPublish" }

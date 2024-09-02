@@ -16,12 +16,14 @@
 
 package eu.europa.ec.eudi.wallet.document.internal
 
-import com.android.identity.android.securearea.AndroidKeystoreSecureArea
-import com.android.identity.credential.Credential
+import com.android.identity.android.securearea.AndroidKeystoreKeyInfo
+import com.android.identity.credential.SecureAreaBoundCredential
+import com.android.identity.document.NameSpacedData
 import eu.europa.ec.eudi.wallet.document.Document
 import java.time.Instant
+import com.android.identity.document.Document as BaseDocument
 
-internal var Credential.documentName: String
+internal var BaseDocument.documentName: String
     @JvmSynthetic
     get() = applicationData.getString("name")
     @JvmSynthetic
@@ -29,14 +31,14 @@ internal var Credential.documentName: String
         applicationData.setString("name", value)
     }
 
-internal var Credential.state: Document.State
+internal var BaseDocument.state: Document.State
     @JvmSynthetic
     get() = try {
-        applicationData.getNumber("state").let { Document.State.values()[it.toInt()] }
+        applicationData.getNumber("state").let { Document.State.entries[it.toInt()] }
     } catch (_: Throwable) {
         // handle missing state field
         // since the state field was not present in the earlier versions of the app
-        if (nameSpacedData.nameSpaceNames.isEmpty()) Document.State.UNSIGNED
+        if (!applicationData.keyExists("nameSpacedData") || applicationData.getNameSpacedData("nameSpacedData").nameSpaceNames.isEmpty()) Document.State.UNSIGNED
         else Document.State.ISSUED
     }
     @JvmSynthetic
@@ -44,7 +46,7 @@ internal var Credential.state: Document.State
         applicationData.setNumber("state", value.value)
     }
 
-internal var Credential.docType: String
+internal var BaseDocument.docType: String
     @JvmSynthetic
     get() = applicationData.getString("docType")
     @JvmSynthetic
@@ -52,7 +54,7 @@ internal var Credential.docType: String
         applicationData.setString("docType", value)
     }
 
-internal var Credential.createdAt: Instant
+internal var BaseDocument.createdAt: Instant
     @JvmSynthetic
     get() = applicationData.getNumber("createdAt").let { Instant.ofEpochMilli(it) }
     @JvmSynthetic
@@ -60,7 +62,7 @@ internal var Credential.createdAt: Instant
         applicationData.setNumber("createdAt", value.toEpochMilli())
     }
 
-internal var Credential.issuedAt: Instant
+internal var BaseDocument.issuedAt: Instant
     @JvmSynthetic
     get() = try {
         applicationData.getNumber("issuedAt").let { Instant.ofEpochMilli(it) }
@@ -74,27 +76,39 @@ internal var Credential.issuedAt: Instant
         applicationData.setNumber("issuedAt", value.toEpochMilli())
     }
 
+internal var BaseDocument.nameSpacedData: NameSpacedData
+    @JvmSynthetic
+    get() = this.applicationData.getNameSpacedData("nameSpacedData")
+    @JvmSynthetic
+    set(value) {
+        applicationData.setNameSpacedData("nameSpacedData", value)
+    }
 
-internal val Credential.usesStrongBox: Boolean
+
+internal val BaseDocument.usesStrongBox: Boolean
     @JvmSynthetic
     get() = when (state) {
-        Document.State.UNSIGNED, Document.State.DEFERRED -> pendingAuthenticationKeys.firstOrNull()?.alias
-        Document.State.ISSUED -> authenticationKeys.firstOrNull()?.alias
-    }?.let {
-        (credentialSecureArea.getKeyInfo(it) as AndroidKeystoreSecureArea.KeyInfo)
-    }?.isStrongBoxBacked ?: false
+        Document.State.UNSIGNED, Document.State.DEFERRED -> pendingCredentials
+        Document.State.ISSUED -> certifiedCredentials
+    }.firstOrNull { it is SecureAreaBoundCredential }
+        ?.let { it as SecureAreaBoundCredential }
+        ?.let {
+            it.secureArea.getKeyInfo(it.alias) as AndroidKeystoreKeyInfo
+        }?.isStrongBoxBacked ?: false
 
-internal val Credential.requiresUserAuth: Boolean
+internal val BaseDocument.requiresUserAuth: Boolean
     @JvmSynthetic
     get() = when (state) {
-        Document.State.UNSIGNED, Document.State.DEFERRED -> pendingAuthenticationKeys.firstOrNull()?.alias
-        Document.State.ISSUED -> authenticationKeys.firstOrNull()?.alias
-    }?.let {
-        (credentialSecureArea.getKeyInfo(it) as AndroidKeystoreSecureArea.KeyInfo)
-    }?.isUserAuthenticationRequired ?: false
+        Document.State.UNSIGNED, Document.State.DEFERRED -> pendingCredentials
+        Document.State.ISSUED -> certifiedCredentials
+    }.firstOrNull { it is SecureAreaBoundCredential }
+        ?.let { it as SecureAreaBoundCredential }
+        ?.let {
+            it.secureArea.getKeyInfo(it.alias) as AndroidKeystoreKeyInfo
+        }?.isUserAuthenticationRequired ?: false
 
 
-internal var Credential.attestationChallenge: ByteArray
+internal var BaseDocument.attestationChallenge: ByteArray
     @JvmSynthetic
     get() = try {
         applicationData.getData("attestationChallenge")
@@ -108,7 +122,7 @@ internal var Credential.attestationChallenge: ByteArray
         applicationData.setData("attestationChallenge", value)
     }
 
-internal var Credential.deferredRelatedData: ByteArray
+internal var BaseDocument.deferredRelatedData: ByteArray
     @JvmSynthetic
     get() = applicationData.getData("deferredRelatedData")
     @JvmSynthetic
@@ -117,4 +131,5 @@ internal var Credential.deferredRelatedData: ByteArray
     }
 
 @JvmSynthetic
-internal fun Credential.clearDeferredRelatedData() = applicationData.setData("deferredRelatedData", null)
+internal fun BaseDocument.clearDeferredRelatedData() =
+    applicationData.setData("deferredRelatedData", null)

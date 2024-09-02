@@ -76,17 +76,37 @@ android {
             }
         }
     }
+
+    packagingOptions {
+        resources {
+            excludes += '**/META-INF/**'
+        }
+    }
+
+    jacoco {
+        version = libs.versions.jacoco.get() // Latest version at the time of writing.
+    }
+
+    testCoverage {
+        jacocoVersion = libs.versions.jacoco.get() // Latest version at the time of writing.
+    }
 }
 
 dependencies {
 
     // Google library
-    implementation (libs.identity.credential) {
+    implementation(libs.google.identity) {
         exclude group: "org.bouncycastle"
     }
-    implementation (libs.android.identity.credential) {
+    implementation(libs.google.identity.android) {
         exclude group: "org.bouncycastle"
     }
+    implementation(libs.google.identity.mdoc) {
+        exclude group: "org.bouncycastle"
+    }
+    implementation(libs.kotlinx.datetime)
+    implementation(libs.kotlinx.io.core)
+    implementation(libs.kotlinx.io.bytestring)
 
     implementation libs.biometric.ktx
 

@@ -17,7 +17,7 @@
 package eu.europa.ec.eudi.wallet.document
 
 import androidx.annotation.StringDef
-import com.android.identity.android.securearea.AndroidKeystoreSecureArea
+import com.android.identity.crypto.Algorithm as BaseAlgorith
 
 /**
  * Algorithm used to sign the document
@@ -38,10 +38,10 @@ annotation class Algorithm {
     }
 }
 
-internal val String.algorithm: Int
+internal val String.algorithm: BaseAlgorith
     get() = when (this) {
-        Algorithm.SHA256withECDSA -> AndroidKeystoreSecureArea.ALGORITHM_ES256
-        Algorithm.SHA384withECDSA -> AndroidKeystoreSecureArea.ALGORITHM_ES384
-        Algorithm.SHA512withECDSA -> AndroidKeystoreSecureArea.ALGORITHM_ES512
+        Algorithm.SHA256withECDSA -> BaseAlgorith.ES256
+        Algorithm.SHA384withECDSA -> BaseAlgorith.ES384
+        Algorithm.SHA512withECDSA -> BaseAlgorith.ES512
         else -> throw IllegalArgumentException("Unknown algorithm: $this")
     }

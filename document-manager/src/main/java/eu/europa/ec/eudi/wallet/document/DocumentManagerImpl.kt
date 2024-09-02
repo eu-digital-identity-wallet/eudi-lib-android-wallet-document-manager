@@ -20,18 +20,40 @@ import COSE.MessageTag
 import COSE.Sign1Message
 import android.content.Context
 import android.util.Log
+import com.android.identity.android.securearea.AndroidKeystoreCreateKeySettings
 import com.android.identity.android.securearea.AndroidKeystoreSecureArea
-import com.android.identity.android.securearea.AndroidKeystoreSecureArea.*
-import com.android.identity.credential.CredentialStore
+import com.android.identity.android.securearea.UserAuthenticationType
+import com.android.identity.credential.CredentialFactory
+import com.android.identity.credential.SecureAreaBoundCredential
+import com.android.identity.crypto.EcCurve
+import com.android.identity.crypto.toEcPublicKey
+import com.android.identity.document.DocumentStore
+import com.android.identity.mdoc.credential.MdocCredential
 import com.android.identity.mdoc.mso.MobileSecurityObjectParser
 import com.android.identity.mdoc.mso.StaticAuthDataGenerator
+import com.android.identity.securearea.KeyPurpose
 import com.android.identity.securearea.SecureAreaRepository
 import com.android.identity.storage.StorageEngine
 import com.upokecenter.cbor.CBORObject
-import eu.europa.ec.eudi.wallet.document.internal.*
+import eu.europa.ec.eudi.wallet.document.internal.asNameSpacedData
+import eu.europa.ec.eudi.wallet.document.internal.attestationChallenge
+import eu.europa.ec.eudi.wallet.document.internal.clearDeferredRelatedData
+import eu.europa.ec.eudi.wallet.document.internal.createdAt
+import eu.europa.ec.eudi.wallet.document.internal.deferredRelatedData
+import eu.europa.ec.eudi.wallet.document.internal.docType
+import eu.europa.ec.eudi.wallet.document.internal.documentName
+import eu.europa.ec.eudi.wallet.document.internal.getEmbeddedCBORObject
+import eu.europa.ec.eudi.wallet.document.internal.isDeviceSecure
+import eu.europa.ec.eudi.wallet.document.internal.issuedAt
+import eu.europa.ec.eudi.wallet.document.internal.nameSpacedData
+import eu.europa.ec.eudi.wallet.document.internal.state
+import eu.europa.ec.eudi.wallet.document.internal.supportsStrongBox
+import eu.europa.ec.eudi.wallet.document.internal.toDigestIdMapping
+import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.security.SecureRandom
+import java.security.Security
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 
 
 /**
@@ -71,8 +93,16 @@ class DocumentManagerImpl(
         }
     }
 
-    private val credentialStore: CredentialStore by lazy {
-        CredentialStore(storageEngine, secureAreaRepository)
+    private val credentialFactory: CredentialFactory by lazy {
+        CredentialFactory().apply {
+            addCredentialImplementation(MdocCredential::class) { document, dataItem ->
+                MdocCredential(document, dataItem)
+            }
+        }
+    }
+
+    private val documentStore: DocumentStore by lazy {
+        DocumentStore(storageEngine, secureAreaRepository, credentialFactory)
     }
 
     var userAuth: Boolean = isDeviceSecure
@@ -87,6 +117,11 @@ class DocumentManagerImpl(
     var userAuthTimeoutInMillis: Long = AUTH_TIMEOUT
 
     var checkPublicKeyBeforeAdding: Boolean = true
+
+    init {
+        Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME)
+        Security.insertProviderAt(BouncyCastleProvider(), 1)
+    }
 
     /**
      * Sets whether to require user authentication to access the document.
@@ -119,8 +154,8 @@ class DocumentManagerImpl(
         apply { this.checkPublicKeyBeforeAdding = check }
 
     override fun getDocuments(state: Document.State?): List<Document> {
-        val credentials = credentialStore.listCredentials().mapNotNull { credentialName ->
-            credentialStore.lookupCredential(credentialName)
+        val credentials = documentStore.listDocuments().mapNotNull { credentialName ->
+            documentStore.lookupDocument(credentialName)
         }
         return when (state) {
             null -> credentials
@@ -129,12 +164,12 @@ class DocumentManagerImpl(
     }
 
     override fun getDocumentById(documentId: DocumentId): Document? =
-        credentialStore.lookupCredential(documentId)?.let { Document(it) }
+        documentStore.lookupDocument(documentId)?.let { Document(it) }
 
     override fun deleteDocumentById(documentId: DocumentId): DeleteDocumentResult {
         return try {
             val proofOfDeletion = byteArrayOf()
-            credentialStore.deleteCredential(documentId)
+            documentStore.deleteDocument(documentId)
             DeleteDocumentResult.Success(proofOfDeletion)
         } catch (e: Exception) {
             DeleteDocumentResult.Failure(e)
@@ -147,23 +182,38 @@ class DocumentManagerImpl(
         attestationChallenge: ByteArray?
     ): CreateDocumentResult {
         return try {
-
+            val domain = "eudi"
             val documentId = "${UUID.randomUUID()}"
             val strongBoxed = useStrongBox && context.supportsStrongBox
             val nonEmptyChallenge = attestationChallenge
                 ?.takeUnless { it.isEmpty() }
                 ?: generateRandomBytes(10)
             val keySettings = createKeySettings(nonEmptyChallenge, strongBoxed)
-            val credential = credentialStore.createCredential(documentId, keySettings).apply {
+
+            val documentCredential = documentStore.createDocument(documentId).apply {
                 state = Document.State.UNSIGNED
                 this.docType = docType
                 documentName = docType
                 createdAt = Instant.now()
                 this.attestationChallenge = nonEmptyChallenge
-
-                createPendingAuthenticationKey(keySettings, null)
             }
-            val unsignedDocument = UnsignedDocument(credential)
+            MdocCredential(
+                document = documentCredential,
+                asReplacementFor = null,
+                domain = domain,
+                secureArea = secureArea,
+                createKeySettings = keySettings,
+                docType = docType,
+            )
+
+            documentCredential.pendingCredentials.firstOrNull { it is SecureAreaBoundCredential }
+                ?.let { it as SecureAreaBoundCredential }
+                ?.attestation
+                ?.publicKey
+
+            documentStore.addDocument(documentCredential)
+
+            val unsignedDocument = UnsignedDocument(documentCredential)
             CreateDocumentResult.Success(unsignedDocument)
         } catch (e: Exception) {
             CreateDocumentResult.Failure(e)
@@ -175,23 +225,21 @@ class DocumentManagerImpl(
         issuerDocumentData: ByteArray
     ): StoreDocumentResult {
         try {
-            val credential = credentialStore.lookupCredential(unsignedDocument.id)
+            val documentCredential = documentStore.lookupDocument(unsignedDocument.id)
                 ?: return StoreDocumentResult.Failure(IllegalArgumentException("No credential found for ${unsignedDocument.id}"))
 
             val issuerSigned = CBORObject.DecodeFromBytes(issuerDocumentData)
 
-            with(credential) {
+            with(documentCredential) {
                 val issuerAuthBytes = issuerSigned["issuerAuth"].EncodeToBytes()
                 val issuerAuth = Message
                     .DecodeFromBytes(issuerAuthBytes, MessageTag.Sign1) as Sign1Message
 
                 val msoBytes = issuerAuth.GetContent().getEmbeddedCBORObject().EncodeToBytes()
 
-                val mso = MobileSecurityObjectParser()
-                    .setMobileSecurityObject(msoBytes)
-                    .parse()
+                val mso = MobileSecurityObjectParser(msoBytes).parse()
 
-                if (mso.deviceKey != unsignedDocument.publicKey) {
+                if (mso.deviceKey != unsignedDocument.publicKey.toEcPublicKey(mso.deviceKey.curve)) {
                     val msg = "Public key in MSO does not match the one in the request"
                     Log.d(TAG, msg)
                     if (checkPublicKeyBeforeAdding) {
@@ -207,13 +255,13 @@ class DocumentManagerImpl(
                 val digestIdMapping = nameSpaces.toDigestIdMapping()
                 val staticAuthData = StaticAuthDataGenerator(digestIdMapping, issuerAuthBytes)
                     .generate()
-                pendingAuthenticationKeys.forEach { key ->
-                    key.certify(staticAuthData, mso.validFrom, mso.validUntil)
+                documentCredential.pendingCredentials.forEach { credential ->
+                    credential.certify(staticAuthData, mso.validFrom, mso.validUntil)
                 }
 
                 nameSpacedData = nameSpaces.asNameSpacedData()
             }
-            return StoreDocumentResult.Success(credential.name, null)
+            return StoreDocumentResult.Success(documentCredential.name, null)
         } catch (e: Exception) {
             return StoreDocumentResult.Failure(e)
         }
@@ -224,14 +272,14 @@ class DocumentManagerImpl(
         relatedData: ByteArray
     ): StoreDocumentResult {
         try {
-            val credential = credentialStore.lookupCredential(unsignedDocument.id)
+            val documentCredential = documentStore.lookupDocument(unsignedDocument.id)
                 ?: return StoreDocumentResult.Failure(IllegalArgumentException("No credential found for ${unsignedDocument.id}"))
 
-            with(credential) {
+            with(documentCredential) {
                 state = Document.State.DEFERRED
                 deferredRelatedData = relatedData
             }
-            return StoreDocumentResult.Success(credential.name, byteArrayOf())
+            return StoreDocumentResult.Success(documentCredential.name, byteArrayOf())
         } catch (e: Exception) {
             return StoreDocumentResult.Failure(e)
         }
@@ -240,19 +288,18 @@ class DocumentManagerImpl(
     private fun createKeySettings(
         challenge: ByteArray,
         useStrongBox: Boolean,
-    ) = CreateKeySettings.Builder(challenge)
-        .setEcCurve(EC_CURVE_P256)
+    ) = AndroidKeystoreCreateKeySettings.Builder(challenge)
+        .setEcCurve(EcCurve.P256)
         .setUseStrongBox(useStrongBox)
         .setUserAuthenticationRequired(userAuth, userAuthTimeoutInMillis, AUTH_TYPE)
-        .setKeyPurposes(KEY_PURPOSE_SIGN)
+        .setKeyPurposes(setOf(KeyPurpose.SIGN))
         .build()
 
     companion object {
         private const val TAG = "DocumentManager"
 
         const val AUTH_TIMEOUT = 30_000L
-        private const val AUTH_TYPE =
-            USER_AUTHENTICATION_TYPE_BIOMETRIC or USER_AUTHENTICATION_TYPE_LSKF
+        private val AUTH_TYPE = setOf(UserAuthenticationType.BIOMETRIC, UserAuthenticationType.LSKF)
     }
 }
 

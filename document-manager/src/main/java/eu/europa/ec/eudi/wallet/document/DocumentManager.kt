@@ -20,6 +20,7 @@ import com.android.identity.android.securearea.AndroidKeystoreSecureArea
 import com.android.identity.android.storage.AndroidStorageEngine
 import com.android.identity.storage.StorageEngine
 import eu.europa.ec.eudi.wallet.document.internal.isDeviceSecure
+import kotlinx.io.files.Path
 import java.io.File
 
 /**
@@ -104,7 +105,10 @@ interface DocumentManager {
      * @param issuerDocumentData in CBOR format containing the document's data
      * @return [StoreDocumentResult.Success] containing the documentId and the proof of provisioning if successful, [StoreDocumentResult.Failure] otherwise
      */
-    fun storeIssuedDocument(unsignedDocument: UnsignedDocument, issuerDocumentData: ByteArray): StoreDocumentResult
+    fun storeIssuedDocument(
+        unsignedDocument: UnsignedDocument,
+        issuerDocumentData: ByteArray
+    ): StoreDocumentResult
 
     /**
      * Stores a [UnsignedDocument] as [DeferredDocument]. The document can be retrieved using the [DocumentManager.getDocumentById] method.
@@ -114,7 +118,10 @@ interface DocumentManager {
      * @param relatedData related data to deferred process to be stored with the document
      * @return [StoreDocumentResult.Success] containing the documentId if successful, [StoreDocumentResult.Failure] otherwise
      */
-    fun storeDeferredDocument(unsignedDocument: UnsignedDocument, relatedData: ByteArray): StoreDocumentResult
+    fun storeDeferredDocument(
+        unsignedDocument: UnsignedDocument,
+        relatedData: ByteArray
+    ): StoreDocumentResult
 
     /**
      * Builder class to instantiate the default DocumentManager implementation.
@@ -207,7 +214,10 @@ interface DocumentManager {
             }
 
         private val storageEngine: StorageEngine
-            get() = AndroidStorageEngine.Builder(_context, storageDir)
+            get() = AndroidStorageEngine.Builder(
+                _context,
+                Path(File(storageDir.path, "eudi-identity.bin").path)
+            )
                 .setUseEncryption(useEncryption)
                 .build()
 

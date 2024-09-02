@@ -19,15 +19,16 @@ import COSE.AlgorithmID.ECDSA_256
 import COSE.HeaderKeys.Algorithm
 import COSE.OneKey
 import COSE.Sign1Message
+import com.android.identity.crypto.EcPublicKey
 import com.android.identity.mdoc.mso.MobileSecurityObjectGenerator
-import com.android.identity.util.Timestamp
 import com.upokecenter.cbor.CBORObject
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.util.io.pem.PemReader
 import java.security.KeyFactory
 import java.security.MessageDigest
 import java.security.PrivateKey
-import java.security.PublicKey
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import java.security.spec.PKCS8EncodedKeySpec
@@ -87,15 +88,16 @@ internal val PrivateKey.oneKey
 internal fun generateMso(
     digestAlg: String,
     docType: String,
-    authKey: PublicKey,
+    authKey: EcPublicKey,
     nameSpaces: CBORObject,
 ) =
     MobileSecurityObjectGenerator(digestAlg, docType, authKey)
         .apply {
-            val now = Timestamp.now().toEpochMilli()
-            val signed = Timestamp.ofEpochMilli(now)
-            val validFrom = Timestamp.ofEpochMilli(now)
-            val validUntil = Timestamp.ofEpochMilli(now + 1000L * 60L * 60L * 24L * 365L)
+            val now = Clock.System.now()
+            val signed = now
+            val validFrom = now
+            val validUntil =
+                Instant.fromEpochMilliseconds(now.toEpochMilliseconds() + 1000L * 60L * 60L * 24L * 365L)
             setValidityInfo(signed, validFrom, validUntil, null)
 
             val digestIds = nameSpaces.entries.associate { (nameSpace, issuerSignedItems) ->
@@ -108,7 +110,10 @@ internal fun generateMso(
         .generate()
 
 @JvmSynthetic
-internal fun calculateDigests(digestAlg: String, issuerSignedItems: CBORObject): Map<Long, ByteArray> {
+internal fun calculateDigests(
+    digestAlg: String,
+    issuerSignedItems: CBORObject
+): Map<Long, ByteArray> {
     return issuerSignedItems.values.associate { issuerSignedItemBytes ->
         val issuerSignedItem = issuerSignedItemBytes.getEmbeddedCBORObject()
         val digest = MessageDigest.getInstance(digestAlg)

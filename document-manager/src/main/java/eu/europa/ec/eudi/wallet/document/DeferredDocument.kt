@@ -16,11 +16,19 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import com.android.identity.credential.Credential
+import com.android.identity.credential.SecureAreaBoundCredential
+import com.android.identity.crypto.javaX509Certificates
 import eu.europa.ec.eudi.wallet.document.Document.State
-import eu.europa.ec.eudi.wallet.document.internal.*
+import eu.europa.ec.eudi.wallet.document.internal.createdAt
+import eu.europa.ec.eudi.wallet.document.internal.deferredRelatedData
+import eu.europa.ec.eudi.wallet.document.internal.docType
+import eu.europa.ec.eudi.wallet.document.internal.documentName
+import eu.europa.ec.eudi.wallet.document.internal.requiresUserAuth
+import eu.europa.ec.eudi.wallet.document.internal.state
+import eu.europa.ec.eudi.wallet.document.internal.usesStrongBox
 import java.security.cert.X509Certificate
 import java.time.Instant
+import com.android.identity.document.Document as BaseDocument
 
 /**
  * A [DeferredDocument] is as [UnsignedDocument] with extra [relatedData] that can be used later on
@@ -49,7 +57,7 @@ class DeferredDocument(
 ) {
 
     override val state: State
-        get() = credential?.state ?: State.DEFERRED
+        get() = base?.state ?: State.DEFERRED
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -87,17 +95,23 @@ class DeferredDocument(
 
     internal companion object {
         @JvmSynthetic
-        operator fun invoke(credential: Credential) = DeferredDocument(
-            id = credential.name,
-            name = credential.documentName,
-            docType = credential.docType,
-            usesStrongBox = credential.usesStrongBox,
-            requiresUserAuth = credential.requiresUserAuth,
-            createdAt = credential.createdAt,
-            certificatesNeedAuth = credential.pendingAuthenticationKeys.first().attestation,
-            relatedData = credential.deferredRelatedData,
+        operator fun invoke(baseDocument: BaseDocument) = DeferredDocument(
+            id = baseDocument.name,
+            name = baseDocument.documentName,
+            docType = baseDocument.docType,
+            usesStrongBox = baseDocument.usesStrongBox,
+            requiresUserAuth = baseDocument.requiresUserAuth,
+            createdAt = baseDocument.createdAt,
+            certificatesNeedAuth = baseDocument.pendingCredentials
+                .firstOrNull { it is SecureAreaBoundCredential }
+                ?.let { it as SecureAreaBoundCredential }
+                ?.attestation
+                ?.certChain
+                ?.javaX509Certificates
+                ?: emptyList(),
+            relatedData = baseDocument.deferredRelatedData,
         ).apply {
-            this.credential = credential
+            this.base = baseDocument
         }
     }
 }

@@ -16,7 +16,7 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import com.android.identity.credential.Credential
+import com.android.identity.document.Document as BaseDocument
 import eu.europa.ec.eudi.wallet.document.Document.State.*
 import eu.europa.ec.eudi.wallet.document.internal.state
 import java.time.Instant
@@ -72,10 +72,10 @@ sealed interface Document {
 
     companion object {
 
-        internal operator fun invoke(credential: Credential) = when (credential.state) {
-            UNSIGNED -> UnsignedDocument(credential)
-            DEFERRED -> DeferredDocument(credential)
-            ISSUED -> IssuedDocument(credential)
+        internal operator fun invoke(baseDocument: BaseDocument) = when (baseDocument.state) {
+            UNSIGNED -> UnsignedDocument(baseDocument)
+            DEFERRED -> DeferredDocument(baseDocument)
+            ISSUED -> IssuedDocument(baseDocument)
         }
     }
 }
