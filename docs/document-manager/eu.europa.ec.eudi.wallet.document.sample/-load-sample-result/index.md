@@ -2,7 +2,7 @@
 
 # LoadSampleResult
 
-interface [LoadSampleResult](index.md)
+sealed interface [LoadSampleResult](index.md)
 
 [SampleDocumentManager.loadSampleData](../-sample-document-manager/load-sample-data.md) result. If the sample data has been loaded successfully, returns [LoadSampleResult.Success](-success/index.md). Otherwise, returns [LoadSampleResult.Error](-error/index.md), with the error message.
 

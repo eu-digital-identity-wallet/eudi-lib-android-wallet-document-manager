@@ -17,11 +17,12 @@ Available algorithms are:
 
 #### Return
 
-[SignedWithAuthKeyResult.Success](../-signed-with-auth-key-result/-success/index.md) containing the signature if
-successful, [SignedWithAuthKeyResult.UserAuthRequired](../-signed-with-auth-key-result/-user-auth-required/index.md) if
-user authentication is required to sign
-data, [SignedWithAuthKeyResult.Failure](../-signed-with-auth-key-result/-failure/index.md) if an error occurred while
-signing the data
+[SignedWithAuthKeyResult.Success](../-signed-with-auth-key-result/-success/index.md) containing the
+signature if
+successful, [SignedWithAuthKeyResult.UserAuthRequired](../-signed-with-auth-key-result/-user-auth-required/index.md)
+if user authentication is required to sign
+data, [SignedWithAuthKeyResult.Failure](../-signed-with-auth-key-result/-failure/index.md) if an
+error occurred while signing the data
 
 #### Parameters
 

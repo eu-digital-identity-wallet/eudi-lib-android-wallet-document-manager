@@ -2,7 +2,7 @@
 
 # Document
 
-interface [Document](index.md)
+sealed interface [Document](index.md)
 
 A document.
 
@@ -27,7 +27,7 @@ A document.
 |-------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [createdAt](created-at.md)                | [androidJvm]<br>abstract val [createdAt](created-at.md): [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html)<br>the creation date of the document                                  |
 | [docType](doc-type.md)                    | [androidJvm]<br>abstract val [docType](doc-type.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)<br>the document type                                                      |
-| [id](id.md)                               | [androidJvm]<br>abstract val [id](id.md): [DocumentId](../index.md#659369697%2FClasslikes%2F1351694608)<br>the identifier of the document                                                                       |
+| [id](id.md)                               | [androidJvm]<br>abstract val [id](id.md): [DocumentId](../-document-id/index.md)<br>the identifier of the document                                                                                              |
 | [isDeferred](is-deferred.md)              | [androidJvm]<br>open val [isDeferred](is-deferred.md): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)<br>whether the document is deferred                                   |
 | [isIssued](is-issued.md)                  | [androidJvm]<br>open val [isIssued](is-issued.md): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)<br>whether the document is issued                                         |
 | [isUnsigned](is-unsigned.md)              | [androidJvm]<br>open val [isUnsigned](is-unsigned.md): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)<br>whether the document is unsigned                                   |

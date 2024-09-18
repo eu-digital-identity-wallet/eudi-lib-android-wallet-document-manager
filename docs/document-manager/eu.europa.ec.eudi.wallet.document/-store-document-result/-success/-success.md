@@ -3,8 +3,9 @@
 # Success
 
 [androidJvm]\
-constructor(documentId: [DocumentId](../../index.md#659369697%2FClasslikes%2F1351694608),
-proofOfProvisioning: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html)? = null)
+constructor(documentId: [DocumentId](../../-document-id/index.md),
+proofOfProvisioning: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html)? =
+null)
 
 #### Parameters
 

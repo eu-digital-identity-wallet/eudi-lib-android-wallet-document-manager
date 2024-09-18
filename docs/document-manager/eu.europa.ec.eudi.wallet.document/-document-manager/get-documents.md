@@ -3,7 +3,8 @@
 # getDocuments
 
 [androidJvm]\
-abstract fun [getDocuments](get-documents.md)(state: [Document.State](../-document/-state/index.md)? =
+abstract fun [getDocuments](get-documents.md)(
+state: [Document.State](../-document/-state/index.md)? =
 null): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)
 &lt;[Document](../-document/index.md)&gt;
 

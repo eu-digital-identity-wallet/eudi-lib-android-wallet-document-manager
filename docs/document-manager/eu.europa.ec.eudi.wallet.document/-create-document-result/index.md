@@ -2,7 +2,7 @@
 
 # CreateDocumentResult
 
-interface [CreateDocumentResult](index.md)
+sealed interface [CreateDocumentResult](index.md)
 
 The result of [DocumentManager.createDocument](../-document-manager/create-document.md) method
 
