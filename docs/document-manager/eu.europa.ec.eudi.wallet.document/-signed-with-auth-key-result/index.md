@@ -2,7 +2,7 @@
 
 # SignedWithAuthKeyResult
 
-interface [SignedWithAuthKeyResult](index.md)
+sealed interface [SignedWithAuthKeyResult](index.md)
 
 The result of [UnsignedDocument.signWithAuthKey](../-unsigned-document/sign-with-auth-key.md) method
 

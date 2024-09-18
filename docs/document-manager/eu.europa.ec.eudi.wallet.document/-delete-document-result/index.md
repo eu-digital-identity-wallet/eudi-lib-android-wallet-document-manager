@@ -2,7 +2,7 @@
 
 # DeleteDocumentResult
 
-interface [DeleteDocumentResult](index.md)
+sealed interface [DeleteDocumentResult](index.md)
 
 The result of [DocumentManager.deleteDocumentById](../-document-manager/delete-document-by-id.md) method
 

@@ -3,7 +3,8 @@
 # getDocumentById
 
 [androidJvm]\
-open override fun [getDocumentById](get-document-by-id.md)(documentId: [DocumentId](../index.md#659369697%2FClasslikes%2F1351694608)): [Document](../-document/index.md)?
+open override fun [getDocumentById](get-document-by-id.md)(
+documentId: [DocumentId](../-document-id/index.md)): [Document](../-document/index.md)?
 
 Get document by id
 

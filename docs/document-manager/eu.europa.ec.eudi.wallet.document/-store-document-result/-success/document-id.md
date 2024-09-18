@@ -3,4 +3,4 @@
 # documentId
 
 [androidJvm]\
-val [documentId](document-id.md): [DocumentId](../../index.md#659369697%2FClasslikes%2F1351694608)
+val [documentId](document-id.md): [DocumentId](../../-document-id/index.md)

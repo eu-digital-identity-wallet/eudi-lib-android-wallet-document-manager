@@ -4,7 +4,7 @@
 
 [androidJvm]\
 open fun [onSuccess](on-success.md)(
-block: ([DocumentId](../index.md#659369697%2FClasslikes%2F1351694608), [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html)?)
+block: ([DocumentId](../-document-id/index.md), [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html)?)
 -&gt; [Unit](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)): [StoreDocumentResult](index.md)
 
 Success result containing the documentId and the proof of provisioning if successful

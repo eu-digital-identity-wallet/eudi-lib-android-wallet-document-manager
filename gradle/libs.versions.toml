@@ -1,52 +1,51 @@
 [versions]
+agp = "8.6.0"
 biometric-ktx = "1.2.0-alpha05"
-json = "20240303"
-kotlin = "2.0.0"
-kotlinx-datetime = "0.6.0"
-kotlinx-io = "0.4.0"
-dokka = "1.8.10"
-jacoco = "0.8.12"
-java = "1.8"
-gradle-plugin = "7.4.2"
+bouncy-castle = "1.78.1"
+cbor = "4.5.2"
+cose = "1.1.0"
 dependency-license-report = "2.8"
+dependencycheck = "9.0.9"
+dokka = "1.9.20"
+espressoCore = "3.6.1"
 google-identity = "202408.1"
 google-identity-android = "202408.1"
 google-identity-mdoc = "202408.1"
-cbor = "4.5.2"
-cose = "1.1.0"
-bouncy-castle = "1.78.1"
+jacoco = "0.8.12"
+java = "17"
+json = "20240303"
 junit = "4.13.2"
-junit-android = "1.2.1"
+junitVersion = "1.2.1"
+kotlin = "1.9.0"
+kotlinx-datetime = "0.6.0"
+kotlinx-io = "0.4.0"
+mavenPublish = "0.27.0"
 mockk = "1.13.5"
-espresso-core = "3.6.1"
-mavenPublish = "0.25.3"
-dependencycheck = "9.0.9"
-sonarqube = "4.4.1.3373"
+sonarqube = "5.1.0.4882"
 
 [libraries]
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 biometric-ktx = { module = "androidx.biometric:biometric-ktx", version.ref = "biometric-ktx" }
+bouncy-castle-pkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncy-castle" }
+bouncy-castle-prov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncy-castle" }
+cbor = { module = "com.upokecenter:cbor", version.ref = "cbor" }
+cose = { module = "com.augustcellars.cose:cose-java", version.ref = "cose" }
 google-identity = { module = "com.android.identity:identity", version.ref = "google-identity" }
 google-identity-android = { module = "com.android.identity:identity-android", version.ref = "google-identity-android" }
 google-identity-mdoc = { module = "com.android.identity:identity-mdoc", version.ref = "google-identity-mdoc" }
-cbor = { module = "com.upokecenter:cbor", version.ref = "cbor" }
-cose = { module = "com.augustcellars.cose:cose-java", version.ref = "cose" }
-bouncy-castle-prov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncy-castle" }
-bouncy-castle-pkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncy-castle" }
 json = { module = "org.json:json", version.ref = "json" }
-junit = { module = "junit:junit", version.ref = "junit" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinx-datetime" }
+kotlinx-io-bytestring = { group = "org.jetbrains.kotlinx", name = "kotlinx-io-bytestring", version.ref = "kotlinx-io" }
+kotlinx-io-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-io-core", version.ref = "kotlinx-io" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
-android-junit = { module = "androidx.test.ext:junit", version.ref = "junit-android" }
-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso-core" }
-kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinx-datetime"}
-kotlinx-io-bytestring = { group = "org.jetbrains.kotlinx", name = "kotlinx-io-bytestring", version.ref = "kotlinx-io"}
-kotlinx-io-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-io-core", version.ref = "kotlinx-io"}
-
 
 [plugins]
-android-library = { id = "com.android.library", version.ref = "gradle-plugin" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+android-library = { id = "com.android.library", version.ref = "agp" }
 dependency-license-report = { id = "com.github.jk1.dependency-license-report", version.ref = "dependency-license-report" }
 dependencycheck = { id = "org.owasp.dependencycheck", version.ref = "dependencycheck" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "mavenPublish" }
 sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }

@@ -36,8 +36,9 @@ the [DocumentManager.getDocumentById](../-document-manager/get-document-by-id.md
 
 #### Return
 
-[StoreDocumentResult.Success](../-store-document-result/-success/index.md) containing the documentId and the proof of
-provisioning if successful, [StoreDocumentResult.Failure](../-store-document-result/-failure/index.md) otherwise
+[StoreDocumentResult.Success](../-store-document-result/-success/index.md) containing the documentId
+and the proof of provisioning if
+successful, [StoreDocumentResult.Failure](../-store-document-result/-failure/index.md) otherwise
 
 #### Parameters
 

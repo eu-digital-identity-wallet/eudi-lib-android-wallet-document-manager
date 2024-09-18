@@ -3,7 +3,8 @@
 # deleteDocumentById
 
 [androidJvm]\
-open override fun [deleteDocumentById](delete-document-by-id.md)(documentId: [DocumentId](../index.md#659369697%2FClasslikes%2F1351694608)): [DeleteDocumentResult](../-delete-document-result/index.md)
+open override fun [deleteDocumentById](delete-document-by-id.md)(
+documentId: [DocumentId](../-document-id/index.md)): [DeleteDocumentResult](../-delete-document-result/index.md)
 
 Delete document by id
 
