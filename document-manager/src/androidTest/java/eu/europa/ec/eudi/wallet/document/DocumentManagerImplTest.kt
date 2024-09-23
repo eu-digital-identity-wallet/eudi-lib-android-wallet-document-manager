@@ -126,6 +126,13 @@ class DocumentManagerImplTest {
         val result = documentManager.storeIssuedDocument(retrievedToBeIssued, data)
         assertTrue(result is StoreDocumentResult.Success)
         assertEquals(toBeIssued.id, (result as StoreDocumentResult.Success).documentId)
+
+        val documents = documentManager.getDocuments()
+        assertEquals(1, documents.size)
+        val document = documents.first()
+        assertFalse(document.isUnsigned)
+        assertEquals(docType, document.docType)
+        assertFalse(document.usesStrongBox)
     }
 
     @Test

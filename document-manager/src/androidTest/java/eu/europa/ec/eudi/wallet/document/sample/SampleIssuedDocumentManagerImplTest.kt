@@ -74,7 +74,7 @@ class SampleIssuedDocumentManagerImplTest {
     fun setup() {
         storageEngine = AndroidStorageEngine.Builder(
             context,
-            Path(File(context.cacheDir, "eudi-identity.bin").path)
+            Path(File(context.noBackupFilesDir, "eudi-identity.bin").path)
         )
             .setUseEncryption(false)
             .build()

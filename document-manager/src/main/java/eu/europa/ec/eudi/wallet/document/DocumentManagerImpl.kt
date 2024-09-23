@@ -206,8 +206,9 @@ class DocumentManagerImpl(
                 docType = docType,
             )
 
-            documentCredential.pendingCredentials.firstOrNull { it is SecureAreaBoundCredential }
-                ?.let { it as SecureAreaBoundCredential }
+            documentCredential.pendingCredentials
+                .filterIsInstance<SecureAreaBoundCredential>()
+                .firstOrNull()
                 ?.attestation
                 ?.publicKey
 
@@ -255,7 +256,7 @@ class DocumentManagerImpl(
                 val digestIdMapping = nameSpaces.toDigestIdMapping()
                 val staticAuthData = StaticAuthDataGenerator(digestIdMapping, issuerAuthBytes)
                     .generate()
-                documentCredential.pendingCredentials.forEach { credential ->
+                pendingCredentials.forEach { credential ->
                     credential.certify(staticAuthData, mso.validFrom, mso.validUntil)
                 }
 

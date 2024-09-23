@@ -90,22 +90,22 @@ internal val BaseDocument.usesStrongBox: Boolean
     get() = when (state) {
         Document.State.UNSIGNED, Document.State.DEFERRED -> pendingCredentials
         Document.State.ISSUED -> certifiedCredentials
-    }.firstOrNull { it is SecureAreaBoundCredential }
-        ?.let { it as SecureAreaBoundCredential }
-        ?.let {
-            it.secureArea.getKeyInfo(it.alias) as AndroidKeystoreKeyInfo
-        }?.isStrongBoxBacked ?: false
+    }.filterIsInstance<SecureAreaBoundCredential>()
+        .firstOrNull()
+        ?.let { it.secureArea.getKeyInfo(it.alias) }
+        ?.let { it as AndroidKeystoreKeyInfo }
+        ?.isStrongBoxBacked ?: false
 
 internal val BaseDocument.requiresUserAuth: Boolean
     @JvmSynthetic
     get() = when (state) {
         Document.State.UNSIGNED, Document.State.DEFERRED -> pendingCredentials
         Document.State.ISSUED -> certifiedCredentials
-    }.firstOrNull { it is SecureAreaBoundCredential }
-        ?.let { it as SecureAreaBoundCredential }
-        ?.let {
-            it.secureArea.getKeyInfo(it.alias) as AndroidKeystoreKeyInfo
-        }?.isUserAuthenticationRequired ?: false
+    }.filterIsInstance<SecureAreaBoundCredential>()
+        .firstOrNull()
+        ?.let { it.secureArea.getKeyInfo(it.alias) }
+        ?.let { it as AndroidKeystoreKeyInfo }
+        ?.isUserAuthenticationRequired ?: false
 
 
 internal var BaseDocument.attestationChallenge: ByteArray
