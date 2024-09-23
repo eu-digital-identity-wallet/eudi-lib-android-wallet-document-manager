@@ -213,16 +213,16 @@ interface DocumentManager {
                 userAuthTimeout(this@Builder.userAuthTimeoutInMillis)
             }
 
-        private val storageEngine: StorageEngine
-            get() = AndroidStorageEngine.Builder(
-                _context,
-                Path(File(storageDir.path, "eudi-identity.bin").path)
-            )
+        private val storageEngine: StorageEngine by lazy {
+            val path = Path(File(storageDir.path, "eudi-identity.bin").path)
+            AndroidStorageEngine.Builder(_context, path)
                 .setUseEncryption(useEncryption)
                 .build()
+        }
 
-        private val androidSecureArea: AndroidKeystoreSecureArea
-            get() = AndroidKeystoreSecureArea(_context, storageEngine)
+        private val androidSecureArea: AndroidKeystoreSecureArea by lazy {
+            AndroidKeystoreSecureArea(_context, storageEngine)
+        }
     }
 }
 
