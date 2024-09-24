@@ -59,36 +59,6 @@ class DeferredDocument(
     override val state: State
         get() = base?.state ?: State.DEFERRED
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as DeferredDocument
-
-        if (id != other.id) return false
-        if (docType != other.docType) return false
-        if (name != other.name) return false
-        if (usesStrongBox != other.usesStrongBox) return false
-        if (requiresUserAuth != other.requiresUserAuth) return false
-        if (createdAt != other.createdAt) return false
-        if (state != other.state) return false
-        if (!relatedData.contentEquals(other.relatedData)) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = id.hashCode()
-        result = 31 * result + docType.hashCode()
-        result = 31 * result + name.hashCode()
-        result = 31 * result + usesStrongBox.hashCode()
-        result = 31 * result + requiresUserAuth.hashCode()
-        result = 31 * result + createdAt.hashCode()
-        result = 31 * result + state.hashCode()
-        result = 31 * result + relatedData.contentHashCode()
-        return result
-    }
-
     override fun toString(): String {
         return "DeferredDocument(id='$id', docType='$docType', name='$name', usesStrongBox=$usesStrongBox, requiresUserAuth=$requiresUserAuth, createdAt=$createdAt, state=$state, relatedData=${relatedData.contentToString()})"
     }
@@ -103,8 +73,8 @@ class DeferredDocument(
             requiresUserAuth = baseDocument.requiresUserAuth,
             createdAt = baseDocument.createdAt,
             certificatesNeedAuth = baseDocument.pendingCredentials
-                .firstOrNull { it is SecureAreaBoundCredential }
-                ?.let { it as SecureAreaBoundCredential }
+                .filterIsInstance<SecureAreaBoundCredential>()
+                .firstOrNull()
                 ?.attestation
                 ?.certChain
                 ?.javaX509Certificates

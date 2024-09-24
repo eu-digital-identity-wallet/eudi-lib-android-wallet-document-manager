@@ -141,14 +141,13 @@ open class UnsignedDocument(
             usesStrongBox = baseDocument.usesStrongBox,
             requiresUserAuth = baseDocument.requiresUserAuth,
             createdAt = baseDocument.createdAt,
-            certificatesNeedAuth = baseDocument.pendingCredentials.firstOrNull() { it is SecureAreaBoundCredential }
-                ?.let { it as SecureAreaBoundCredential }
+            certificatesNeedAuth = baseDocument.pendingCredentials
+                .filterIsInstance<SecureAreaBoundCredential>()
+                .firstOrNull()
                 ?.attestation
                 ?.certChain
                 ?.javaX509Certificates
                 ?: emptyList(),
         ).also { it.base = baseDocument }
     }
-
-
 }
