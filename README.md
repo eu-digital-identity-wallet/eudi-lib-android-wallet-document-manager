@@ -20,19 +20,26 @@ The library is written in Kotlin and is available for Android.
 
 The released software is a initial development release version:
 
-- The initial development release is an early endeavor reflecting the efforts of a short timeboxed period, and by no
+- The initial development release is an early endeavor reflecting the efforts of a short timeboxed
+  period, and by no
   means can be considered as the final product.
-- The initial development release may be changed substantially over time, might introduce new features but also may
+- The initial development release may be changed substantially over time, might introduce new
+  features but also may
   change or remove existing ones, potentially breaking compatibility with your existing code.
 - The initial development release is limited in functional scope.
-- The initial development release may contain errors or design flaws and other problems that could cause system or other
+- The initial development release may contain errors or design flaws and other problems that could
+  cause system or other
   failures and data loss.
-- The initial development release has reduced security, privacy, availability, and reliability standards relative to
-  future releases. This could make the software slower, less reliable, or more vulnerable to attacks than mature
+- The initial development release has reduced security, privacy, availability, and reliability
+  standards relative to
+  future releases. This could make the software slower, less reliable, or more vulnerable to attacks
+  than mature
   software.
 - The initial development release is not yet comprehensively documented.
-- Users of the software must perform sufficient engineering and additional testing in order to properly evaluate their
-  application and determine whether any of the open-sourced components is suitable for use in that application.
+- Users of the software must perform sufficient engineering and additional testing in order to
+  properly evaluate their
+  application and determine whether any of the open-sourced components is suitable for use in that
+  application.
 - We strongly recommend not putting this version of the software into production use.
 - Only the latest version of the software will be supported
 
@@ -63,9 +70,15 @@ file.
 
 ```groovy
 dependencies {
-    implementation "eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager:0.4.3"
+    implementation "eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager:0.5.0-SNAPSHOT"
 }
 ```
+
+### Breaking changes
+
+**Note** that version 0.5.x introduces breaking changes internally to the library.
+That means that any stored documents or keypairs with versions up to 0.4.x of the library
+will not be available after upgrading to version 0.5.x.
 
 ## How to Use
 
@@ -76,10 +89,13 @@ For source code documentation, see in [docs](docs/index.md) directory.
 ### Instantiating the DocumentManager
 
 The library provides
-a [`DocumentManager`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/index.md) class
+a [`DocumentManager`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/index.md)
+class
 implementation to manage documents. To create an instance of
-the [`DocumentManager`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/index.md), the library
-provides a [`Builder`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/-builder/index.md),
+the [`DocumentManager`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/index.md),
+the library
+provides
+a [`Builder`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/-builder/index.md),
 that can be used to get a default implementation of the `DocumentManager`.
 
 ```kotlin
@@ -97,11 +113,14 @@ val documentManager = DocumentManager.Builder(context)
 
 A document can be in one of the three following states:
 
-- **Unsigned** the document is not yet issued and has no data from the issuer. Contains only the keys that will be used
+- **Unsigned** the document is not yet issued and has no data from the issuer. Contains only the
+  keys that will be used
   for
   issuance
-- **Deferred** the document is not yet received from the issuer, but the issuer has received the document's public key
-  and proof of possession. It also holds some related to the deferred issuance process, that can be used for the
+- **Deferred** the document is not yet received from the issuer, but the issuer has received the
+  document's public key
+  and proof of possession. It also holds some related to the deferred issuance process, that can be
+  used for the
   completion of issuance.
 - **Issued** the document is issued and contains the data received from the issuer
 
@@ -145,7 +164,8 @@ To retrieve the list of documents, use
 the [`DocumentManager.getDocuments`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/get-documents.md)
 method.
 The method receives an optional
-argument [`state`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document/-state/index.md) to filter the
+argument [`state`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document/-state/index.md)
+to filter the
 documents by
 their state. In the following example, the
 method is used to retrieve all issued documents:
@@ -191,14 +211,16 @@ when (deleteResult) {
 ```
 
 To add a new document
-in [`DocumentManager`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/index.md), the
+in [`DocumentManager`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/index.md),
+the
 following
 steps should be followed:
 
 1. Create a new document using
    the [`DocumentManager.createDocument`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/create-document.md)
    From the return result of this method you can get
-   the [`UnsignedDocument`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-unsigned-document/index.md) object.
+   the [`UnsignedDocument`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-unsigned-document/index.md)
+   object.
 2. Use
    the [`UnsignedDocument.publicKey`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-unsigned-document/public-key.md)
    property for the issuer and
@@ -211,7 +233,8 @@ steps should be followed:
    to store the deferred document and related data from the issuer's response.
 
 [`DocumentManager.storeIssuedDocument`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/store-issued-document.md)
-method expects document's data to be in CBOR bytes and have the IssuerSigned structure according to ISO 23220-4 __*__ :
+method expects document's data to be in CBOR bytes and have the IssuerSigned structure according to
+ISO 23220-4 __*__ :
 
 ```cddl
 IssuerSigned = {
@@ -231,7 +254,8 @@ IssuerSignedItem = {
 IssuerAuth = COSE_Sign1 ; The payload is MobileSecurityObjectBytes
 ```
 
-__*__**Important note**: Currently, the library does not support IssuerSigned structure without the `nameSpaces` field.
+__*__**Important note**: Currently, the library does not support IssuerSigned structure without
+the `nameSpaces` field.
 
 See the code below for an example of how to add a new document
 in [`DocumentManager`](docs/document-manager/eu.europa.ec.eudi.wallet.document/-document-manager/index.md):
