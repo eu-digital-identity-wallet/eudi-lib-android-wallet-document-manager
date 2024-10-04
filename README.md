@@ -70,7 +70,10 @@ file.
 
 ```groovy
 dependencies {
-    implementation "eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager:0.5.0-SNAPSHOT"
+    // Android Identity Credential API library needed for providing custom StorageEngine and SecureArea implementations
+    implementation "com.android.identity:identity:202408.1"
+    // EUDI Wallet Documents Manager library
+    implementation "eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager:0.6.0-SNAPSHOT"
 }
 ```
 
@@ -102,10 +105,11 @@ that can be used to get a default implementation of the `DocumentManager`.
 import eu.europa.ec.eudi.wallet.document.DocumentManager
 
 val documentManager = DocumentManager.Builder(context)
-    .useEncryption(true)
-    .storageDir(context.noBackupFilesDir)
-    .enableUserAuth(true)
-    .userAuthTimeout(30000)
+    .storageEngine(MyStorageEngine())
+    .secureArea(MySecureArea())
+    .createKeySettingsFactory(MyKeySettingsFactory())
+    .keyUnlockDataFactory(MyKeyUnlockDataFactory())
+    .checkPublicKeyBeforeAdding(true)
     .build()
 ```
 

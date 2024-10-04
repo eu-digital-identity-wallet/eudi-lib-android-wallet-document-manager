@@ -56,7 +56,8 @@ open class UnsignedDocument(
     override val usesStrongBox: Boolean,
     override val requiresUserAuth: Boolean,
     override val createdAt: Instant,
-    val certificatesNeedAuth: List<X509Certificate>
+    val certificatesNeedAuth: List<X509Certificate>,
+    private val keyUnlockDataFactory: KeyUnlockDataFactory
 ) : Document {
 
     @JvmSynthetic
@@ -103,7 +104,8 @@ open class UnsignedDocument(
 
             null -> SignedWithAuthKeyResult.Failure(Exception("Not initialized correctly. Use DocumentManager.createDocument method."))
             else -> {
-                val keyUnlockData = AndroidKeystoreKeyUnlockData(cred.alias)
+                val keyUnlockData =
+                    keyUnlockDataFactory.createKeyUnlockData(cred.secureArea, cred.alias)
                 try {
                     cred.secureArea.sign(
                         cred.alias,
@@ -116,7 +118,13 @@ open class UnsignedDocument(
                 } catch (e: Exception) {
                     when (e) {
                         is KeyLockedException -> SignedWithAuthKeyResult.UserAuthRequired(
-                            keyUnlockData.getCryptoObjectForSigning(alg.algorithm)
+                            when (keyUnlockData) {
+                                is AndroidKeystoreKeyUnlockData -> keyUnlockData.getCryptoObjectForSigning(
+                                    alg.algorithm
+                                )
+
+                                else -> null
+                            }
                         )
 
                         else -> SignedWithAuthKeyResult.Failure(e)
@@ -134,7 +142,10 @@ open class UnsignedDocument(
 
     internal companion object {
         @JvmSynthetic
-        operator fun invoke(baseDocument: BaseDocument) = UnsignedDocument(
+        operator fun invoke(
+            baseDocument: BaseDocument,
+            keyUnlockDataFactory: KeyUnlockDataFactory
+        ) = UnsignedDocument(
             id = baseDocument.name,
             name = baseDocument.documentName,
             docType = baseDocument.docType,
@@ -148,6 +159,7 @@ open class UnsignedDocument(
                 ?.certChain
                 ?.javaX509Certificates
                 ?: emptyList(),
+            keyUnlockDataFactory = keyUnlockDataFactory
         ).also { it.base = baseDocument }
     }
 }

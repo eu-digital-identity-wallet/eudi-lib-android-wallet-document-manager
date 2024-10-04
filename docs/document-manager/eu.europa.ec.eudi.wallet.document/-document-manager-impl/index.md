@@ -2,18 +2,14 @@
 
 # DocumentManagerImpl
 
-class [DocumentManagerImpl](index.md)(context: [Context](https://developer.android.com/reference/kotlin/android/content/Context.html), storageEngine: StorageEngine, secureArea: AndroidKeystoreSecureArea) : [DocumentManager](../-document-manager/index.md)
+class [DocumentManagerImpl](index.md)(storageEngine: StorageEngine, secureArea: SecureArea,
+createKeySettingsFactory: [CreateKeySettingsFactory](../-create-key-settings-factory/index.md),
+keyUnlockDataFactory: [KeyUnlockDataFactory](../-key-unlock-data-factory/index.md), var
+checkPublicKeyBeforeAdding: [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html) =
+true) : [DocumentManager](../-document-manager/index.md)
 
-A [DocumentManager](../-document-manager/index.md) implementation that uses StorageEngine to store documents and AndroidKeystoreSecureArea for key management.
-
-Features:
-
-- 
-   Enforces user authentication to access documents, if supported by the device
-- 
-   Enforces hardware backed keys, if supported by the device
-- 
-   P256 curve and Sign1 support for document keys
+A [DocumentManager](../-document-manager/index.md) implementation that uses StorageEngine to store
+documents and SecureArea for key management.
 
 To instantiate it, use the [eu.europa.ec.eudi.wallet.document.DocumentManager.Builder](../-document-manager/-builder/index.md) class.
 
@@ -21,17 +17,18 @@ To instantiate it, use the [eu.europa.ec.eudi.wallet.document.DocumentManager.Bu
 
 androidJvm
 
-| |
-|---|
-| context |
-| storageEngine | storage engine used to store documents |
-| secureArea | secure area used to store documents' keys |
+|                            |                                                                                                                                  |
+|----------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| storageEngine              | storage engine used to store documents                                                                                           |
+| secureArea                 | secure area used to store documents' keys                                                                                        |
+| createKeySettingsFactory   | factory to create CreateKeySettings for document keys                                                                            |
+| checkPublicKeyBeforeAdding | flag that indicates if the public key in the [UnsignedDocument](../-unsigned-document/index.md) must match the public key in MSO |
 
 ## Constructors
 
-| | |
-|---|---|
-| [DocumentManagerImpl](-document-manager-impl.md) | [androidJvm]<br>constructor(context: [Context](https://developer.android.com/reference/kotlin/android/content/Context.html), storageEngine: StorageEngine, secureArea: AndroidKeystoreSecureArea) |
+|                                                  |                                                                                                                                                                                                                                                                                                                                                                                              |
+|--------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [DocumentManagerImpl](-document-manager-impl.md) | [androidJvm]<br>constructor(storageEngine: StorageEngine, secureArea: SecureArea, createKeySettingsFactory: [CreateKeySettingsFactory](../-create-key-settings-factory/index.md), keyUnlockDataFactory: [KeyUnlockDataFactory](../-key-unlock-data-factory/index.md), checkPublicKeyBeforeAdding: [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html) = true) |
 
 ## Types
 
@@ -44,8 +41,6 @@ androidJvm
 | Name                                                            | Summary                                                                                                                                                                                                                                                                                                     |
 |-----------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [checkPublicKeyBeforeAdding](check-public-key-before-adding.md) | [androidJvm]<br>var [checkPublicKeyBeforeAdding](check-public-key-before-adding.md): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)<br>flag that indicates if the public key in the [UnsignedDocument](../-unsigned-document/index.md) must match the public key in MSO |
-| [userAuth](user-auth.md)                                        | [androidJvm]<br>var [userAuth](user-auth.md): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)<br>flag that indicates if the document requires user authentication to be accessed. If the device is not secured, this will be set to false.                               |
-| [userAuthTimeoutInMillis](user-auth-timeout-in-millis.md)       | [androidJvm]<br>var [userAuthTimeoutInMillis](user-auth-timeout-in-millis.md): [Long](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html)<br>timeout in milliseconds for user authentication                                                                                              |
 
 ## Functions
 
@@ -59,5 +54,3 @@ androidJvm
 | [getDocuments](../get-documents.md)                             | [androidJvm]<br>inline fun &lt;[D](../get-documents.md) : [Document](../-document/index.md)&gt; [DocumentManager](../-document-manager/index.md).[getDocuments](../get-documents.md)(): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)&lt;[D](../get-documents.md)&gt;<br>Extension function for [DocumentManager](../-document-manager/index.md) to get documents using reified type parameter                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | [storeDeferredDocument](store-deferred-document.md)             | [androidJvm]<br>open override fun [storeDeferredDocument](store-deferred-document.md)(unsignedDocument: [UnsignedDocument](../-unsigned-document/index.md), relatedData: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html)): [StoreDocumentResult](../-store-document-result/index.md)<br>Stores a [UnsignedDocument](../-unsigned-document/index.md) as [DeferredDocument](../-deferred-document/index.md). The document can be retrieved using the [DocumentManager.getDocumentById](../-document-manager/get-document-by-id.md) method. Also, the relatedData can be used later for the issuance process.                                                                                                                                                                                                                         |
 | [storeIssuedDocument](store-issued-document.md)                 | [androidJvm]<br>open override fun [storeIssuedDocument](store-issued-document.md)(unsignedDocument: [UnsignedDocument](../-unsigned-document/index.md), issuerDocumentData: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html)): [StoreDocumentResult](../-store-document-result/index.md)<br>Add document to the document manager.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| [userAuth](user-auth.md)                                        | [androidJvm]<br>fun [userAuth](user-auth.md)(enable: [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)): [DocumentManagerImpl](index.md)<br>Sets whether to require user authentication to access the document.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| [userAuthTimeout](user-auth-timeout.md)                         | [androidJvm]<br>fun [userAuthTimeout](user-auth-timeout.md)(timeoutInMillis: [Long](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html)): [DocumentManagerImpl](index.md)<br>Sets the timeout in milliseconds for user authentication.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |

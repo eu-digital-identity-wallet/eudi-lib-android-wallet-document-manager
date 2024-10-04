@@ -16,12 +16,12 @@
 package eu.europa.ec.eudi.wallet.document
 
 import android.content.Context
-import com.android.identity.android.securearea.AndroidKeystoreSecureArea
-import com.android.identity.android.storage.AndroidStorageEngine
+import com.android.identity.securearea.CreateKeySettings
+import com.android.identity.securearea.KeyUnlockData
+import com.android.identity.securearea.SecureArea
 import com.android.identity.storage.StorageEngine
-import eu.europa.ec.eudi.wallet.document.internal.isDeviceSecure
-import kotlinx.io.files.Path
-import java.io.File
+import eu.europa.ec.eudi.wallet.document.defaults.DefaultSecureArea
+import eu.europa.ec.eudi.wallet.document.defaults.DefaultStorageEngine
 
 /**
  * Document manager object is the entry point to access documents.
@@ -129,65 +129,63 @@ interface DocumentManager {
      * example:
      * ```
      * val documentManager = DocumentManager.Builder(context)
-     *    .useEncryption(true)
-     *    .storageDir(context.noBackupFilesDir)
-     *    .enableUserAuth(true)
-     *    .userAuthTimeout(30000)
-     *    .build()
+     *   .storageEngine(MyStorageEngine())
+     *   .secureArea(MySecureArea())
+     *   .createKeySettingsFactory(MyCreateKeySettingsFactory())
+     *   .checkPublicKeyBeforeAdding(true)
+     *   .build()
      * ```
      *
-     * @property useEncryption whether to encrypt the values stored on disk. Note that keys are not encrypted, only values. By default this is set to true.
-     * @property storageDir the directory to store data files in. By default the [Context.getNoBackupFilesDir] is used.
-     * @property userAuth flag that indicates if the document requires user authentication to be accessed. By default this is set to true if the device is secured with a PIN, password or pattern.
-     * @property userAuthTimeoutInMillis timeout in milliseconds for user authentication. By default this is set to 30 seconds.
+     * @property storageEngine storage engine used to store documents. By default, this is set to [DefaultStorageEngine].
+     * @property secureArea secure area used to store documents' keys. By default, this is set to [DefaultSecureArea].
+     * @property createKeySettingsFactory factory to create [CreateKeySettings] for document keys. By default, this is set to [DefaultSecureArea.CreateKeySettingsFactory].
      * @property checkPublicKeyBeforeAdding flag that indicates if the public key from the [UnsignedDocument] must match the public key in MSO. By default this is set to true.
-     * @constructor
      *
+     * @constructor
      * @param context [Context] used to instantiate the DocumentManager
      */
     class Builder(context: Context) {
-        private val _context = context.applicationContext
-        var useEncryption: Boolean = true
-        var storageDir: File = _context.noBackupFilesDir
-        var userAuth: Boolean = context.isDeviceSecure
-        var userAuthTimeoutInMillis: Long = DocumentManagerImpl.AUTH_TIMEOUT
+        private val context = context.applicationContext
+        var storageEngine: StorageEngine? = null
+        var secureArea: SecureArea? = null
+        var createKeySettingsFactory: CreateKeySettingsFactory? = null
+        var keyUnlockDataFactory: KeyUnlockDataFactory? = null
         var checkPublicKeyBeforeAdding: Boolean = true
 
         /**
-         * Sets whether to encrypt the values stored on disk.
-         * Note that keys are not encrypted, only values.
-         * By default, this is set to true.
-         *
-         * @param useEncryption
-         * @return [DocumentManager.Builder]
+         * Sets the storage engine to store the documents.
+         * By default, this is set to [DefaultStorageEngine].
+         * The storage engine is used to store the documents in the device's storage.
          */
-        fun useEncryption(useEncryption: Boolean) = apply { this.useEncryption = useEncryption }
+        fun storageEngine(storageEngine: StorageEngine) =
+            apply { this.storageEngine = storageEngine }
 
         /**
-         * The directory to store data files in.
-         * By default, the [Context.getNoBackupFilesDir] is used.
-         *
-         * @param storageDir
-         * @return [DocumentManager.Builder]
+         * Sets the secure area that manages the keys for the documents.
+         * By default, this is set to [DefaultSecureArea].
          */
-        fun storageDir(storageDir: File) = apply { this.storageDir = storageDir }
+        fun secureArea(secureArea: SecureArea) = apply { this.secureArea = secureArea }
 
         /**
-         * Sets whether to require user authentication to access the document.
-         *
-         * @param enable
-         * @return [DocumentManager.Builder]
+         * Sets the factory to create [CreateKeySettings] for document keys.
+         * By default, this is set to [DefaultSecureArea.CreateKeySettingsFactory].
+         * This factory is used to create [CreateKeySettings] for the keys that are created in the secure area.
+         * The [CreateKeySettings] can be used to set the key's alias, key's purpose, key's protection level, etc.
          */
-        fun enableUserAuth(enable: Boolean) = apply { this.userAuth = enable }
+        fun createKeySettingsFactory(createKeySettingsFactory: CreateKeySettingsFactory) =
+            apply { this.createKeySettingsFactory = createKeySettingsFactory }
+
 
         /**
-         * Sets the timeout in milliseconds for user authentication.
-         *
-         * @param timeoutInMillis timeout in milliseconds for user authentication
-         * @return [DocumentManager.Builder]
+         * Sets the factory to create [KeyUnlockData] for document keys.
+         * By default, this is set to [DefaultSecureArea.KeyUnlockDataFactory].
+         * This factory is used to create [KeyUnlockData] that is used to unlock the keys in the secure area.
+         * @param keyUnlockDataFactory
+         * @see [KeyUnlockData]
+         * @return
          */
-        fun userAuthTimeout(timeoutInMillis: Long) =
-            apply { this.userAuthTimeoutInMillis = timeoutInMillis }
+        fun keyUnlockDataFactory(keyUnlockDataFactory: KeyUnlockDataFactory) =
+            apply { this.keyUnlockDataFactory = keyUnlockDataFactory }
 
         /**
          * Sets whether to check public key in MSO before adding document to storage.
@@ -207,21 +205,30 @@ interface DocumentManager {
          *
          * @return [DocumentManager]
          */
-        fun build(): DocumentManager =
-            DocumentManagerImpl(_context, storageEngine, androidSecureArea).apply {
-                userAuth(this@Builder.userAuth)
-                userAuthTimeout(this@Builder.userAuthTimeoutInMillis)
-            }
-
-        private val storageEngine: StorageEngine by lazy {
-            val path = Path(File(storageDir.path, "eudi-identity.bin").path)
-            AndroidStorageEngine.Builder(_context, path)
-                .setUseEncryption(useEncryption)
-                .build()
+        fun build(): DocumentManager {
+            val storageEngineImpl = storageEngine ?: DefaultStorageEngine(context)
+            val secureAreaImpl = secureArea ?: DefaultSecureArea(context, storageEngineImpl)
+            val createKeySettingsFactory =
+                createKeySettingsFactory ?: DefaultSecureArea.CreateKeySettingsFactory(context)
+            return DocumentManagerImpl(
+                storageEngine = storageEngineImpl,
+                secureArea = secureAreaImpl,
+                createKeySettingsFactory = createKeySettingsFactory,
+                keyUnlockDataFactory = keyUnlockDataFactory
+                    ?: DefaultSecureArea.KeyUnlockDataFactory,
+                checkPublicKeyBeforeAdding = checkPublicKeyBeforeAdding
+            )
         }
 
-        private val androidSecureArea: AndroidKeystoreSecureArea by lazy {
-            AndroidKeystoreSecureArea(_context, storageEngine)
+    }
+
+    companion object {
+
+        /**
+         * Instantiates a DocumentManager using the provided context and the builder block.
+         */
+        operator fun invoke(context: Context, block: Builder.() -> Unit): DocumentManager {
+            return Builder(context).apply(block).build()
         }
     }
 }

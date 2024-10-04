@@ -2,7 +2,7 @@
 # EUDI wallet library for managing documents
 ## Dependency License Report
 
-_2024-09-23 11:02:02 EEST_
+_2024-10-04 17:51:43 EEST_
 ## Apache License, Version 2.0
 
 **1** **Group:** `androidx.biometric` **Name:** `biometric-ktx` **Version:** `1.2.0-alpha05`
@@ -19,7 +19,7 @@ _2024-09-23 11:02:02 EEST_
 **4** **Group:** `com.android.identity` **Name:** `identity-android` **Version:** `202408.1`
 > - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-**5** **Group:** `org.jetbrains.kotlin` **Name:** `kotlin-stdlib-jdk8` **Version:** `1.9.0`
+**5** **Group:** `org.jetbrains.kotlin` **Name:** `kotlin-stdlib` **Version:** `2.0.10`
 > - **POM Project URL**: [https://kotlinlang.org/](https://kotlinlang.org/)
 > - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
 

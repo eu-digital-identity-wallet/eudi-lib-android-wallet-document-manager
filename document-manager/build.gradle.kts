@@ -100,9 +100,6 @@ android {
 
 dependencies {
 
-//    implementation(libs.androidx.core.ktx)
-//    implementation(libs.androidx.appcompat)
-
     // Google identity
     implementation(libs.google.identity) {
         exclude(group = "org.bouncycastle")

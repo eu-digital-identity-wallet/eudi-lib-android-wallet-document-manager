@@ -19,7 +19,9 @@ package eu.europa.ec.eudi.wallet.document.internal
 import com.android.identity.android.securearea.AndroidKeystoreKeyInfo
 import com.android.identity.credential.SecureAreaBoundCredential
 import com.android.identity.document.NameSpacedData
+import com.android.identity.mdoc.credential.MdocCredential
 import eu.europa.ec.eudi.wallet.document.Document
+import kotlinx.datetime.Clock
 import java.time.Instant
 import com.android.identity.document.Document as BaseDocument
 
@@ -133,3 +135,25 @@ internal var BaseDocument.deferredRelatedData: ByteArray
 @JvmSynthetic
 internal fun BaseDocument.clearDeferredRelatedData() =
     applicationData.setData("deferredRelatedData", null)
+
+@JvmSynthetic
+internal fun BaseDocument.findCredential(
+    now: kotlinx.datetime.Instant = Clock.System.now()
+): MdocCredential? {
+    var candidate: MdocCredential? = null
+    certifiedCredentials
+        .filterIsInstance<MdocCredential>()
+        .filter { now >= it.validFrom && now <= it.validUntil }
+        .forEach { credential ->
+            // If we already have a candidate, prefer this one if its usage count is lower
+            candidate?.let { candidateCredential ->
+                if (credential.usageCount < candidateCredential.usageCount) {
+                    candidate = credential
+                }
+            } ?: run {
+                candidate = credential
+            }
+
+        }
+    return candidate
+}
