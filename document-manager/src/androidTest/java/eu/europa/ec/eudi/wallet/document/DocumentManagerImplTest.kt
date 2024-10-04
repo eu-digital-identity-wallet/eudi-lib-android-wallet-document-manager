@@ -19,10 +19,16 @@ package eu.europa.ec.eudi.wallet.document
 import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.android.identity.android.securearea.AndroidKeystoreCreateKeySettings
+import com.android.identity.android.securearea.AndroidKeystoreKeyUnlockData
 import com.android.identity.android.securearea.AndroidKeystoreSecureArea
+import com.android.identity.android.securearea.UserAuthenticationType
+import com.android.identity.crypto.EcCurve
+import com.android.identity.securearea.KeyPurpose
 import com.android.identity.storage.EphemeralStorageEngine
 import com.android.identity.storage.StorageEngine
 import eu.europa.ec.eudi.wallet.document.internal.isDeviceSecure
+import eu.europa.ec.eudi.wallet.document.internal.randomBytes
 import eu.europa.ec.eudi.wallet.document.test.R
 import org.bouncycastle.util.encoders.Hex
 import org.junit.*
@@ -43,7 +49,6 @@ class DocumentManagerImplTest {
         get() = InstrumentationRegistry.getInstrumentation().targetContext
     private lateinit var secureArea: AndroidKeystoreSecureArea
     private lateinit var storageEngine: StorageEngine
-    private lateinit var documentManager: DocumentManagerImpl
 
     @Before
     @Throws(IOException::class)
@@ -54,8 +59,30 @@ class DocumentManagerImplTest {
                 deleteAll()
             }
         secureArea = AndroidKeystoreSecureArea(context, storageEngine)
-        documentManager = DocumentManagerImpl(context, storageEngine, secureArea)
-            .userAuth(false)
+    }
+
+    fun getDocumentManager(userAuth: Boolean = false): DocumentManagerImpl {
+        val createKeySettingsFactory = CreateKeySettingsFactory {
+            AndroidKeystoreCreateKeySettings.Builder(10.randomBytes)
+                .setEcCurve(EcCurve.P256)
+                .setUseStrongBox(false)
+                .setUserAuthenticationRequired(
+                    userAuth,
+                    30_000L,
+                    setOf(UserAuthenticationType.BIOMETRIC, UserAuthenticationType.LSKF)
+                )
+                .setKeyPurposes(setOf(KeyPurpose.SIGN))
+                .build()
+        }
+        val keyUnlockDataFactory = KeyUnlockDataFactory { _, keyAlias ->
+            keyAlias?.let { AndroidKeystoreKeyUnlockData(it) }
+        }
+        return DocumentManagerImpl(
+            storageEngine,
+            secureArea,
+            createKeySettingsFactory,
+            keyUnlockDataFactory
+        )
     }
 
     @After
@@ -65,12 +92,14 @@ class DocumentManagerImplTest {
 
     @Test
     fun test_getDocuments_returns_empty_list() {
+        val documentManager = getDocumentManager()
         val documents = documentManager.getDocuments()
         assertTrue(documents.isEmpty())
     }
 
     @Test
     fun test_getDocumentById_returns_null() {
+        val documentManager = getDocumentManager()
         val documentId = "${UUID.randomUUID()}"
         val document = documentManager.getDocumentById(documentId)
         assertNull(document)
@@ -78,6 +107,7 @@ class DocumentManagerImplTest {
 
     @Test
     fun test_createDocument() {
+        val documentManager = getDocumentManager()
         val docType = "eu.europa.ec.eudi.pid.1"
         val requestResult = documentManager.createDocument(docType, false)
         assertTrue(requestResult is CreateDocumentResult.Success)
@@ -115,6 +145,7 @@ class DocumentManagerImplTest {
 
     @Test
     fun test_storeIssuedDocument() {
+        val documentManager = getDocumentManager()
         val docType = "eu.europa.ec.eudi.pid.1"
         val data = context.resources.openRawResource(R.raw.eu_pid).use { raw ->
             Hex.decode(raw.readBytes())
@@ -137,6 +168,7 @@ class DocumentManagerImplTest {
 
     @Test
     fun test_checkPublicKeyInMso() {
+        val documentManager = getDocumentManager()
         val docType = "eu.europa.ec.eudi.pid.1"
         // some random data with mismatching public key
         val data = context.resources.openRawResource(R.raw.eu_pid).use { raw ->
@@ -159,9 +191,7 @@ class DocumentManagerImplTest {
     @Test
     fun test_unsignedDocument_signWithAuthKey_throws_when_userAuth_is_set() {
         assumeTrue(context.isDeviceSecure)
-        documentManager
-            .userAuth(true)
-            .userAuthTimeout(10_000L)
+        val documentManager = getDocumentManager(true)
         val doc1 = documentManager.createDocument("doc1", false).getOrThrow()
 
         assertTrue(doc1.requiresUserAuth)

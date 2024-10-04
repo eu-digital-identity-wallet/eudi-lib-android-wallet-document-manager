@@ -74,9 +74,12 @@ sealed interface Document {
 
     companion object {
 
-        internal operator fun invoke(baseDocument: BaseDocument) = when (baseDocument.state) {
-            UNSIGNED -> UnsignedDocument(baseDocument)
-            DEFERRED -> DeferredDocument(baseDocument)
+        internal operator fun invoke(
+            baseDocument: BaseDocument,
+            keyUnlockDataFactory: KeyUnlockDataFactory
+        ) = when (baseDocument.state) {
+            UNSIGNED -> UnsignedDocument(baseDocument, keyUnlockDataFactory)
+            DEFERRED -> DeferredDocument(baseDocument, keyUnlockDataFactory)
             ISSUED -> IssuedDocument(baseDocument)
         }
     }

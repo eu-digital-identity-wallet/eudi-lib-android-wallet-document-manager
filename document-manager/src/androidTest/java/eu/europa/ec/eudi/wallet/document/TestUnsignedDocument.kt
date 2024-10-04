@@ -20,6 +20,7 @@ import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.identity.android.securearea.AndroidKeystoreCreateKeySettings
+import com.android.identity.android.securearea.AndroidKeystoreKeyUnlockData
 import com.android.identity.android.securearea.AndroidKeystoreSecureArea
 import com.android.identity.android.securearea.UserAuthenticationType
 import com.android.identity.credential.CredentialFactory
@@ -109,7 +110,11 @@ class TestUnsignedDocument {
             docType = "type.test-document"
         )
         documentStore.addDocument(baseDocument)
-        val unsignedDocument = UnsignedDocument(baseDocument)
+        val unsignedDocument = UnsignedDocument(baseDocument, KeyUnlockDataFactory { _, keyAlias ->
+            keyAlias?.let {
+                AndroidKeystoreKeyUnlockData(it)
+            }
+        })
 
         return unsignedDocument
     }

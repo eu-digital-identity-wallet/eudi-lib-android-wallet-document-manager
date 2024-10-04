@@ -18,20 +18,16 @@ package eu.europa.ec.eudi.wallet.document
 import COSE.Message
 import COSE.MessageTag
 import COSE.Sign1Message
-import android.content.Context
 import android.util.Log
-import com.android.identity.android.securearea.AndroidKeystoreCreateKeySettings
-import com.android.identity.android.securearea.AndroidKeystoreSecureArea
-import com.android.identity.android.securearea.UserAuthenticationType
 import com.android.identity.credential.CredentialFactory
 import com.android.identity.credential.SecureAreaBoundCredential
-import com.android.identity.crypto.EcCurve
 import com.android.identity.crypto.toEcPublicKey
 import com.android.identity.document.DocumentStore
 import com.android.identity.mdoc.credential.MdocCredential
 import com.android.identity.mdoc.mso.MobileSecurityObjectParser
 import com.android.identity.mdoc.mso.StaticAuthDataGenerator
-import com.android.identity.securearea.KeyPurpose
+import com.android.identity.securearea.CreateKeySettings
+import com.android.identity.securearea.SecureArea
 import com.android.identity.securearea.SecureAreaRepository
 import com.android.identity.storage.StorageEngine
 import com.upokecenter.cbor.CBORObject
@@ -43,49 +39,36 @@ import eu.europa.ec.eudi.wallet.document.internal.deferredRelatedData
 import eu.europa.ec.eudi.wallet.document.internal.docType
 import eu.europa.ec.eudi.wallet.document.internal.documentName
 import eu.europa.ec.eudi.wallet.document.internal.getEmbeddedCBORObject
-import eu.europa.ec.eudi.wallet.document.internal.isDeviceSecure
 import eu.europa.ec.eudi.wallet.document.internal.issuedAt
 import eu.europa.ec.eudi.wallet.document.internal.nameSpacedData
 import eu.europa.ec.eudi.wallet.document.internal.state
-import eu.europa.ec.eudi.wallet.document.internal.supportsStrongBox
 import eu.europa.ec.eudi.wallet.document.internal.toDigestIdMapping
 import org.bouncycastle.jce.provider.BouncyCastleProvider
-import java.security.SecureRandom
 import java.security.Security
 import java.time.Instant
 import java.util.UUID
 
 
 /**
- * A [DocumentManager] implementation that uses [StorageEngine] to store documents and [AndroidKeystoreSecureArea] for key management.
- *
- * Features:
- * - Enforces user authentication to access documents, if supported by the device
- * - Enforces hardware backed keys, if supported by the device
- * - P256 curve and Sign1 support for document keys
+ * A [DocumentManager] implementation that uses [StorageEngine] to store documents and [SecureArea] for key management.
  *
  * To instantiate it, use the [eu.europa.ec.eudi.wallet.document.DocumentManager.Builder] class.
  *
- * @property storageEngine storage engine used to store documents
- * @property secureArea secure area used to store documents' keys
- * @property userAuth flag that indicates if the document requires user authentication to be accessed. If the device is not secured, this will be set to false.
- * @property userAuthTimeoutInMillis timeout in milliseconds for user authentication
  * @property checkPublicKeyBeforeAdding flag that indicates if the public key in the [UnsignedDocument] must match the public key in MSO
  *
  * @constructor
- * @param context
  * @param storageEngine storage engine used to store documents
  * @param secureArea secure area used to store documents' keys
+ * @param createKeySettingsFactory factory to create [CreateKeySettings] for document keys
+ * @param checkPublicKeyBeforeAdding flag that indicates if the public key in the [UnsignedDocument] must match the public key in MSO
  */
 class DocumentManagerImpl(
-    context: Context,
     private val storageEngine: StorageEngine,
-    private val secureArea: AndroidKeystoreSecureArea,
+    private val secureArea: SecureArea,
+    private val createKeySettingsFactory: CreateKeySettingsFactory,
+    private val keyUnlockDataFactory: KeyUnlockDataFactory,
+    var checkPublicKeyBeforeAdding: Boolean = true
 ) : DocumentManager {
-
-    private val context = context.applicationContext
-    private val isDeviceSecure: Boolean
-        get() = context.isDeviceSecure
 
     private val secureAreaRepository: SecureAreaRepository by lazy {
         SecureAreaRepository().apply {
@@ -105,40 +88,10 @@ class DocumentManagerImpl(
         DocumentStore(storageEngine, secureAreaRepository, credentialFactory)
     }
 
-    var userAuth: Boolean = isDeviceSecure
-        /**
-         * Sets whether to require user authentication to access the document.
-         * If the device is not secured, this will be set to false.
-         */
-        set(value) {
-            field = value && isDeviceSecure
-        }
-
-    var userAuthTimeoutInMillis: Long = AUTH_TIMEOUT
-
-    var checkPublicKeyBeforeAdding: Boolean = true
-
     init {
         Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME)
         Security.insertProviderAt(BouncyCastleProvider(), 1)
     }
-
-    /**
-     * Sets whether to require user authentication to access the document.
-     *
-     * @param enable
-     * @return [DocumentManagerImpl]
-     */
-    fun userAuth(enable: Boolean) = apply { this.userAuth = enable }
-
-    /**
-     * Sets the timeout in milliseconds for user authentication.
-     *
-     * @param timeoutInMillis timeout in milliseconds for user authentication
-     * @return [DocumentManagerImpl]
-     */
-    fun userAuthTimeout(timeoutInMillis: Long) =
-        apply { this.userAuthTimeoutInMillis = timeoutInMillis }
 
     /**
      * Sets whether to check public key in MSO before adding document to storage.
@@ -160,11 +113,11 @@ class DocumentManagerImpl(
         return when (state) {
             null -> credentials
             else -> credentials.filter { it.state == state }
-        }.map { Document(it) }
+        }.map { Document(it, keyUnlockDataFactory) }
     }
 
     override fun getDocumentById(documentId: DocumentId): Document? =
-        documentStore.lookupDocument(documentId)?.let { Document(it) }
+        documentStore.lookupDocument(documentId)?.let { Document(it, keyUnlockDataFactory) }
 
     override fun deleteDocumentById(documentId: DocumentId): DeleteDocumentResult {
         return try {
@@ -184,18 +137,14 @@ class DocumentManagerImpl(
         return try {
             val domain = "eudi"
             val documentId = "${UUID.randomUUID()}"
-            val strongBoxed = useStrongBox && context.supportsStrongBox
-            val nonEmptyChallenge = attestationChallenge
-                ?.takeUnless { it.isEmpty() }
-                ?: generateRandomBytes(10)
-            val keySettings = createKeySettings(nonEmptyChallenge, strongBoxed)
+            val keySettings = createKeySettingsFactory.createKeySettings()
 
             val documentCredential = documentStore.createDocument(documentId).apply {
                 state = Document.State.UNSIGNED
                 this.docType = docType
                 documentName = docType
                 createdAt = Instant.now()
-                this.attestationChallenge = nonEmptyChallenge
+                this.attestationChallenge
             }
             MdocCredential(
                 document = documentCredential,
@@ -214,7 +163,7 @@ class DocumentManagerImpl(
 
             documentStore.addDocument(documentCredential)
 
-            val unsignedDocument = UnsignedDocument(documentCredential)
+            val unsignedDocument = UnsignedDocument(documentCredential, keyUnlockDataFactory)
             CreateDocumentResult.Success(unsignedDocument)
         } catch (e: Exception) {
             CreateDocumentResult.Failure(e)
@@ -286,29 +235,11 @@ class DocumentManagerImpl(
         }
     }
 
-    private fun createKeySettings(
-        challenge: ByteArray,
-        useStrongBox: Boolean,
-    ) = AndroidKeystoreCreateKeySettings.Builder(challenge)
-        .setEcCurve(EcCurve.P256)
-        .setUseStrongBox(useStrongBox)
-        .setUserAuthenticationRequired(userAuth, userAuthTimeoutInMillis, AUTH_TYPE)
-        .setKeyPurposes(setOf(KeyPurpose.SIGN))
-        .build()
-
     companion object {
         private const val TAG = "DocumentManager"
-
-        const val AUTH_TIMEOUT = 30_000L
-        private val AUTH_TYPE = setOf(UserAuthenticationType.BIOMETRIC, UserAuthenticationType.LSKF)
     }
 }
 
-private fun generateRandomBytes(size: Int): ByteArray {
-    val secureRandom = SecureRandom()
-    val randomBytes = ByteArray(size)
-    secureRandom.nextBytes(randomBytes)
-    return randomBytes
-}
+
 
 

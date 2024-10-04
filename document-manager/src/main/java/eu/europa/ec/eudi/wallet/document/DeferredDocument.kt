@@ -45,6 +45,7 @@ class DeferredDocument(
     requiresUserAuth: Boolean,
     createdAt: Instant,
     certificatesNeedAuth: List<X509Certificate>,
+    keyUnlockDataFactory: KeyUnlockDataFactory,
     val relatedData: ByteArray
 ) : Document, UnsignedDocument(
     id,
@@ -54,6 +55,7 @@ class DeferredDocument(
     requiresUserAuth,
     createdAt,
     certificatesNeedAuth,
+    keyUnlockDataFactory,
 ) {
 
     override val state: State
@@ -65,7 +67,10 @@ class DeferredDocument(
 
     internal companion object {
         @JvmSynthetic
-        operator fun invoke(baseDocument: BaseDocument) = DeferredDocument(
+        operator fun invoke(
+            baseDocument: BaseDocument,
+            keyUnlockDataFactory: KeyUnlockDataFactory
+        ) = DeferredDocument(
             id = baseDocument.name,
             name = baseDocument.documentName,
             docType = baseDocument.docType,
@@ -80,6 +85,7 @@ class DeferredDocument(
                 ?.javaX509Certificates
                 ?: emptyList(),
             relatedData = baseDocument.deferredRelatedData,
+            keyUnlockDataFactory = keyUnlockDataFactory
         ).apply {
             this.base = baseDocument
         }

@@ -20,9 +20,10 @@ A default implementation of this interface is implemented by [DocumentManagerImp
 
 ## Types
 
-| Name | Summary |
-|---|---|
-| [Builder](-builder/index.md) | [androidJvm]<br>class [Builder](-builder/index.md)(context: [Context](https://developer.android.com/reference/kotlin/android/content/Context.html))<br>Builder class to instantiate the default DocumentManager implementation. |
+| Name                             | Summary                                                                                                                                                                                                                         |
+|----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [Builder](-builder/index.md)     | [androidJvm]<br>class [Builder](-builder/index.md)(context: [Context](https://developer.android.com/reference/kotlin/android/content/Context.html))<br>Builder class to instantiate the default DocumentManager implementation. |
+| [Companion](-companion/index.md) | [androidJvm]<br>object [Companion](-companion/index.md)                                                                                                                                                                         |
 
 ## Functions
 
