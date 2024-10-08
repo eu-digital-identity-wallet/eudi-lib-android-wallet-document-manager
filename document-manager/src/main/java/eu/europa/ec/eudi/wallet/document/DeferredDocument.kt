@@ -26,6 +26,7 @@ import eu.europa.ec.eudi.wallet.document.internal.documentName
 import eu.europa.ec.eudi.wallet.document.internal.requiresUserAuth
 import eu.europa.ec.eudi.wallet.document.internal.state
 import eu.europa.ec.eudi.wallet.document.internal.usesStrongBox
+import java.security.PublicKey
 import java.security.cert.X509Certificate
 import java.time.Instant
 import com.android.identity.document.Document as BaseDocument
@@ -37,57 +38,68 @@ import com.android.identity.document.Document as BaseDocument
  *
  * @property relatedData the related data
  */
-class DeferredDocument(
+open class DeferredDocument(
     id: DocumentId,
-    name: String,
     docType: String,
+    name: String,
     usesStrongBox: Boolean,
     requiresUserAuth: Boolean,
     createdAt: Instant,
+    publicKeyCoseBytes: ByteArray,
     certificatesNeedAuth: List<X509Certificate>,
-    keyUnlockDataFactory: KeyUnlockDataFactory,
     val relatedData: ByteArray
 ) : Document, UnsignedDocument(
-    id,
-    name,
-    docType,
-    usesStrongBox,
-    requiresUserAuth,
-    createdAt,
-    certificatesNeedAuth,
-    keyUnlockDataFactory,
+    id = id,
+    docType = docType,
+    name = name,
+    usesStrongBox = usesStrongBox,
+    requiresUserAuth = requiresUserAuth,
+    createdAt = createdAt,
+    publicKeyCoseBytes = publicKeyCoseBytes,
+    certificatesNeedAuth = certificatesNeedAuth,
 ) {
 
-    override val state: State
-        get() = base?.state ?: State.DEFERRED
-
-    override fun toString(): String {
-        return "DeferredDocument(id='$id', docType='$docType', name='$name', usesStrongBox=$usesStrongBox, requiresUserAuth=$requiresUserAuth, createdAt=$createdAt, state=$state, relatedData=${relatedData.contentToString()})"
-    }
+    override var state: State = State.DEFERRED
 
     internal companion object {
         @JvmSynthetic
         operator fun invoke(
             baseDocument: BaseDocument,
             keyUnlockDataFactory: KeyUnlockDataFactory
-        ) = DeferredDocument(
-            id = baseDocument.name,
-            name = baseDocument.documentName,
-            docType = baseDocument.docType,
-            usesStrongBox = baseDocument.usesStrongBox,
-            requiresUserAuth = baseDocument.requiresUserAuth,
-            createdAt = baseDocument.createdAt,
-            certificatesNeedAuth = baseDocument.pendingCredentials
-                .filterIsInstance<SecureAreaBoundCredential>()
-                .firstOrNull()
-                ?.attestation
-                ?.certChain
-                ?.javaX509Certificates
-                ?: emptyList(),
-            relatedData = baseDocument.deferredRelatedData,
-            keyUnlockDataFactory = keyUnlockDataFactory
-        ).apply {
-            this.base = baseDocument
-        }
+        ): DeferredDocument =
+            DeferredDocumentImpl(
+                baseDocument,
+                UnsignedDocument(baseDocument, keyUnlockDataFactory)
+            )
     }
+}
+
+internal class DeferredDocumentImpl(
+    baseDocument: BaseDocument,
+    private val unsignedDocument: UnsignedDocument,
+) : DeferredDocument(
+    id = baseDocument.name,
+    docType = baseDocument.docType,
+    name = baseDocument.documentName,
+    usesStrongBox = baseDocument.usesStrongBox,
+    requiresUserAuth = baseDocument.requiresUserAuth,
+    createdAt = baseDocument.createdAt,
+    publicKeyCoseBytes = unsignedDocument.publicKeyCoseBytes,
+    certificatesNeedAuth = unsignedDocument.certificatesNeedAuth,
+    relatedData = baseDocument.deferredRelatedData,
+) {
+
+    init {
+        state = baseDocument.state
+    }
+
+    override fun signWithAuthKey(data: ByteArray, alg: String): SignedWithAuthKeyResult {
+        return unsignedDocument.signWithAuthKey(data, alg)
+    }
+
+    override fun toString(): String {
+        return "DeferredDocument(id='$id', docType='$docType', name='$name', usesStrongBox=$usesStrongBox, requiresUserAuth=$requiresUserAuth, createdAt=$createdAt, state=$state, relatedData=${relatedData.contentToString()})"
+    }
+
+
 }

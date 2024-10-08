@@ -20,7 +20,6 @@ import COSE.MessageTag
 import COSE.Sign1Message
 import android.util.Log
 import com.android.identity.credential.CredentialFactory
-import com.android.identity.credential.SecureAreaBoundCredential
 import com.android.identity.crypto.toEcPublicKey
 import com.android.identity.document.DocumentStore
 import com.android.identity.mdoc.credential.MdocCredential
@@ -154,12 +153,6 @@ class DocumentManagerImpl(
                 createKeySettings = keySettings,
                 docType = docType,
             )
-
-            documentCredential.pendingCredentials
-                .filterIsInstance<SecureAreaBoundCredential>()
-                .firstOrNull()
-                ?.attestation
-                ?.publicKey
 
             documentStore.addDocument(documentCredential)
 

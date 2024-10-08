@@ -19,19 +19,15 @@ package eu.europa.ec.eudi.wallet.document
 import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.android.identity.android.securearea.AndroidKeystoreCreateKeySettings
-import com.android.identity.android.securearea.AndroidKeystoreKeyUnlockData
-import com.android.identity.android.securearea.AndroidKeystoreSecureArea
-import com.android.identity.android.securearea.UserAuthenticationType
 import com.android.identity.credential.CredentialFactory
-import com.android.identity.crypto.EcCurve
 import com.android.identity.crypto.toEcPublicKey
 import com.android.identity.document.DocumentStore
 import com.android.identity.mdoc.credential.MdocCredential
-import com.android.identity.securearea.KeyPurpose
+import com.android.identity.securearea.SecureArea
 import com.android.identity.securearea.SecureAreaRepository
 import com.android.identity.storage.EphemeralStorageEngine
 import com.android.identity.util.UUID
+import eu.europa.ec.eudi.wallet.document.defaults.DefaultSecureArea
 import eu.europa.ec.eudi.wallet.document.internal.createdAt
 import eu.europa.ec.eudi.wallet.document.internal.docType
 import eu.europa.ec.eudi.wallet.document.internal.documentName
@@ -57,18 +53,21 @@ class TestUnsignedDocument {
 
     private val context: Context
         get() = InstrumentationRegistry.getInstrumentation().targetContext
-    private lateinit var secureArea: AndroidKeystoreSecureArea
+    private lateinit var secureArea: SecureArea
     private lateinit var documentStore: DocumentStore
+    private lateinit var keyUnlockDataFactory: KeyUnlockDataFactory
 
     @Before
     fun setUp() {
         Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME)
         Security.insertProviderAt(BouncyCastleProvider(), 1)
         val storageEngine = EphemeralStorageEngine()
-        secureArea = AndroidKeystoreSecureArea(context, storageEngine)
+        secureArea = DefaultSecureArea(context, storageEngine)
         val secureAreaRepository = SecureAreaRepository().apply {
             addImplementation(secureArea)
         }
+        keyUnlockDataFactory = DefaultSecureArea.KeyUnlockDataFactory
+
         val credentialFactory = CredentialFactory().apply {
             addCredentialImplementation(MdocCredential::class) { document, dataItem ->
                 MdocCredential(document, dataItem)
@@ -83,7 +82,9 @@ class TestUnsignedDocument {
     }
 
     private fun getUnsignedDocument(requireUserAuth: Boolean = false): UnsignedDocument {
-        // Given
+        val createKeySettingsFactory = DefaultSecureArea.CreateKeySettingsFactory(context).apply {
+            userAuth = requireUserAuth
+        }
         val documentId = UUID.randomUUID().toString()
         val baseDocument = documentStore.createDocument(documentId).apply {
             state = Document.State.UNSIGNED
@@ -91,30 +92,16 @@ class TestUnsignedDocument {
             docType = "type.test-document"
             createdAt = Clock.System.now().toJavaInstant()
         }
-        val attestationChallenge = "attestation-challenge".toByteArray()
         MdocCredential(
             document = baseDocument,
             asReplacementFor = null,
             domain = "domain",
             secureArea = secureArea,
-            createKeySettings = AndroidKeystoreCreateKeySettings.Builder(attestationChallenge)
-                .setKeyPurposes(setOf(KeyPurpose.SIGN))
-                .setEcCurve(EcCurve.P256)
-                .setUseStrongBox(false)
-                .setUserAuthenticationRequired(
-                    requireUserAuth,
-                    10_000L,
-                    setOf(UserAuthenticationType.LSKF)
-                )
-                .build(),
+            createKeySettings = createKeySettingsFactory.createKeySettings(),
             docType = "type.test-document"
         )
         documentStore.addDocument(baseDocument)
-        val unsignedDocument = UnsignedDocument(baseDocument, KeyUnlockDataFactory { _, keyAlias ->
-            keyAlias?.let {
-                AndroidKeystoreKeyUnlockData(it)
-            }
-        })
+        val unsignedDocument = UnsignedDocument(baseDocument, keyUnlockDataFactory)
 
         return unsignedDocument
     }
@@ -155,7 +142,7 @@ class TestUnsignedDocument {
     }
 
     @Test
-    fun publicKey_returns_the_public_key_of_first_certificate() {
+    fun publicKey_returns_the_public_key_from_base_document_attestation() {
         // Given
         val unsignedDocument = getUnsignedDocument()
 
@@ -165,14 +152,11 @@ class TestUnsignedDocument {
         // Then
         assertNotNull(publicKey)
         assertEquals(unsignedDocument.certificatesNeedAuth.first().publicKey, publicKey)
-        val baseDocument = unsignedDocument.base
+        val baseDocument = documentStore.lookupDocument(unsignedDocument.id)
         assertNotNull(baseDocument)
         baseDocument!!
-        val attestation = baseDocument.pendingCredentials.firstOrNull() { it is MdocCredential }
-            ?.let { it as MdocCredential }
-            ?.attestation
-        assertNotNull(attestation)
-        attestation!!
+        val attestation = baseDocument.pendingCredentials.filterIsInstance<MdocCredential>()
+            .first().attestation
         assertEquals(publicKey.toEcPublicKey(attestation.publicKey.curve), attestation.publicKey)
     }
 
@@ -187,7 +171,7 @@ class TestUnsignedDocument {
 
         // Then
         assertEquals(newName, unsignedDocument.name)
-        val baseDocument = unsignedDocument.base
+        val baseDocument = documentStore.lookupDocument(unsignedDocument.id)
         assertNotNull(baseDocument)
         baseDocument!!
         assertTrue(baseDocument.applicationData.keyExists("name"))
@@ -202,7 +186,7 @@ class TestUnsignedDocument {
 
         // Then
         assertEquals(Document.State.UNSIGNED, unsignedDocument.state)
-        val baseDocument = unsignedDocument.base
+        val baseDocument = documentStore.lookupDocument(unsignedDocument.id)
         assertNotNull(baseDocument)
         baseDocument!!
         assertTrue(baseDocument.applicationData.keyExists("state"))

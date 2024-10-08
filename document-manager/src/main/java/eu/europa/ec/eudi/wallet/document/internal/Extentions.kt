@@ -16,12 +16,20 @@
 
 package eu.europa.ec.eudi.wallet.document.internal
 
+import com.android.identity.cbor.Cbor
+import com.android.identity.crypto.EcPublicKey
 import java.security.SecureRandom
 
-val Int.randomBytes: ByteArray
+internal val Int.randomBytes: ByteArray
     get() {
         val secureRandom = SecureRandom()
         val randomBytes = ByteArray(this)
         secureRandom.nextBytes(randomBytes)
         return randomBytes
     }
+
+internal val EcPublicKey.toCoseBytes: ByteArray
+    get() = Cbor.encode(toDataItem())
+
+internal val ByteArray.toEcPublicKey: EcPublicKey
+    get() = EcPublicKey.fromDataItem(Cbor.decode(this))
