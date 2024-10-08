@@ -3,4 +3,4 @@
 # state
 
 [androidJvm]\
-open override val [state](state.md): [Document.State](../-document/-state/index.md)
+open override var [state](state.md): [Document.State](../-document/-state/index.md)

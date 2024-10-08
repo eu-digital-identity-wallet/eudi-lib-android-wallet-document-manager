@@ -95,8 +95,9 @@ internal val BaseDocument.usesStrongBox: Boolean
     }.filterIsInstance<SecureAreaBoundCredential>()
         .firstOrNull()
         ?.let { it.secureArea.getKeyInfo(it.alias) }
+        ?.takeIf { it is AndroidKeystoreKeyInfo }
         ?.let { it as AndroidKeystoreKeyInfo }
-        ?.isStrongBoxBacked ?: false
+        ?.isStrongBoxBacked == true
 
 internal val BaseDocument.requiresUserAuth: Boolean
     @JvmSynthetic
@@ -106,8 +107,9 @@ internal val BaseDocument.requiresUserAuth: Boolean
     }.filterIsInstance<SecureAreaBoundCredential>()
         .firstOrNull()
         ?.let { it.secureArea.getKeyInfo(it.alias) }
+        ?.takeIf { it is AndroidKeystoreKeyInfo }
         ?.let { it as AndroidKeystoreKeyInfo }
-        ?.isUserAuthenticationRequired ?: false
+        ?.isUserAuthenticationRequired == true
 
 
 internal var BaseDocument.attestationChallenge: ByteArray

@@ -25,6 +25,7 @@ import eu.europa.ec.eudi.wallet.document.internal.generateMso
 import eu.europa.ec.eudi.wallet.document.internal.getDocumentNameFromResourcesOrDocType
 import eu.europa.ec.eudi.wallet.document.internal.signMso
 import eu.europa.ec.eudi.wallet.document.internal.supportsStrongBox
+import eu.europa.ec.eudi.wallet.document.internal.toEcPublicKey
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.security.Security
 
@@ -74,7 +75,7 @@ class SampleDocumentManagerImpl(
                         val unsignedDocument = createDocumentResult.unsignedDocument
                         unsignedDocument.name =
                             context.getDocumentNameFromResourcesOrDocType(docType)
-                        val authKey = unsignedDocument.ecPublicKey
+                        val authKey = unsignedDocument.publicKeyCoseBytes.toEcPublicKey
                         checkNotNull(authKey) { "Public key not found" }
                         val mso = generateMso(DIGEST_ALG, docType, authKey, nameSpaces)
                         val issuerAuth = signMso(mso)

@@ -18,7 +18,7 @@ package eu.europa.ec.eudi.wallet.document
 
 import com.android.identity.android.securearea.AndroidKeystoreKeyUnlockData
 import com.android.identity.credential.SecureAreaBoundCredential
-import com.android.identity.crypto.EcPublicKey
+import com.android.identity.crypto.javaPublicKey
 import com.android.identity.crypto.javaX509Certificates
 import com.android.identity.crypto.toDer
 import com.android.identity.securearea.KeyLockedException
@@ -28,6 +28,8 @@ import eu.europa.ec.eudi.wallet.document.internal.docType
 import eu.europa.ec.eudi.wallet.document.internal.documentName
 import eu.europa.ec.eudi.wallet.document.internal.requiresUserAuth
 import eu.europa.ec.eudi.wallet.document.internal.state
+import eu.europa.ec.eudi.wallet.document.internal.toCoseBytes
+import eu.europa.ec.eudi.wallet.document.internal.toEcPublicKey
 import eu.europa.ec.eudi.wallet.document.internal.usesStrongBox
 import java.security.PublicKey
 import java.security.cert.X509Certificate
@@ -45,42 +47,84 @@ import com.android.identity.document.Document as BaseDocument
  * [DocumentManager.storeIssuedDocument] to store the document. This will transform the [UnsignedDocument] to
  * an [IssuedDocument]
  *
+ * @property id the identifier of the document
  * @property name the name of the document. This name can be updated before the document is issued
- * @property certificatesNeedAuth list of certificates that will be used for issuing the document
+ * @property docType the document type
+ * @property usesStrongBox whether the document's keys are in strongBox
+ * @property requiresUserAuth whether the document requires user authentication
+ * @property createdAt the creation date of the document
  * @property publicKey public key of the first certificate in [certificatesNeedAuth] list to be included in mobile security object that it will be signed from issuer
+ * @property certificatesNeedAuth list of certificates that will be used for issuing the document. This list may be empty
  */
+
 open class UnsignedDocument(
     override val id: DocumentId,
-    name: String,
-    final override val docType: String,
+    override val docType: String,
+    override var name: String = docType,
     override val usesStrongBox: Boolean,
     override val requiresUserAuth: Boolean,
     override val createdAt: Instant,
-    val certificatesNeedAuth: List<X509Certificate>,
-    private val keyUnlockDataFactory: KeyUnlockDataFactory
+    val publicKeyCoseBytes: ByteArray,
+    val certificatesNeedAuth: List<X509Certificate>
 ) : Document {
 
-    @JvmSynthetic
-    internal var base: BaseDocument? = null
-
-    internal val ecPublicKey: EcPublicKey?
-        get() = base?.pendingCredentials
-            ?.firstOrNull() { it is SecureAreaBoundCredential }
-            ?.let { it as SecureAreaBoundCredential }
-            ?.attestation
-            ?.publicKey
-
-    override var name: String = name
-        set(value) {
-            field = value
-            base?.let { it.documentName = value }
-        }
-
-    override val state: State
-        get() = base?.state ?: State.UNSIGNED
-
     val publicKey: PublicKey
-        get() = certificatesNeedAuth.first().publicKey
+        get() = publicKeyCoseBytes.toEcPublicKey.javaPublicKey
+
+    override var state: State = State.UNSIGNED
+        protected set
+
+    open fun signWithAuthKey(
+        data: ByteArray,
+        @Algorithm alg: String = Algorithm.SHA256withECDSA
+    ): SignedWithAuthKeyResult {
+        return SignedWithAuthKeyResult.Failure(Exception("Not implemented"))
+    }
+
+    internal companion object {
+        @JvmSynthetic
+        operator fun invoke(
+            baseDocument: BaseDocument,
+            keyUnlockDataFactory: KeyUnlockDataFactory
+        ): UnsignedDocument = UnsignedDocumentImpl(
+            baseDocument = baseDocument,
+            keyUnlockDataFactory = keyUnlockDataFactory
+        )
+    }
+}
+
+internal class UnsignedDocumentImpl internal constructor(
+    private val baseDocument: BaseDocument,
+    private val keyUnlockDataFactory: KeyUnlockDataFactory
+) : UnsignedDocument(
+    id = baseDocument.name,
+    docType = baseDocument.docType,
+    name = baseDocument.documentName,
+    usesStrongBox = baseDocument.usesStrongBox,
+    requiresUserAuth = baseDocument.requiresUserAuth,
+    createdAt = baseDocument.createdAt,
+    publicKeyCoseBytes = baseDocument.pendingCredentials
+        .filterIsInstance<SecureAreaBoundCredential>()
+        .first()
+        .attestation
+        .publicKey
+        .toCoseBytes,
+    certificatesNeedAuth = baseDocument.pendingCredentials
+        .filterIsInstance<SecureAreaBoundCredential>()
+        .firstOrNull()
+        ?.attestation
+        ?.certChain
+        ?.javaX509Certificates ?: emptyList(),
+) {
+    init {
+        state = baseDocument.state
+    }
+
+    override var name: String
+        get() = baseDocument.documentName
+        set(value) {
+            baseDocument.documentName = value
+        }
 
     /**
      * Sign given data with authentication key
@@ -94,16 +138,14 @@ open class UnsignedDocument(
      * [SignedWithAuthKeyResult.UserAuthRequired] if user authentication is required to sign data,
      * [SignedWithAuthKeyResult.Failure] if an error occurred while signing the data
      */
-    fun signWithAuthKey(
+    override fun signWithAuthKey(
         data: ByteArray,
-        @Algorithm alg: String = Algorithm.SHA256withECDSA
+        @Algorithm alg: String
     ): SignedWithAuthKeyResult {
-        return when (val cred = base?.pendingCredentials
-            ?.firstOrNull { it is SecureAreaBoundCredential }
-            ?.let { it as SecureAreaBoundCredential }) {
-
-            null -> SignedWithAuthKeyResult.Failure(Exception("Not initialized correctly. Use DocumentManager.createDocument method."))
-            else -> {
+        return baseDocument.pendingCredentials
+            .filterIsInstance<SecureAreaBoundCredential>()
+            .firstOrNull()
+            ?.let { cred ->
                 val keyUnlockData =
                     keyUnlockDataFactory.createKeyUnlockData(cred.secureArea, cred.alias)
                 try {
@@ -131,35 +173,12 @@ open class UnsignedDocument(
                     }
                 }
 
-            }
 
-        }
+            }
+            ?: SignedWithAuthKeyResult.Failure(Exception("Not initialized correctly. Use DocumentManager.createDocument method."))
     }
 
     override fun toString(): String {
         return "UnsignedDocument(id=$id, docType='$docType', usesStrongBox=$usesStrongBox, requiresUserAuth=$requiresUserAuth, createdAt=$createdAt, state=$state, certificatesNeedAuth=$certificatesNeedAuth, name='$name')"
-    }
-
-    internal companion object {
-        @JvmSynthetic
-        operator fun invoke(
-            baseDocument: BaseDocument,
-            keyUnlockDataFactory: KeyUnlockDataFactory
-        ) = UnsignedDocument(
-            id = baseDocument.name,
-            name = baseDocument.documentName,
-            docType = baseDocument.docType,
-            usesStrongBox = baseDocument.usesStrongBox,
-            requiresUserAuth = baseDocument.requiresUserAuth,
-            createdAt = baseDocument.createdAt,
-            certificatesNeedAuth = baseDocument.pendingCredentials
-                .filterIsInstance<SecureAreaBoundCredential>()
-                .firstOrNull()
-                ?.attestation
-                ?.certChain
-                ?.javaX509Certificates
-                ?: emptyList(),
-            keyUnlockDataFactory = keyUnlockDataFactory
-        ).also { it.base = baseDocument }
     }
 }
