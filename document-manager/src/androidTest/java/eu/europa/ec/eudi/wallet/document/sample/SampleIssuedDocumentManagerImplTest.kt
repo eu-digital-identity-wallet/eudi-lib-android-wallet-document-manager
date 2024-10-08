@@ -18,14 +18,9 @@ package eu.europa.ec.eudi.wallet.document.sample
 import android.security.keystore.UserNotAuthenticatedException
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.android.identity.android.securearea.AndroidKeystoreCreateKeySettings
-import com.android.identity.android.securearea.AndroidKeystoreKeyUnlockData
-import com.android.identity.android.securearea.AndroidKeystoreSecureArea
-import com.android.identity.android.storage.AndroidStorageEngine
 import com.android.identity.credential.CredentialFactory
 import com.android.identity.credential.SecureAreaBoundCredential
 import com.android.identity.crypto.Algorithm
-import com.android.identity.crypto.EcCurve
 import com.android.identity.document.DocumentRequest
 import com.android.identity.document.DocumentStore
 import com.android.identity.document.NameSpacedData
@@ -36,20 +31,20 @@ import com.android.identity.mdoc.response.DeviceResponseGenerator
 import com.android.identity.mdoc.response.DeviceResponseParser
 import com.android.identity.mdoc.response.DocumentGenerator
 import com.android.identity.mdoc.util.MdocUtil
-import com.android.identity.securearea.KeyPurpose
+import com.android.identity.securearea.SecureArea
 import com.android.identity.securearea.SecureAreaRepository
+import com.android.identity.storage.StorageEngine
 import com.android.identity.util.Constants
 import com.upokecenter.cbor.CBORObject
 import eu.europa.ec.eudi.wallet.document.*
-import eu.europa.ec.eudi.wallet.document.internal.randomBytes
+import eu.europa.ec.eudi.wallet.document.defaults.DefaultSecureArea
+import eu.europa.ec.eudi.wallet.document.defaults.DefaultStorageEngine
 import eu.europa.ec.eudi.wallet.document.test.R
-import kotlinx.io.files.Path
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
 import java.util.*
 
 @RunWith(AndroidJUnit4::class)
@@ -58,9 +53,9 @@ class SampleIssuedDocumentManagerImplTest {
     val context
         get() = InstrumentationRegistry.getInstrumentation().targetContext
 
-    lateinit var storageEngine: AndroidStorageEngine
+    lateinit var storageEngine: StorageEngine
 
-    lateinit var secureArea: AndroidKeystoreSecureArea
+    lateinit var secureArea: SecureArea
 
     lateinit var delegate: DocumentManager
 
@@ -73,27 +68,10 @@ class SampleIssuedDocumentManagerImplTest {
 
     @Before
     fun setup() {
-        storageEngine = AndroidStorageEngine.Builder(
-            context,
-            Path(File(context.noBackupFilesDir, "eudi-identity.bin").path)
-        )
-            .setUseEncryption(false)
-            .build()
-            .apply {
-                deleteAll()
-            }
-        secureArea = AndroidKeystoreSecureArea(context, storageEngine)
-        val createKeySettingsFactory = CreateKeySettingsFactory {
-            AndroidKeystoreCreateKeySettings.Builder(10.randomBytes)
-                .setEcCurve(EcCurve.P256)
-                .setUseStrongBox(false)
-                .setUserAuthenticationRequired(false, 0, emptySet())
-                .setKeyPurposes(setOf(KeyPurpose.SIGN))
-                .build()
-        }
-        val keyUnlockDataFactory = KeyUnlockDataFactory { _, keyAlias ->
-            keyAlias?.let { AndroidKeystoreKeyUnlockData(it) }
-        }
+        storageEngine = DefaultStorageEngine(context, useEncryption = true)
+        secureArea = DefaultSecureArea(context, storageEngine)
+        val keyUnlockDataFactory = DefaultSecureArea.KeyUnlockDataFactory
+        val createKeySettingsFactory = DefaultSecureArea.CreateKeySettingsFactory(context)
         delegate = DocumentManagerImpl(
             storageEngine,
             secureArea,

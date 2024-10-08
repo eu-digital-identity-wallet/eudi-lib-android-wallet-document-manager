@@ -36,7 +36,14 @@ class DefaultStorageEngine(
         ): AndroidStorageEngine {
             return AndroidStorageEngine.Builder(
                 context = context,
-                storageFile = Path(storageFile.path)
+                storageFile = Path(
+                    when {
+                        storageFile.isDirectory ->
+                            File(storageFile, "eudi-identity.bin")
+
+                        else -> storageFile
+                    }.path
+                )
             ).apply {
                 setUseEncryption(useEncryption)
             }.build()
