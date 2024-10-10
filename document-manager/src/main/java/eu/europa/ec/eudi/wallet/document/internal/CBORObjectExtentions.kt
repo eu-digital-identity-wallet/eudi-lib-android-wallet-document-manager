@@ -19,6 +19,7 @@ package eu.europa.ec.eudi.wallet.document.internal
 import com.android.identity.document.NameSpacedData
 import com.upokecenter.cbor.CBORObject
 import com.upokecenter.cbor.CBORType
+import eu.europa.ec.eudi.wallet.document.NameSpace
 import java.util.Base64
 
 
@@ -69,16 +70,9 @@ private fun CBORObject.parse(): Any? {
 }
 
 @JvmSynthetic
-internal fun CBORObject.toDigestIdMapping(): Map<String, List<ByteArray>> = keys.associate {
-    it.AsString() to this[it].values.map { v ->
-        val el = v.getEmbeddedCBORObject()
-        CBORObject.NewMap()
-            .Add("digestID", el["digestID"])
-            .Add("random", el["random"])
-            .Add("elementIdentifier", el["elementIdentifier"])
-            .Add("elementValue", CBORObject.Null)
-            .EncodeToBytes()
-            .withTag24()
+internal fun CBORObject.toDigestIdMapping(): Map<NameSpace, List<ByteArray>> {
+    return entries.associate { (nameSpace, issuerSignedItems) ->
+        nameSpace.AsString() to issuerSignedItems.values.map { it.EncodeToBytes() }
     }
 }
 
