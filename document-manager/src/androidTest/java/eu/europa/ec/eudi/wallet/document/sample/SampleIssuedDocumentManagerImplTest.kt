@@ -18,21 +18,14 @@ package eu.europa.ec.eudi.wallet.document.sample
 import android.security.keystore.UserNotAuthenticatedException
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.android.identity.credential.CredentialFactory
-import com.android.identity.credential.SecureAreaBoundCredential
 import com.android.identity.crypto.Algorithm
 import com.android.identity.document.DocumentRequest
-import com.android.identity.document.DocumentStore
 import com.android.identity.document.NameSpacedData
-import com.android.identity.mdoc.credential.MdocCredential
-import com.android.identity.mdoc.mso.StaticAuthDataParser
-import com.android.identity.mdoc.mso.StaticAuthDataParser.StaticAuthData
 import com.android.identity.mdoc.response.DeviceResponseGenerator
 import com.android.identity.mdoc.response.DeviceResponseParser
 import com.android.identity.mdoc.response.DocumentGenerator
 import com.android.identity.mdoc.util.MdocUtil
 import com.android.identity.securearea.SecureArea
-import com.android.identity.securearea.SecureAreaRepository
 import com.android.identity.storage.StorageEngine
 import com.android.identity.util.Constants
 import com.upokecenter.cbor.CBORObject
@@ -127,7 +120,7 @@ class SampleIssuedDocumentManagerImplTest {
                 }
             }.build()
 
-            val issuerData = getStaticAuthDataFromDocument(document)
+            val issuerData = getStaticAuthDataFromDocument(document, secureArea, storageEngine)
             val staticAuthData = issuerData.staticAuthData
             val mergedIssuerNameSpaces =
                 MdocUtil.mergeIssuerNamesSpaces(request, nameSpacedData, staticAuthData)
@@ -161,29 +154,5 @@ class SampleIssuedDocumentManagerImplTest {
                 responseObj.documents[0].numIssuerEntryDigestMatchFailures,
             )
         }
-    }
-
-    internal data class DocumentIssuerData(
-        var keyAlias: String,
-        var staticAuthData: StaticAuthData,
-    )
-
-
-    private fun getStaticAuthDataFromDocument(issuedDocument: IssuedDocument): DocumentIssuerData {
-        val secureAreaRepository = SecureAreaRepository()
-        secureAreaRepository.addImplementation(secureArea)
-        val credentialFactory = CredentialFactory().apply {
-            addCredentialImplementation(MdocCredential::class) { document, dataItem ->
-                MdocCredential(document, dataItem)
-            }
-        }
-        val credentialStore = DocumentStore(storageEngine, secureAreaRepository, credentialFactory)
-        val baseDocument = credentialStore.lookupDocument(issuedDocument.id)
-        assertNotNull(baseDocument)
-        val credential = (baseDocument!!.certifiedCredentials[0] as SecureAreaBoundCredential)
-        return DocumentIssuerData(
-            staticAuthData = StaticAuthDataParser(credential.issuerProvidedData).parse(),
-            keyAlias = credential.alias,
-        )
     }
 }
