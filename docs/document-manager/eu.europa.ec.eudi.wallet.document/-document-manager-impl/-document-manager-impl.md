@@ -3,19 +3,13 @@
 # DocumentManagerImpl
 
 [androidJvm]\
-constructor(storageEngine: StorageEngine, secureArea: SecureArea,
-createKeySettingsFactory: [CreateKeySettingsFactory](../-create-key-settings-factory/index.md),
-keyUnlockDataFactory: [KeyUnlockDataFactory](../-key-unlock-data-factory/index.md),
-checkPublicKeyBeforeAdding: [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html) =
-true)
+constructor(storageEngine: StorageEngine, secureArea: SecureArea)
 
 #### Parameters
 
 androidJvm
 
-|                            |                                                                                                                                  |
-|----------------------------|----------------------------------------------------------------------------------------------------------------------------------|
-| storageEngine              | storage engine used to store documents                                                                                           |
-| secureArea                 | secure area used to store documents' keys                                                                                        |
-| createKeySettingsFactory   | factory to create CreateKeySettings for document keys                                                                            |
-| checkPublicKeyBeforeAdding | flag that indicates if the public key in the [UnsignedDocument](../-unsigned-document/index.md) must match the public key in MSO |
+|               |                    |
+|---------------|--------------------|
+| storageEngine | the storage engine |
+| secureArea    | the secure area    |

@@ -4,3 +4,9 @@
 
 [androidJvm]\
 object [Companion](index.md)
+
+## Properties
+
+| Name                      | Summary                                                                                                                               |
+|---------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| [PREFIX](-p-r-e-f-i-x.md) | [androidJvm]<br>const val [PREFIX](-p-r-e-f-i-x.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html) |

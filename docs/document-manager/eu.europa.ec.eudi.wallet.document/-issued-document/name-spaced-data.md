@@ -3,7 +3,4 @@
 # nameSpacedData
 
 [androidJvm]\
-val [nameSpacedData](name-spaced-data.md): [Map](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-map/index.html)
-&lt;[NameSpace](../-name-space/index.md), [Map](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-map/index.html)
-&lt;[ElementIdentifier](../-element-identifier/index.md), [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html)
-&gt;&gt;
+val [nameSpacedData](name-spaced-data.md): NameSpacedData

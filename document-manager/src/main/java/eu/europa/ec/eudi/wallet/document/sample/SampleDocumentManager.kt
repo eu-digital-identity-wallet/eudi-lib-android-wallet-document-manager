@@ -17,9 +17,11 @@
 
 package eu.europa.ec.eudi.wallet.document.sample
 
-import android.content.Context
+import com.android.identity.securearea.CreateKeySettings
+import eu.europa.ec.eudi.wallet.document.DocType
+import eu.europa.ec.eudi.wallet.document.DocumentId
 import eu.europa.ec.eudi.wallet.document.DocumentManager
-import eu.europa.ec.eudi.wallet.document.internal.supportsStrongBox
+import eu.europa.ec.eudi.wallet.document.Outcome
 import eu.europa.ec.eudi.wallet.document.sample.SampleDocumentManager.Builder
 
 /**
@@ -51,11 +53,13 @@ import eu.europa.ec.eudi.wallet.document.sample.SampleDocumentManager.Builder
  */
 interface SampleDocumentManager : DocumentManager {
     /**
-     * Loads the sample data into the document manager.
+     * Loads the sample documents that are in mdoc format into the document manager.
      *
-     * @param sampleData the sample data to be loaded in cbor format
+     * @param sampleData the sample data in mdoc format to be loaded in cbor format
+     * @param createKeySettings the settings for creating keys for the sample documents
+     * @param documentNamesMap the names of the documents per docType
      * @return [LoadSampleResult.Success] if the sample data has been loaded successfully.
-     * Otherwise, returns [LoadSampleResult.Error], with the error message.
+     * Otherwise, returns [LoadSampleResult.Failure], with the error message.
      *
      * Expected sampleData format is CBOR. The CBOR data must be in the following structure:
      *
@@ -84,39 +88,33 @@ interface SampleDocumentManager : DocumentManager {
      * IssuerAuth = COSE_Sign1 ; The payload is MobileSecurityObjectBytes
      * ```
      */
-    fun loadSampleData(sampleData: ByteArray): LoadSampleResult
+    fun loadMdocSampleDocuments(
+        sampleData: ByteArray,
+        createKeySettings: CreateKeySettings,
+        documentNamesMap: Map<DocType, String>? = null
+    ): Outcome<List<DocumentId>>
 
     /**
      * Builder class to instantiate a SampleDocumentManager.
      *
-     * @property hardwareBacked if hardware-backed keys should be used. Default is true if device supports it.
+     * @property setDocumentManager [DocumentManager] implementation to delegate the document management operations
      *
      * example:
      * ```
-     * val documentManager = SampleDocumentManager.Builder(context)
-     *    .hardwareBacked(true)
+     * val sampleDocumentManager = SampleDocumentManager.Builder(context)
+     *    .setDocumentManager(documentManager)
      *    .build()
      * ```
-     *
-     * @constructor
-     *
-     * @param context
      */
-    class Builder(context: Context) {
-        private val _context = context.applicationContext
+    class Builder() {
 
-        var documentManager: DocumentManager = DocumentManager.Builder(_context).build()
-
-        /**
-         * Flag to indicate that the documents' keys should be stored in hardware backed keystore if supported by the device.
-         */
-        var hardwareBacked: Boolean = _context.supportsStrongBox
+        var documentManager: DocumentManager? = null
 
         /**
-         * Sets the flag to indicate that the documents' keys should be stored in hardware backed keystore if supported by the device.
-         *
+         * Sets the [DocumentManager] implementation to delegate the document management operations.
          */
-        fun hardwareBacked(flag: Boolean) = apply { hardwareBacked = flag }
+        fun setDocumentManager(documentManager: DocumentManager) =
+            apply { this.documentManager = documentManager }
 
         /**
          * Builds the SampleDocumentManager.
@@ -124,43 +122,23 @@ interface SampleDocumentManager : DocumentManager {
          * @return [SampleDocumentManager]
          */
         fun build(): SampleDocumentManager {
-            return SampleDocumentManagerImpl(_context, documentManager).apply {
-                this.useStrongBox = this@Builder.hardwareBacked
+            requireNotNull(documentManager) {
+                "DocumentManager implementation must be set"
             }
+            return SampleDocumentManagerImpl(documentManager!!)
+        }
+    }
+
+    companion object {
+        operator fun invoke(configure: Builder.() -> Unit): SampleDocumentManager {
+            return Builder().apply(configure).build()
+        }
+
+        fun build(configure: DocumentManager.Builder.() -> Unit): SampleDocumentManager {
+            return Builder().apply {
+                documentManager = DocumentManager.Builder().apply(configure).build()
+            }.build()
         }
     }
 }
 
-/**
- * [SampleDocumentManager.loadSampleData] result.
- * If the sample data has been loaded successfully, returns [LoadSampleResult.Success].
- * Otherwise, returns [LoadSampleResult.Error], with the error message.
- *
- * @see SampleDocumentManager.loadSampleData
- *
- * @constructor Create empty Load sample result
- */
-sealed interface LoadSampleResult {
-    /**
-     * Success object to return when the sample data has been loaded successfully.
-     *
-     * @constructor Create empty Success
-     */
-    object Success : LoadSampleResult {
-        override fun toString(): String = "Success"
-    }
-
-    /**
-     * Error class to return the error message.
-     *
-     * @property throwable exception that caused the error
-     * @property message error message
-     * @constructor
-     * @param throwable exception that caused the error
-     */
-    data class Error(val throwable: Throwable) : LoadSampleResult {
-        constructor(message: String) : this(Exception(message))
-
-        val message = throwable.message ?: "Error"
-    }
-}

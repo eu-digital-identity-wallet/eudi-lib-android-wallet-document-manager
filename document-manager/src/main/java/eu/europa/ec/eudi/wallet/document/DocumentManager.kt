@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 European Commission
+ * Copyright (c) 2024 European Commission
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,224 +13,155 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package eu.europa.ec.eudi.wallet.document
 
-import android.content.Context
 import com.android.identity.securearea.CreateKeySettings
-import com.android.identity.securearea.KeyUnlockData
 import com.android.identity.securearea.SecureArea
 import com.android.identity.storage.StorageEngine
-import eu.europa.ec.eudi.wallet.document.defaults.DefaultSecureArea
-import eu.europa.ec.eudi.wallet.document.defaults.DefaultStorageEngine
+import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 
 /**
- * Document manager object is the entry point to access documents.
+ * The DocumentManager interface is the main entry point to interact with documents.
+ * It is a high-level abstraction that provides a simplified API to interact with documents.
  *
- * It is used to add, retrieve and delete documents.
+ * It provides methods to:
+ * - Create a new document
+ * - Store a document
+ * - Retrieve a document
+ * - Delete a document
+ * - List all documents
  *
- * A default implementation of this interface is implemented by [DocumentManagerImpl].
- * To instantiate it, use the [eu.europa.ec.eudi.wallet.document.DocumentManager.Builder] class.
+ * To create a default instance of the DocumentManager, use the companion object or the [Builder] class.
+ *
+ * @see [Builder]
+ *
+ * @property identifier the identifier of the document manager
  */
 interface DocumentManager {
-    /**
-     * Retrieve all documents
-     *
-     * @param state optional state of the document
-     * @return list of documents
-     */
-    fun getDocuments(state: Document.State? = null): List<Document>
+
+    val identifier: String
 
     /**
-     * Get document by id
+     * Retrieve a document by its identifier.
      *
-     * @param documentId document's unique identifier
-     * @return [Document] if exists, null otherwise
+     * @param documentId the identifier of the document
+     * @return the document or null if not found
      */
     fun getDocumentById(documentId: DocumentId): Document?
 
     /**
-     * Delete document by id
+     * Retrieve all documents.
      *
-     * @param documentId document's unique identifier
-     * @return [DeleteDocumentResult.Success] containing the proof of deletion if successful, [DeleteDocumentResult.Failure] otherwise
+     * @param predicate a query to filter the documents
+     * @return the list of documents
      */
-    fun deleteDocumentById(documentId: DocumentId): DeleteDocumentResult
+    fun getDocuments(predicate: ((Document) -> Boolean)? = null): List<Document>
 
     /**
-     * Creates a [UnsignedDocument] for a given docType which can be then used to issue the document
-     * from the issuer. The [UnsignedDocument] contains the certificate that must be sent to the issuer
-     * and implements [UnsignedDocument.signWithAuthKey] to sign the proof of possession if needed by the
-     * issuer.
+     * Delete a document by its identifier.
      *
-     * @param docType document's docType (example: "eu.europa.ec.eudi.pid.1")
-     * @param useStrongBox whether the document should be stored in hardware backed storage
-     * @param attestationChallenge optional attestationChallenge to check provided by the issuer
-     * @return [CreateDocumentResult.Success] containing the issuance request if successful, [CreateDocumentResult.Failure] otherwise
+     * @param documentId the identifier of the document
+     * @return the result of the deletion. If successful, it will return a proof of deletion. If not, it will return an error.
+     * @see [DeleteDocumentResult]
+     */
+    fun deleteDocumentById(documentId: DocumentId): Outcome<ProofOfDeletion?>
+
+    /**
+     * Create a new document. This method will create a new document with the given format and keys settings.
+     * If the document is successfully created, it will return an [UnsignedDocument]. This [UnsignedDocument]
+     * contains the keys and the method to proof the ownership of the keys, that can be used with an issuer
+     * to retrieve the document's claims. After that the document can be stored using [storeIssuedDocument] or [storeDeferredDocument].
+     *
+     * @param format the format of the document
+     * @param createKeySettings the settings to create the keys
+     * @param attestationChallenge the attestation challenge
+     * @return the result of the creation. If successful, it will return the document. If not, it will return an error.
      */
     fun createDocument(
-        docType: String,
-        useStrongBox: Boolean,
-        attestationChallenge: ByteArray? = null,
-    ): CreateDocumentResult
+        format: DocumentFormat,
+        createKeySettings: CreateKeySettings,
+        attestationChallenge: ByteArray? = null
+    ): Outcome<UnsignedDocument>
 
     /**
-     * Add document to the document manager.
+     * Store an issued document. This method will store the document with its issuer provided data.
      *
-     * Expected data format is CBOR. The CBOR data must be in the following structure:
-     *
-     * ```cddl
-     * IssuerSigned = {
-     *   ?"nameSpaces" : IssuerNameSpaces, ; Returned data elements
-     *   "issuerAuth" : IssuerAuth ; Contains the mobile security object (MSO) for issuer data authentication
-     * }
-     * IssuerNameSpaces = { ; Returned data elements for each namespace
-     *   + NameSpace => [ + IssuerSignedItemBytes ]
-     * }
-     * IssuerSignedItemBytes = #6.24(bstr .cbor IssuerSignedItem)
-     * IssuerSignedItem = {
-     *   "digestID" : uint, ; Digest ID for issuer data authentication
-     *   "random" : bstr, ; Random value for issuer data authentication
-     *   "elementIdentifier" : DataElementIdentifier, ; Data element identifier
-     *   "elementValue" : DataElementValue ; Data element value
-     * }
-     * IssuerAuth = COSE_Sign1 ; The payload is MobileSecurityObjectBytes
-     * ```
-     *
-     * **Important** Currently `nameSpaces` field should exist and must not be empty.
-     *
-     * The document is added in the storage and can be retrieved using the
-     * [DocumentManager.getDocumentById] method.
-     *
-     * @param unsignedDocument [UnsignedDocument] containing necessary information of the issued the document
-     * @param issuerDocumentData in CBOR format containing the document's data
-     * @return [StoreDocumentResult.Success] containing the documentId and the proof of provisioning if successful, [StoreDocumentResult.Failure] otherwise
+     * @param unsignedDocument the unsigned document
+     * @param issuerProvidedData the issuer provided data
+     * @return the result of the storage. If successful, it will return the [IssuedDocument]. If not, it will return an error.
      */
     fun storeIssuedDocument(
         unsignedDocument: UnsignedDocument,
-        issuerDocumentData: ByteArray
-    ): StoreDocumentResult
+        issuerProvidedData: ByteArray,
+    ): Outcome<IssuedDocument>
 
     /**
-     * Stores a [UnsignedDocument] as [DeferredDocument]. The document can be retrieved using the [DocumentManager.getDocumentById] method.
-     * Also, the relatedData can be used later for the issuance process.
+     * Store an unsigned document for deferred issuance. This method will store the document with the related
+     * to the issuance data.
      *
-     * @param unsignedDocument [UnsignedDocument] containing necessary information of the issued the document
-     * @param relatedData related data to deferred process to be stored with the document
-     * @return [StoreDocumentResult.Success] containing the documentId if successful, [StoreDocumentResult.Failure] otherwise
+     * @param unsignedDocument the unsigned document
+     * @param relatedData the related data
+     * @return the result of the storage. If successful, it will return the [DeferredDocument]. If not, it will return an error.
      */
     fun storeDeferredDocument(
         unsignedDocument: UnsignedDocument,
         relatedData: ByteArray
-    ): StoreDocumentResult
+    ): Outcome<DeferredDocument>
+
 
     /**
-     * Builder class to instantiate the default DocumentManager implementation.
-     *
-     * example:
-     * ```
-     * val documentManager = DocumentManager.Builder(context)
-     *   .storageEngine(MyStorageEngine())
-     *   .secureArea(MySecureArea())
-     *   .createKeySettingsFactory(MyCreateKeySettingsFactory())
-     *   .checkPublicKeyBeforeAdding(true)
-     *   .build()
-     * ```
-     *
-     * @property storageEngine storage engine used to store documents. By default, this is set to [DefaultStorageEngine].
-     * @property secureArea secure area used to store documents' keys. By default, this is set to [DefaultSecureArea].
-     * @property createKeySettingsFactory factory to create [CreateKeySettings] for document keys. By default, this is set to [DefaultSecureArea.CreateKeySettingsFactory].
-     * @property checkPublicKeyBeforeAdding flag that indicates if the public key from the [UnsignedDocument] must match the public key in MSO. By default this is set to true.
-     *
-     * @constructor
-     * @param context [Context] used to instantiate the DocumentManager
+     * Builder class to create a [DocumentManager] instance.
+     * @property storageEngine the storage engine to use for storing/retrieving documents
+     * @property secureArea the secure area to use for managing the keys
      */
-    class Builder(context: Context) {
-        private val context = context.applicationContext
+    class Builder {
         var storageEngine: StorageEngine? = null
         var secureArea: SecureArea? = null
-        var createKeySettingsFactory: CreateKeySettingsFactory? = null
-        var keyUnlockDataFactory: KeyUnlockDataFactory? = null
-        var checkPublicKeyBeforeAdding: Boolean = true
 
         /**
-         * Sets the storage engine to store the documents.
-         * By default, this is set to [DefaultStorageEngine].
-         * The storage engine is used to store the documents in the device's storage.
+         * Set the storage engine to use for storing/retrieving documents.
+         * @param storageEngine the storage engine
+         * @return this builder
          */
-        fun storageEngine(storageEngine: StorageEngine) =
-            apply { this.storageEngine = storageEngine }
-
-        /**
-         * Sets the secure area that manages the keys for the documents.
-         * By default, this is set to [DefaultSecureArea].
-         */
-        fun secureArea(secureArea: SecureArea) = apply { this.secureArea = secureArea }
-
-        /**
-         * Sets the factory to create [CreateKeySettings] for document keys.
-         * By default, this is set to [DefaultSecureArea.CreateKeySettingsFactory].
-         * This factory is used to create [CreateKeySettings] for the keys that are created in the secure area.
-         * The [CreateKeySettings] can be used to set the key's alias, key's purpose, key's protection level, etc.
-         */
-        fun createKeySettingsFactory(createKeySettingsFactory: CreateKeySettingsFactory) =
-            apply { this.createKeySettingsFactory = createKeySettingsFactory }
-
-
-        /**
-         * Sets the factory to create [KeyUnlockData] for document keys.
-         * By default, this is set to [DefaultSecureArea.KeyUnlockDataFactory].
-         * This factory is used to create [KeyUnlockData] that is used to unlock the keys in the secure area.
-         * @param keyUnlockDataFactory
-         * @see [KeyUnlockData]
-         * @return
-         */
-        fun keyUnlockDataFactory(keyUnlockDataFactory: KeyUnlockDataFactory) =
-            apply { this.keyUnlockDataFactory = keyUnlockDataFactory }
-
-        /**
-         * Sets whether to check public key in MSO before adding document to storage.
-         * By default, this is set to true.
-         * This check is done to prevent adding documents with public key that is not in MSO.
-         * The public key from the [UnsignedDocument] must match the public key in MSO.
-         *
-         * @see [DocumentManager.storeIssuedDocument]
-         *
-         * @param checkPublicKeyBeforeAdding
-         */
-        fun checkPublicKeyBeforeAdding(checkPublicKeyBeforeAdding: Boolean) =
-            apply { this.checkPublicKeyBeforeAdding = checkPublicKeyBeforeAdding }
-
-        /**
-         * Build the DocumentManager
-         *
-         * @return [DocumentManager]
-         */
-        fun build(): DocumentManager {
-            val storageEngineImpl = storageEngine ?: DefaultStorageEngine(context)
-            val secureAreaImpl = secureArea ?: DefaultSecureArea(context, storageEngineImpl)
-            val createKeySettingsFactory =
-                createKeySettingsFactory ?: DefaultSecureArea.CreateKeySettingsFactory(context)
-            return DocumentManagerImpl(
-                storageEngine = storageEngineImpl,
-                secureArea = secureAreaImpl,
-                createKeySettingsFactory = createKeySettingsFactory,
-                keyUnlockDataFactory = keyUnlockDataFactory
-                    ?: DefaultSecureArea.KeyUnlockDataFactory,
-                checkPublicKeyBeforeAdding = checkPublicKeyBeforeAdding
-            )
+        fun setStorageEngine(storageEngine: StorageEngine): Builder = apply {
+            this.storageEngine = storageEngine
         }
 
-    }
-
-    companion object {
+        /**
+         * Set the secure area to use for managing the keys.
+         * @param secureArea the secure area
+         * @return this builder
+         */
+        fun setSecureArea(secureArea: SecureArea): Builder = apply {
+            this.secureArea = secureArea
+        }
 
         /**
-         * Instantiates a DocumentManager using the provided context and the builder block.
+         * Build a [DocumentManager] instance.
+         * @throws IllegalArgumentException if the storage engine or secure area is not set
+         * @return the document manager
          */
-        operator fun invoke(context: Context, block: Builder.() -> Unit): DocumentManager {
-            return Builder(context).apply(block).build()
+        fun build(): DocumentManager {
+            requireNotNull(storageEngine) { "Storage engine is required" }
+            requireNotNull(secureArea) { "Secure area is required" }
+            return DocumentManagerImpl(storageEngine!!, secureArea!!)
+        }
+    }
+
+    /**
+     * Companion object to create a [DocumentManager] instance.
+     */
+    companion object {
+        /**
+         * Create a [DocumentManager] instance.
+         * @param configure the builder configuration
+         * @throws IllegalArgumentException if the storage engine or secure area is not set
+         * @return the document manager
+         */
+        @JvmStatic
+        operator fun invoke(configure: Builder.() -> Unit): DocumentManager {
+            return Builder().apply(configure).build()
         }
     }
 }
-
-

@@ -64,7 +64,7 @@ wibtidg8cLtZ7sCW59rUvdnz5wvo3VXndZi3sj0jf8CAKZZZNTE=
 
 private val bc = BouncyCastleProvider()
 
-@get:JvmSynthetic
+@JvmSynthetic
 internal val issuerPrivateKey: PrivateKey = PemReader(SAMPLE_ISSUER_PRIVATE_KEY.reader())
     .use { reader -> reader.readPemObject().content }
     .let { privateKeyBytes ->
@@ -72,7 +72,7 @@ internal val issuerPrivateKey: PrivateKey = PemReader(SAMPLE_ISSUER_PRIVATE_KEY.
             .generatePrivate(PKCS8EncodedKeySpec(privateKeyBytes))
     }
 
-@get:JvmSynthetic
+@JvmSynthetic
 internal val issuerCertificate: X509Certificate = PemReader(SAMPLE_ISSUER_DS.reader())
     .use { reader -> reader.readPemObject().content }
     .let { certificateBytes ->

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 European Commission
+ * Copyright (c) 2024 European Commission
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,226 +13,230 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package eu.europa.ec.eudi.wallet.document
 
-import COSE.Message
-import COSE.MessageTag
-import COSE.Sign1Message
-import android.util.Log
 import com.android.identity.credential.CredentialFactory
-import com.android.identity.crypto.toEcPublicKey
 import com.android.identity.document.DocumentStore
 import com.android.identity.mdoc.credential.MdocCredential
-import com.android.identity.mdoc.mso.MobileSecurityObjectParser
-import com.android.identity.mdoc.mso.StaticAuthDataGenerator
 import com.android.identity.securearea.CreateKeySettings
 import com.android.identity.securearea.SecureArea
 import com.android.identity.securearea.SecureAreaRepository
 import com.android.identity.storage.StorageEngine
-import com.upokecenter.cbor.CBORObject
-import eu.europa.ec.eudi.wallet.document.internal.asNameSpacedData
+import com.android.identity.util.Logger
+import com.android.identity.util.UUID
+import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
+import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
+import eu.europa.ec.eudi.wallet.document.format.SdJwtFormat
 import eu.europa.ec.eudi.wallet.document.internal.attestationChallenge
 import eu.europa.ec.eudi.wallet.document.internal.clearDeferredRelatedData
+import eu.europa.ec.eudi.wallet.document.internal.createCredential
 import eu.europa.ec.eudi.wallet.document.internal.createdAt
 import eu.europa.ec.eudi.wallet.document.internal.deferredRelatedData
-import eu.europa.ec.eudi.wallet.document.internal.docType
 import eu.europa.ec.eudi.wallet.document.internal.documentName
-import eu.europa.ec.eudi.wallet.document.internal.getEmbeddedCBORObject
 import eu.europa.ec.eudi.wallet.document.internal.issuedAt
-import eu.europa.ec.eudi.wallet.document.internal.nameSpacedData
-import eu.europa.ec.eudi.wallet.document.internal.state
-import eu.europa.ec.eudi.wallet.document.internal.toDigestIdMapping
-import org.bouncycastle.jce.provider.BouncyCastleProvider
-import java.security.Security
-import java.time.Instant
-import java.util.UUID
-
+import eu.europa.ec.eudi.wallet.document.internal.randomBytes
+import eu.europa.ec.eudi.wallet.document.internal.storeIssuedDocument
+import eu.europa.ec.eudi.wallet.document.internal.toDocument
+import kotlinx.datetime.Clock
+import kotlinx.datetime.toJavaInstant
+import org.jetbrains.annotations.VisibleForTesting
 
 /**
- * A [DocumentManager] implementation that uses [StorageEngine] to store documents and [SecureArea] for key management.
+ * Document Manager Implementation
  *
- * To instantiate it, use the [eu.europa.ec.eudi.wallet.document.DocumentManager.Builder] class.
- *
- * @property checkPublicKeyBeforeAdding flag that indicates if the public key in the [UnsignedDocument] must match the public key in MSO
+ * @property identifier the identifier
+ * @property storageEngine the storage engine
+ * @property secureArea the secure area
  *
  * @constructor
- * @param storageEngine storage engine used to store documents
- * @param secureArea secure area used to store documents' keys
- * @param createKeySettingsFactory factory to create [CreateKeySettings] for document keys
- * @param checkPublicKeyBeforeAdding flag that indicates if the public key in the [UnsignedDocument] must match the public key in MSO
+ * @param storageEngine the storage engine
+ * @param secureArea the secure area
  */
 class DocumentManagerImpl(
-    private val storageEngine: StorageEngine,
-    private val secureArea: SecureArea,
-    private val createKeySettingsFactory: CreateKeySettingsFactory,
-    private val keyUnlockDataFactory: KeyUnlockDataFactory,
-    var checkPublicKeyBeforeAdding: Boolean = true
+    val storageEngine: StorageEngine,
+    val secureArea: SecureArea,
 ) : DocumentManager {
 
-    private val secureAreaRepository: SecureAreaRepository by lazy {
-        SecureAreaRepository().apply {
-            addImplementation(secureArea)
-        }
-    }
+    override val identifier: String
+        get() = "DocumentManagerImpl"
 
-    private val credentialFactory: CredentialFactory by lazy {
-        CredentialFactory().apply {
-            addCredentialImplementation(MdocCredential::class) { document, dataItem ->
+    @VisibleForTesting
+    @get:JvmSynthetic
+    internal var checkMsoKey: Boolean = true
+
+    @get:VisibleForTesting
+    @get:JvmSynthetic
+    internal val documentStore by lazy {
+        DocumentStore(storageEngine, SecureAreaRepository().apply {
+            addImplementation(secureArea)
+        }, CredentialFactory().apply {
+            addCredentialImplementation(
+                MdocCredential::class
+            ) { document, dataItem ->
                 MdocCredential(document, dataItem)
             }
-        }
-    }
-
-    private val documentStore: DocumentStore by lazy {
-        DocumentStore(storageEngine, secureAreaRepository, credentialFactory)
-    }
-
-    init {
-        Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME)
-        Security.insertProviderAt(BouncyCastleProvider(), 1)
+        })
     }
 
     /**
-     * Sets whether to check public key in MSO before adding document to storage.
-     * By default this is set to true.
-     * This check is done to prevent adding documents with public key that is not in MSO.
-     * The public key from the [UnsignedDocument] must match the public key in MSO.
+     * Retrieve a document by its identifier.
      *
-     * @see [DocumentManager.storeIssuedDocument]
-     *
-     * @param check
+     * @param documentId the identifier of the document
+     * @return the document or null if not found
      */
-    fun checkPublicKeyBeforeAdding(check: Boolean) =
-        apply { this.checkPublicKeyBeforeAdding = check }
-
-    override fun getDocuments(state: Document.State?): List<Document> {
-        val credentials = documentStore.listDocuments().mapNotNull { credentialName ->
-            documentStore.lookupDocument(credentialName)
-        }
-        return when (state) {
-            null -> credentials
-            else -> credentials.filter { it.state == state }
-        }.map { Document(it, keyUnlockDataFactory) }
-    }
-
-    override fun getDocumentById(documentId: DocumentId): Document? =
-        documentStore.lookupDocument(documentId)?.let { Document(it, keyUnlockDataFactory) }
-
-    override fun deleteDocumentById(documentId: DocumentId): DeleteDocumentResult {
+    override fun getDocumentById(documentId: DocumentId): Document? {
         return try {
-            val proofOfDeletion = byteArrayOf()
-            documentStore.deleteDocument(documentId)
-            DeleteDocumentResult.Success(proofOfDeletion)
-        } catch (e: Exception) {
-            DeleteDocumentResult.Failure(e)
+            documentStore.lookupDocument(documentId)?.toDocument()
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to get document with id $documentId", e)
+            null
         }
     }
 
-    override fun createDocument(
-        docType: String,
-        useStrongBox: Boolean,
-        attestationChallenge: ByteArray?
-    ): CreateDocumentResult {
+    /**
+     * Retrieve all documents.
+     *
+     * @param predicate a query to filter the documents
+     * @return the list of documents
+     */
+    override fun getDocuments(predicate: ((Document) -> Boolean)?): List<Document> {
         return try {
-            val domain = "eudi"
-            val documentId = "${UUID.randomUUID()}"
-            val keySettings = createKeySettingsFactory.createKeySettings()
+            documentStore.listDocuments()
+                .mapNotNull { documentStore.lookupDocument(it) }
+                .map { it.toDocument() as Document }
+                .filter { predicate?.invoke(it) != false }
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to get documents", e)
+            emptyList()
+        }
+    }
 
-            val documentCredential = documentStore.createDocument(documentId).apply {
-                state = Document.State.UNSIGNED
-                this.docType = docType
-                documentName = docType
-                createdAt = Instant.now()
-                this.attestationChallenge
+    /**
+     * Delete a document by its identifier.
+     *
+     * @param documentId the identifier of the document
+     * @return the result of the deletion. If successful, it will return a proof of deletion. If not, it will return an error.
+     */
+    override fun deleteDocumentById(documentId: DocumentId): Outcome<ProofOfDeletion?> {
+        return documentStore.lookupDocument(documentId)
+            ?.let { identityDocument ->
+                val proofOfDeletion = null
+                documentStore.deleteDocument(identityDocument.name)
+                Outcome.success(proofOfDeletion)
             }
-            MdocCredential(
-                document = documentCredential,
-                asReplacementFor = null,
-                domain = domain,
-                secureArea = secureArea,
-                createKeySettings = keySettings,
-                docType = docType,
-            )
-
-            documentStore.addDocument(documentCredential)
-
-            val unsignedDocument = UnsignedDocument(documentCredential, keyUnlockDataFactory)
-            CreateDocumentResult.Success(unsignedDocument)
-        } catch (e: Exception) {
-            CreateDocumentResult.Failure(e)
-        }
+            ?: Outcome.failure(IllegalArgumentException("Document with $documentId not found"))
     }
 
+    /**
+     * Create a new document. This method will create a new document with the given format and keys settings.
+     * If the document is successfully created, it will return an [UnsignedDocument]. This [UnsignedDocument]
+     * contains the keys and the method to proof the ownership of the keys, that can be used with an issuer
+     * to retrieve the document's claims. After that the document can be stored using [storeIssuedDocument] or [storeDeferredDocument].
+     *
+     * @param format the format of the document
+     * @param createKeySettings the settings to create the keys
+     * @param attestationChallenge the attestation challenge
+     * @return the result of the creation. If successful, it will return the document. If not, it will return an error.
+     */
+    override fun createDocument(
+        format: DocumentFormat,
+        createKeySettings: CreateKeySettings,
+        attestationChallenge: ByteArray?
+    ): Outcome<UnsignedDocument> {
+        var documentId: String? = null
+        return try {
+            documentId = PREFIX + UUID.randomUUID().toString()
+            val domain = identifier
+            val identityDocument = documentStore.createDocument(documentId).apply {
+                this.documentName = documentId
+                this.attestationChallenge = attestationChallenge ?: 10.randomBytes
+                this.createdAt = Clock.System.now().toJavaInstant()
+            }
+            when (format) {
+                is MsoMdocFormat -> {
+                    format.createCredential(domain, identityDocument, secureArea, createKeySettings)
+                    identityDocument.documentName = format.docType
+                }
+
+                is SdJwtFormat -> format.createCredential()
+                else -> throw IllegalArgumentException("Format ${format::class.simpleName} not supported")
+            }
+
+            documentStore.addDocument(identityDocument)
+            Outcome.success(identityDocument.toDocument())
+        } catch (e: Throwable) {
+            documentId?.let { documentStore.deleteDocument(it) }
+            Outcome.failure(e)
+        }
+
+    }
+
+    /**
+     * Store an issued document. This method will store the document with its issuer provided data.
+     *
+     * @param unsignedDocument the unsigned document
+     * @param issuerProvidedData the issuer provided data
+     * @return the result of the storage. If successful, it will return the [IssuedDocument]. If not, it will return an error.
+     */
     override fun storeIssuedDocument(
         unsignedDocument: UnsignedDocument,
-        issuerDocumentData: ByteArray
-    ): StoreDocumentResult {
-        try {
-            val documentCredential = documentStore.lookupDocument(unsignedDocument.id)
-                ?: return StoreDocumentResult.Failure(IllegalArgumentException("No credential found for ${unsignedDocument.id}"))
+        issuerProvidedData: ByteArray
+    ): Outcome<IssuedDocument> {
+        return try {
+            val identityDocument = documentStore.lookupDocument(unsignedDocument.id)
+                ?: throw IllegalArgumentException("Document with ${unsignedDocument.id} not found")
 
-            val issuerSigned = CBORObject.DecodeFromBytes(issuerDocumentData)
+            when (val format = unsignedDocument.format) {
+                is MsoMdocFormat -> format.storeIssuedDocument(
+                    unsignedDocument,
+                    identityDocument,
+                    issuerProvidedData,
+                    checkMsoKey
+                )
 
-            with(documentCredential) {
-                val issuerAuthBytes = issuerSigned["issuerAuth"].EncodeToBytes()
-                val issuerAuth = Message
-                    .DecodeFromBytes(issuerAuthBytes, MessageTag.Sign1) as Sign1Message
-
-                val msoBytes = issuerAuth.GetContent().getEmbeddedCBORObject().EncodeToBytes()
-
-                val mso = MobileSecurityObjectParser(msoBytes).parse()
-
-                if (mso.deviceKey != unsignedDocument.publicKey.toEcPublicKey(mso.deviceKey.curve)) {
-                    val msg = "Public key in MSO does not match the one in the request"
-                    Log.d(TAG, msg)
-                    if (checkPublicKeyBeforeAdding) {
-                        return StoreDocumentResult.Failure(IllegalArgumentException(msg))
-                    }
-                }
-                state = Document.State.ISSUED
-                docType = mso.docType
-                issuedAt = Instant.now()
-                clearDeferredRelatedData()
-
-                val nameSpaces = issuerSigned["nameSpaces"]
-                val digestIdMapping = nameSpaces.toDigestIdMapping()
-                val staticAuthData = StaticAuthDataGenerator(digestIdMapping, issuerAuthBytes)
-                    .generate()
-                pendingCredentials.forEach { credential ->
-                    credential.certify(staticAuthData, mso.validFrom, mso.validUntil)
-                }
-
-                nameSpacedData = nameSpaces.asNameSpacedData()
+                is SdJwtFormat -> format.storeIssuedDocument()
+                else -> throw IllegalArgumentException("Format ${format::class.simpleName} not supported")
             }
-            return StoreDocumentResult.Success(documentCredential.name, null)
-        } catch (e: Exception) {
-            return StoreDocumentResult.Failure(e)
+            with(identityDocument) {
+                documentName = unsignedDocument.name
+                issuedAt = Clock.System.now().toJavaInstant()
+                clearDeferredRelatedData()
+            }
+            Outcome.success(identityDocument.toDocument())
+        } catch (e: Throwable) {
+            Outcome.failure(e)
         }
     }
 
+    /**
+     * Store an unsigned document for deferred issuance. This method will store the document with the related
+     * to the issuance data.
+     *
+     * @param unsignedDocument the unsigned document
+     * @param relatedData the related data
+     * @return the result of the storage. If successful, it will return the [DeferredDocument]. If not, it will return an error.
+     */
     override fun storeDeferredDocument(
         unsignedDocument: UnsignedDocument,
         relatedData: ByteArray
-    ): StoreDocumentResult {
-        try {
-            val documentCredential = documentStore.lookupDocument(unsignedDocument.id)
-                ?: return StoreDocumentResult.Failure(IllegalArgumentException("No credential found for ${unsignedDocument.id}"))
+    ): Outcome<DeferredDocument> {
+        return try {
+            val identityDocument = documentStore.lookupDocument(unsignedDocument.id)
+                ?: throw IllegalArgumentException("Document with ${unsignedDocument.id} not found")
 
-            with(documentCredential) {
-                state = Document.State.DEFERRED
+            with(identityDocument) {
+                documentName = unsignedDocument.name
                 deferredRelatedData = relatedData
             }
-            return StoreDocumentResult.Success(documentCredential.name, byteArrayOf())
+            Outcome.success(identityDocument.toDocument())
         } catch (e: Exception) {
-            return StoreDocumentResult.Failure(e)
+            Outcome.failure(e)
         }
     }
 
     companion object {
-        private const val TAG = "DocumentManager"
+        private const val TAG = "DocumentManagerImpl"
+        const val PREFIX = "DocumentManagerImpl_Document_"
     }
 }
-
-
-
-

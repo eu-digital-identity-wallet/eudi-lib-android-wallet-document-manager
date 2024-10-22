@@ -5,23 +5,22 @@
 [androidJvm]\
 abstract fun [storeDeferredDocument](store-deferred-document.md)(
 unsignedDocument: [UnsignedDocument](../-unsigned-document/index.md),
-relatedData: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html)): [StoreDocumentResult](../-store-document-result/index.md)
+relatedData: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html)): [Outcome](../-outcome/index.md)
+&lt;[DeferredDocument](../-deferred-document/index.md)&gt;
 
-Stores a [UnsignedDocument](../-unsigned-document/index.md)
-as [DeferredDocument](../-deferred-document/index.md). The document can be retrieved using
-the [DocumentManager.getDocumentById](get-document-by-id.md) method. Also, the relatedData can be
-used later for the issuance process.
+Store an unsigned document for deferred issuance. This method will store the document with the
+related to the issuance data.
 
 #### Return
 
-[StoreDocumentResult.Success](../-store-document-result/-success/index.md) containing the documentId
-if successful, [StoreDocumentResult.Failure](../-store-document-result/-failure/index.md) otherwise
+the result of the storage. If successful, it will return
+the [DeferredDocument](../-deferred-document/index.md). If not, it will return an error.
 
 #### Parameters
 
 androidJvm
 
-|                  |                                                                                                                |
-|------------------|----------------------------------------------------------------------------------------------------------------|
-| unsignedDocument | [UnsignedDocument](../-unsigned-document/index.md) containing necessary information of the issued the document |
-| relatedData      | related data to deferred process to be stored with the document                                                |
+|                  |                       |
+|------------------|-----------------------|
+| unsignedDocument | the unsigned document |
+| relatedData      | the related data      |

@@ -14,7 +14,6 @@ google-identity-mdoc = "202408.1"
 jacoco = "0.8.12"
 java = "17"
 json = "20240303"
-junit = "4.13.2"
 junitVersion = "1.2.1"
 kotlin = "2.0.10"
 kotlinx-datetime = "0.6.0"
@@ -35,7 +34,6 @@ google-identity = { module = "com.android.identity:identity", version.ref = "goo
 google-identity-android = { module = "com.android.identity:identity-android", version.ref = "google-identity-android" }
 google-identity-mdoc = { module = "com.android.identity:identity-mdoc", version.ref = "google-identity-mdoc" }
 json = { module = "org.json:json", version.ref = "json" }
-junit = { group = "junit", name = "junit", version.ref = "junit" }
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinx-datetime" }
 kotlinx-io-bytestring = { group = "org.jetbrains.kotlinx", name = "kotlinx-io-bytestring", version.ref = "kotlinx-io" }
 kotlinx-io-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-io-core", version.ref = "kotlinx-io" }

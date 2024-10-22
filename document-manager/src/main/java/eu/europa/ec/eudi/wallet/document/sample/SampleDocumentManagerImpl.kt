@@ -15,87 +15,62 @@
  */
 package eu.europa.ec.eudi.wallet.document.sample
 
-import android.content.Context
+import com.android.identity.securearea.CreateKeySettings
 import com.upokecenter.cbor.CBORObject
-import eu.europa.ec.eudi.wallet.document.CreateDocumentResult
+import eu.europa.ec.eudi.wallet.document.DocType
+import eu.europa.ec.eudi.wallet.document.DocumentId
 import eu.europa.ec.eudi.wallet.document.DocumentManager
-import eu.europa.ec.eudi.wallet.document.StoreDocumentResult
+import eu.europa.ec.eudi.wallet.document.Outcome
+import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.internal.generateData
 import eu.europa.ec.eudi.wallet.document.internal.generateMso
-import eu.europa.ec.eudi.wallet.document.internal.getDocumentNameFromResourcesOrDocType
 import eu.europa.ec.eudi.wallet.document.internal.signMso
-import eu.europa.ec.eudi.wallet.document.internal.supportsStrongBox
 import eu.europa.ec.eudi.wallet.document.internal.toEcPublicKey
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.jetbrains.annotations.VisibleForTesting
 import java.security.Security
 
 /**
  * A [SampleDocumentManager] implementation that composes a [DocumentManager] and provides methods to load sample data.
  *
- * @property useStrongBox Indicates that hardware-backed keys should be used. Default is true if device supports it, false otherwise.
- *
  * @constructor
- * @param context the application context
- * @param documentManager [DocumentManager] implementation to delegate the document management operations
+ * @param delegate [DocumentManager] implementation to delegate the document management operations
  */
 class SampleDocumentManagerImpl(
-    context: Context,
-    documentManager: DocumentManager,
-) : DocumentManager by documentManager, SampleDocumentManager {
-    private val context = context.applicationContext
-    var useStrongBox: Boolean = context.supportsStrongBox
+    @get:VisibleForTesting internal val delegate: DocumentManager
+) : DocumentManager by delegate, SampleDocumentManager {
 
     init {
         Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME)
         Security.insertProviderAt(BouncyCastleProvider(), 1)
     }
 
-    /**
-     * Instructs the document manager to use strong box for sample document's keys.
-     *
-     * @param flag true if hardware-backed keys should be used, false otherwise
-     */
-    fun useStrongBox(flag: Boolean) = apply { useStrongBox = flag }
-
-    override fun loadSampleData(sampleData: ByteArray): LoadSampleResult {
+    override fun loadMdocSampleDocuments(
+        sampleData: ByteArray,
+        createKeySettings: CreateKeySettings,
+        documentNamesMap: Map<DocType, String>?
+    ): Outcome<List<DocumentId>> {
         try {
+            val documentIds = mutableListOf<DocumentId>()
             val cbor = CBORObject.DecodeFromBytes(sampleData)
             val documents = cbor.get("documents")
             documents.values.forEach { documentCbor ->
                 val docType = documentCbor["docType"].AsString()
-
                 val issuerSigned = documentCbor["issuerSigned"]
                 val nameSpaces = issuerSigned["nameSpaces"]
-                when (val createDocumentResult = createDocument(docType, useStrongBox)) {
-                    is CreateDocumentResult.Failure -> {
-                        return LoadSampleResult.Error(createDocumentResult.throwable)
-                    }
-
-                    is CreateDocumentResult.Success -> {
-                        val unsignedDocument = createDocumentResult.unsignedDocument
-                        unsignedDocument.name =
-                            context.getDocumentNameFromResourcesOrDocType(docType)
-                        val authKey = unsignedDocument.publicKeyCoseBytes.toEcPublicKey
-                        checkNotNull(authKey) { "Public key not found" }
-                        val mso = generateMso(DIGEST_ALG, docType, authKey, nameSpaces)
-                        val issuerAuth = signMso(mso)
-                        val data = generateData(nameSpaces, issuerAuth)
-
-                        when (val addResult = storeIssuedDocument(unsignedDocument, data)) {
-                            is StoreDocumentResult.Failure -> return LoadSampleResult.Error(
-                                addResult.throwable
-                            )
-
-                            is StoreDocumentResult.Success -> {
-                                // proceed to next document
-                            }
-                        }
-                    }
-                }
+                val unsignedDocument = createDocument(MsoMdocFormat(docType), createKeySettings)
+                    .getOrThrow()
+                unsignedDocument.name = documentNamesMap?.get(docType) ?: docType
+                val authKey = unsignedDocument.publicKeyCoseBytes.toEcPublicKey
+                val mso = generateMso(DIGEST_ALG, docType, authKey, nameSpaces)
+                val issuerAuth = signMso(mso)
+                val data = generateData(nameSpaces, issuerAuth)
+                val issuedDocument = storeIssuedDocument(unsignedDocument, data).getOrThrow()
+                documentIds.add(issuedDocument.id)
             }
-            return LoadSampleResult.Success
+            return Outcome.success(documentIds)
         } catch (e: Exception) {
-            return LoadSampleResult.Error(e.message ?: "Error storing sample documents")
+            return Outcome.failure(e)
         }
     }
 

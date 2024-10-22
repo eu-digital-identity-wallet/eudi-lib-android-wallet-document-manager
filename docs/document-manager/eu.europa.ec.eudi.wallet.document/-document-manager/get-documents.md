@@ -3,21 +3,21 @@
 # getDocuments
 
 [androidJvm]\
-abstract fun [getDocuments](get-documents.md)(
-state: [Document.State](../-document/-state/index.md)? =
+abstract fun [getDocuments](get-documents.md)(predicate: ([Document](../-document/index.md))
+-&gt; [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)? =
 null): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)
 &lt;[Document](../-document/index.md)&gt;
 
-Retrieve all documents
+Retrieve all documents.
 
 #### Return
 
-list of documents
+the list of documents
 
 #### Parameters
 
 androidJvm
 
-|       |                                |
-|-------|--------------------------------|
-| state | optional state of the document |
+|           |                                 |
+|-----------|---------------------------------|
+| predicate | a query to filter the documents |

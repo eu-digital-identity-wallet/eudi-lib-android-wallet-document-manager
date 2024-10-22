@@ -3,9 +3,28 @@
 # invoke
 
 [androidJvm]\
-operator fun [invoke](invoke.md)(
-context: [Context](https://developer.android.com/reference/kotlin/android/content/Context.html),
-block: [DocumentManager.Builder](../-builder/index.md).()
+
+@[JvmStatic](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.jvm/-jvm-static/index.html)
+
+operator fun [invoke](invoke.md)(configure: [DocumentManager.Builder](../-builder/index.md).()
 -&gt; [Unit](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)): [DocumentManager](../index.md)
 
-Instantiates a DocumentManager using the provided context and the builder block.
+Create a [DocumentManager](../index.md) instance.
+
+#### Return
+
+the document manager
+
+#### Parameters
+
+androidJvm
+
+|           |                           |
+|-----------|---------------------------|
+| configure | the builder configuration |
+
+#### Throws
+
+|                                                                                                                        |                                                 |
+|------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------|
+| [IllegalArgumentException](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-illegal-argument-exception/index.html) | if the storage engine or secure area is not set |

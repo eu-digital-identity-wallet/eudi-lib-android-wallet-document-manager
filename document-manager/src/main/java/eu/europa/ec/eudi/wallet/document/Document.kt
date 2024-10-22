@@ -16,71 +16,99 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import eu.europa.ec.eudi.wallet.document.Document.State.DEFERRED
-import eu.europa.ec.eudi.wallet.document.Document.State.ISSUED
-import eu.europa.ec.eudi.wallet.document.Document.State.UNSIGNED
-import eu.europa.ec.eudi.wallet.document.internal.state
+import com.android.identity.crypto.Algorithm
+import com.android.identity.crypto.EcSignature
+import com.android.identity.securearea.KeyInfo
+import com.android.identity.securearea.KeyUnlockData
+import com.android.identity.securearea.SecureArea
+import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
+import eu.europa.ec.eudi.wallet.document.internal.toCoseBytes
+import eu.europa.ec.eudi.wallet.document.internal.toEcPublicKey
 import java.time.Instant
-import com.android.identity.document.Document as BaseDocument
-
-
-typealias DocumentId = String
-typealias NameSpace = String
-typealias ElementIdentifier = String
 
 /**
- * A document.
- * @property id the identifier of the document
- * @property docType the document type
- * @property name the name of the document
- * @property usesStrongBox whether the document's keys are in strongBox
- * @property requiresUserAuth whether the document requires user authentication
- * @property createdAt the creation date of the document
- * @property state the state of the document
- * @property isUnsigned whether the document is unsigned
- * @property isDeferred whether the document is deferred
- * @property isIssued whether the document is issued
+ * Document interface representing a document
+ * @property id the document id
+ * @property name the document name
+ * @property format the document format
+ * @property keyAlias the key alias
+ * @property secureArea the secure area
+ * @property createdAt the creation date
+ * @property isCertified whether the document is certified
+ * @property keyInfo the key info
+ * @property publicKeyCoseBytes the public key cose bytes
+ * @property isKeyInvalidated whether the key is invalidated
  */
 sealed interface Document {
     val id: DocumentId
-    val docType: String
     val name: String
-    val usesStrongBox: Boolean
-    val requiresUserAuth: Boolean
+    val format: DocumentFormat
+    val keyAlias: String
+    val secureArea: SecureArea
     val createdAt: Instant
-    val state: State
+    val isCertified: Boolean
 
-    val isUnsigned: Boolean
-        get() = state == UNSIGNED
+    val keyInfo: KeyInfo
+        get() = secureArea.getKeyInfo(keyAlias)
 
-    val isDeferred: Boolean
-        get() = state == DEFERRED
+    val publicKeyCoseBytes: ByteArray
+        get() = keyInfo.publicKey.toCoseBytes
 
-    val isIssued: Boolean
-        get() = state == ISSUED
+    val isKeyInvalidated: Boolean
+        get() = secureArea.getKeyInvalidated(keyAlias)
 
     /**
-     * The state of the document.
-     * @property UNSIGNED the document is unsigned
-     * @property ISSUED the document is issued
-     * @property DEFERRED the document is deferred
+     * Sign the data with the document key
+     *
+     * If the key is locked, the key unlock data must be provided to unlock the key
+     * before signing the data. Otherwise, the method will return [SignResult.KeyLocked].
+     *
+     * @param dataToSign the data to sign
+     * @param algorithm the algorithm to use for signing
+     * @param keyUnlockData the key unlock data needed to unlock the key
+     * @return the sign result containing the signature or the failure
      */
-    enum class State {
-        UNSIGNED, ISSUED, DEFERRED;
-
-        val value
-            get() = ordinal.toLong()
+    fun sign(
+        dataToSign: ByteArray,
+        algorithm: Algorithm = Algorithm.ES256,
+        keyUnlockData: KeyUnlockData? = null
+    ): Outcome<EcSignature> {
+        return try {
+            val signature = secureArea.sign(
+                keyAlias,
+                algorithm,
+                dataToSign,
+                keyUnlockData
+            )
+            Outcome.success(signature)
+        } catch (e: Throwable) {
+            Outcome.failure(e)
+        }
     }
 
-    companion object {
-
-        internal operator fun invoke(
-            baseDocument: BaseDocument,
-            keyUnlockDataFactory: KeyUnlockDataFactory
-        ) = when (baseDocument.state) {
-            UNSIGNED -> UnsignedDocument(baseDocument, keyUnlockDataFactory)
-            DEFERRED -> DeferredDocument(baseDocument, keyUnlockDataFactory)
-            ISSUED -> IssuedDocument(baseDocument)
+    /**
+     * Creates a shared secret given the other party's public key
+     *
+     * If the key is locked, the key unlock data must be provided to unlock the key
+     * before creating the shared secret. Otherwise, the method will return [SharedSecretResult.KeyLocked].
+     *
+     * @param otherPublicKey the other party's public key
+     * @param keyUnlockData the key unlock data needed to unlock the key
+     * @return the shared secret result containing the shared secret or the failure
+     */
+    fun keyAgreement(
+        otherPublicKey: ByteArray,
+        keyUnlockData: KeyUnlockData? = null
+    ): Outcome<SharedSecret> {
+        return try {
+            val sharedSecret = secureArea.keyAgreement(
+                keyAlias,
+                otherPublicKey.toEcPublicKey,
+                keyUnlockData
+            )
+            Outcome.success(sharedSecret)
+        } catch (e: Throwable) {
+            Outcome.failure(e)
         }
     }
 }

@@ -26,18 +26,12 @@ import org.json.JSONObject
  */
 @get:JvmName("nameSpacedDataAsJSONObject")
 val IssuedDocument.nameSpacedDataJSONObject: JSONObject
-    get() = JSONObject(nameSpacedDataValues)
+    get() = JSONObject(nameSpacedDataDecoded)
 
 /**
  * Extension function for [DocumentManager] to get documents using
  * reified type parameter
  */
 inline fun <reified D : Document> DocumentManager.getDocuments(): List<D> {
-    val state = when (D::class) {
-        UnsignedDocument::class -> Document.State.UNSIGNED
-        IssuedDocument::class -> Document.State.ISSUED
-        DeferredDocument::class -> Document.State.DEFERRED
-        else -> null
-    }
-    return getDocuments(state).filterIsInstance<D>()
+    return getDocuments().filterIsInstance<D>()
 }
