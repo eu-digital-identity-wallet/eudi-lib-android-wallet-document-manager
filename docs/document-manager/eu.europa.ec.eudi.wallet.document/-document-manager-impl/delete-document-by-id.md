@@ -4,18 +4,20 @@
 
 [androidJvm]\
 open override fun [deleteDocumentById](delete-document-by-id.md)(
-documentId: [DocumentId](../-document-id/index.md)): [DeleteDocumentResult](../-delete-document-result/index.md)
+documentId: [DocumentId](../-document-id/index.md)): [Outcome](../-outcome/index.md)
+&lt;[ProofOfDeletion](../-proof-of-deletion/index.md)?&gt;
 
-Delete document by id
+Delete a document by its identifier.
 
 #### Return
 
-[DeleteDocumentResult.Success](../-delete-document-result/-success/index.md) containing the proof of deletion if successful, [DeleteDocumentResult.Failure](../-delete-document-result/-failure/index.md) otherwise
+the result of the deletion. If successful, it will return a proof of deletion. If not, it will
+return an error.
 
 #### Parameters
 
 androidJvm
 
-| | |
-|---|---|
-| documentId | document's unique identifier |
+|            |                                |
+|------------|--------------------------------|
+| documentId | the identifier of the document |

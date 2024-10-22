@@ -50,10 +50,10 @@ android {
     defaultConfig {
         minSdk = 26
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        testApplicationId = "$NAMESPACE.test"
-        testHandleProfiling = true
-        testFunctionalTest = true
+//        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+//        testApplicationId = "$NAMESPACE.test"
+//        testHandleProfiling = true
+//        testFunctionalTest = true
 
         consumerProguardFiles("consumer-rules.pro")
 
@@ -101,16 +101,13 @@ android {
 dependencies {
 
     // Google identity
-    implementation(libs.google.identity) {
-        exclude(group = "org.bouncycastle")
-    }
-    implementation(libs.google.identity.android) {
+    api(libs.google.identity) {
         exclude(group = "org.bouncycastle")
     }
     implementation(libs.google.identity.mdoc) {
         exclude(group = "org.bouncycastle")
     }
-    implementation(libs.biometric.ktx)
+//    implementation(libs.biometric.ktx)
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.io.core)
     implementation(libs.kotlinx.io.bytestring)
@@ -122,11 +119,14 @@ dependencies {
     implementation(libs.bouncy.castle.prov)
     implementation(libs.bouncy.castle.pkix)
 
-    testImplementation(libs.junit)
+    testImplementation(kotlin("test"))
     testImplementation(libs.mockk)
     testImplementation(libs.json)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
+//    androidTestImplementation(libs.androidx.junit)
+//    androidTestImplementation(libs.androidx.espresso.core)
+//    androidTestImplementation(libs.google.identity.android) {
+//        exclude(group = "org.bouncycastle")
+//    }
 }
 
 // Dependency check

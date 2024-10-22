@@ -4,28 +4,30 @@
 
 [androidJvm]\
 open override fun [createDocument](create-document.md)(
-docType: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html),
-useStrongBox: [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html),
-attestationChallenge: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html)?): [CreateDocumentResult](../-create-document-result/index.md)
+format: [DocumentFormat](../../eu.europa.ec.eudi.wallet.document.format/-document-format/index.md),
+createKeySettings: CreateKeySettings,
+attestationChallenge: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html)?): [Outcome](../-outcome/index.md)
+&lt;[UnsignedDocument](../-unsigned-document/index.md)&gt;
 
-Creates a [UnsignedDocument](../-unsigned-document/index.md) for a given docType which can be then
-used to issue the document from the issuer. The [UnsignedDocument](../-unsigned-document/index.md)
-contains the certificate that must be sent to the issuer and
-implements [UnsignedDocument.signWithAuthKey](../-unsigned-document/sign-with-auth-key.md) to sign
-the proof of possession if needed by the issuer.
+Create a new document. This method will create a new document with the given format and keys
+settings. If the document is successfully created, it will return
+an [UnsignedDocument](../-unsigned-document/index.md).
+This [UnsignedDocument](../-unsigned-document/index.md) contains the keys and the method to proof
+the ownership of the keys, that can be used with an issuer to retrieve the document's claims. After
+that the document can be stored using [storeIssuedDocument](store-issued-document.md)
+or [storeDeferredDocument](store-deferred-document.md).
 
 #### Return
 
-[CreateDocumentResult.Success](../-create-document-result/-success/index.md) containing the issuance
-request if successful, [CreateDocumentResult.Failure](../-create-document-result/-failure/index.md)
-otherwise
+the result of the creation. If successful, it will return the document. If not, it will return an
+error.
 
 #### Parameters
 
 androidJvm
 
-|                      |                                                                   |
-|----------------------|-------------------------------------------------------------------|
-| docType              | document's docType (example: &quot;eu.europa.ec.eudi.pid.1&quot;) |
-| useStrongBox         | whether the document should be stored in hardware backed storage  |
-| attestationChallenge | optional attestationChallenge to check provided by the issuer     |
+|                      |                                 |
+|----------------------|---------------------------------|
+| format               | the format of the document      |
+| createKeySettings    | the settings to create the keys |
+| attestationChallenge | the attestation challenge       |

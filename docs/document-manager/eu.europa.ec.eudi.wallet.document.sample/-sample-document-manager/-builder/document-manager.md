@@ -3,4 +3,4 @@
 # documentManager
 
 [androidJvm]\
-var [documentManager](document-manager.md): [DocumentManager](../../../eu.europa.ec.eudi.wallet.document/-document-manager/index.md)
+var [documentManager](document-manager.md): [DocumentManager](../../../eu.europa.ec.eudi.wallet.document/-document-manager/index.md)?

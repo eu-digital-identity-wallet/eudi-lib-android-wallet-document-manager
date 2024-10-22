@@ -16,90 +16,37 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import com.android.identity.credential.SecureAreaBoundCredential
-import com.android.identity.crypto.javaX509Certificates
-import eu.europa.ec.eudi.wallet.document.Document.State
-import eu.europa.ec.eudi.wallet.document.internal.createdAt
-import eu.europa.ec.eudi.wallet.document.internal.deferredRelatedData
-import eu.europa.ec.eudi.wallet.document.internal.docType
-import eu.europa.ec.eudi.wallet.document.internal.documentName
-import eu.europa.ec.eudi.wallet.document.internal.requiresUserAuth
-import eu.europa.ec.eudi.wallet.document.internal.state
-import eu.europa.ec.eudi.wallet.document.internal.usesStrongBox
-import java.security.PublicKey
-import java.security.cert.X509Certificate
+import com.android.identity.securearea.SecureArea
+import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 import java.time.Instant
-import com.android.identity.document.Document as BaseDocument
 
 /**
- * A [DeferredDocument] is as [UnsignedDocument] with extra [relatedData] that can be used later on
- * by the issuing process. To store the [DeferredDocument] and its related data, use the
- * [DocumentManager.storeDeferredDocument]
- *
+ * Represents a Deferred Document.
+ * A Deferred Document is also an [UnsignedDocument], since it is not yet signed by the issuer.
+ * @property id the document id
+ * @property name the document name
+ * @property format the document format
+ * @property isCertified whether the document is certified
+ * @property keyAlias the key alias
+ * @property secureArea the secure area
+ * @property createdAt the creation date
  * @property relatedData the related data
  */
-open class DeferredDocument(
+class DeferredDocument(
     id: DocumentId,
-    docType: String,
     name: String,
-    usesStrongBox: Boolean,
-    requiresUserAuth: Boolean,
+    format: DocumentFormat,
+    isCertified: Boolean,
+    keyAlias: String,
+    secureArea: SecureArea,
     createdAt: Instant,
-    publicKeyCoseBytes: ByteArray,
-    certificatesNeedAuth: List<X509Certificate>,
     val relatedData: ByteArray
-) : Document, UnsignedDocument(
+) : UnsignedDocument(
     id = id,
-    docType = docType,
     name = name,
-    usesStrongBox = usesStrongBox,
-    requiresUserAuth = requiresUserAuth,
-    createdAt = createdAt,
-    publicKeyCoseBytes = publicKeyCoseBytes,
-    certificatesNeedAuth = certificatesNeedAuth,
-) {
-
-    override var state: State = State.DEFERRED
-
-    internal companion object {
-        @JvmSynthetic
-        operator fun invoke(
-            baseDocument: BaseDocument,
-            keyUnlockDataFactory: KeyUnlockDataFactory
-        ): DeferredDocument =
-            DeferredDocumentImpl(
-                baseDocument,
-                UnsignedDocument(baseDocument, keyUnlockDataFactory)
-            )
-    }
-}
-
-internal class DeferredDocumentImpl(
-    baseDocument: BaseDocument,
-    private val unsignedDocument: UnsignedDocument,
-) : DeferredDocument(
-    id = baseDocument.name,
-    docType = baseDocument.docType,
-    name = baseDocument.documentName,
-    usesStrongBox = baseDocument.usesStrongBox,
-    requiresUserAuth = baseDocument.requiresUserAuth,
-    createdAt = baseDocument.createdAt,
-    publicKeyCoseBytes = unsignedDocument.publicKeyCoseBytes,
-    certificatesNeedAuth = unsignedDocument.certificatesNeedAuth,
-    relatedData = baseDocument.deferredRelatedData,
-) {
-
-    init {
-        state = baseDocument.state
-    }
-
-    override fun signWithAuthKey(data: ByteArray, alg: String): SignedWithAuthKeyResult {
-        return unsignedDocument.signWithAuthKey(data, alg)
-    }
-
-    override fun toString(): String {
-        return "DeferredDocument(id='$id', docType='$docType', name='$name', usesStrongBox=$usesStrongBox, requiresUserAuth=$requiresUserAuth, createdAt=$createdAt, state=$state, relatedData=${relatedData.contentToString()})"
-    }
-
-
-}
+    format = format,
+    isCertified = isCertified,
+    keyAlias = keyAlias,
+    secureArea = secureArea,
+    createdAt = createdAt
+)

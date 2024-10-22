@@ -6,16 +6,16 @@
 open override fun [getDocumentById](get-document-by-id.md)(
 documentId: [DocumentId](../-document-id/index.md)): [Document](../-document/index.md)?
 
-Get document by id
+Retrieve a document by its identifier.
 
 #### Return
 
-[Document](../-document/index.md) if exists, null otherwise
+the document or null if not found
 
 #### Parameters
 
 androidJvm
 
-| | |
-|---|---|
-| documentId | document's unique identifier |
+|            |                                |
+|------------|--------------------------------|
+| documentId | the identifier of the document |

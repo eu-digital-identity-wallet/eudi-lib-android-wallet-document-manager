@@ -3,13 +3,13 @@
 # SampleDocumentManagerImpl
 
 [androidJvm]\
-constructor(context: [Context](https://developer.android.com/reference/kotlin/android/content/Context.html), documentManager: [DocumentManager](../../eu.europa.ec.eudi.wallet.document/-document-manager/index.md))
+constructor(
+delegate: [DocumentManager](../../eu.europa.ec.eudi.wallet.document/-document-manager/index.md))
 
 #### Parameters
 
 androidJvm
 
-| | |
-|---|---|
-| context | the application context |
-| documentManager | [DocumentManager](../../eu.europa.ec.eudi.wallet.document/-document-manager/index.md) implementation to delegate the document management operations |
+|          |                                                                                                                                                     |
+|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| delegate | [DocumentManager](../../eu.europa.ec.eudi.wallet.document/-document-manager/index.md) implementation to delegate the document management operations |
