@@ -48,5 +48,5 @@ class DeferredDocument(
     isCertified = isCertified,
     keyAlias = keyAlias,
     secureArea = secureArea,
-    createdAt = createdAt
+    createdAt = createdAt,
 )

@@ -47,10 +47,21 @@ data class IssuedDocument(
     override val keyAlias: String,
     override val secureArea: SecureArea,
     override val createdAt: Instant,
+    val validFrom: Instant,
+    val validUntil: Instant,
     val issuedAt: Instant,
     val nameSpacedData: NameSpacedData,
     val issuerProvidedData: ByteArray
 ) : Document {
+
+    /**
+     * Check if the document is valid at a given time, based on the validFrom and validUntil fields
+     * @param time the time to check
+     * @return true if the document is valid at the given time, false otherwise
+     */
+    fun isValidAt(time: Instant): Boolean {
+        return time in validFrom..validUntil
+    }
 
     val nameSpacedDataInBytes: NameSpacedValues<ByteArray>
         get() = nameSpacedData.nameSpaceNames.associateWith { nameSpace ->

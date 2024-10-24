@@ -16,15 +16,15 @@
 
 package eu.europa.ec.eudi.wallet.document.internal
 
-import eu.europa.ec.eudi.wallet.document.format.SdJwtFormat
+import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
 
 
 @JvmSynthetic
-internal fun SdJwtFormat.createCredential() {
+internal fun SdJwtVcFormat.createCredential() {
     throw UnsupportedOperationException("Not supported")
 }
 
 @JvmSynthetic
-internal fun SdJwtFormat.storeIssuedDocument() {
+internal fun SdJwtVcFormat.storeIssuedDocument() {
     throw UnsupportedOperationException("Not supported")
 }

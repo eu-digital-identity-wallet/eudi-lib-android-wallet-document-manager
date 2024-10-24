@@ -17,6 +17,6 @@
 package eu.europa.ec.eudi.wallet.document.format
 
 /**
- * Represents a SdJwt Format for the [eu.europa.ec.eudi.wallet.document.Document]
+ * Represents a SdJwtVc Format for the [eu.europa.ec.eudi.wallet.document.Document]
  */
-data object SdJwtFormat : DocumentFormat
+data object SdJwtVcFormat : DocumentFormat
