@@ -23,6 +23,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.toJavaInstant
 import org.junit.Assert
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.days
 
 
 class TestIssuedDocumentExtensions {
@@ -52,6 +53,8 @@ class TestIssuedDocumentExtensions {
             secureArea = mockk(),
             createdAt = Clock.System.now().toJavaInstant(),
             issuedAt = Clock.System.now().toJavaInstant(),
+            validFrom = Clock.System.now().toJavaInstant(),
+            validUntil = Clock.System.now().plus(10.days).toJavaInstant(),
             nameSpacedData = nameSpacedData,
             issuerProvidedData = byteArrayOf(),
         )

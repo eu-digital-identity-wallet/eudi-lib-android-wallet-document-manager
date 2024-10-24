@@ -107,7 +107,6 @@ dependencies {
     implementation(libs.google.identity.mdoc) {
         exclude(group = "org.bouncycastle")
     }
-//    implementation(libs.biometric.ktx)
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.io.core)
     implementation(libs.kotlinx.io.bytestring)

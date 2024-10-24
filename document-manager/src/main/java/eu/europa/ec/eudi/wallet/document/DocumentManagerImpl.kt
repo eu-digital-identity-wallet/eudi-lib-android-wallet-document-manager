@@ -27,7 +27,7 @@ import com.android.identity.util.Logger
 import com.android.identity.util.UUID
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
-import eu.europa.ec.eudi.wallet.document.format.SdJwtFormat
+import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
 import eu.europa.ec.eudi.wallet.document.internal.attestationChallenge
 import eu.europa.ec.eudi.wallet.document.internal.clearDeferredRelatedData
 import eu.europa.ec.eudi.wallet.document.internal.createCredential
@@ -159,7 +159,7 @@ class DocumentManagerImpl(
                     identityDocument.documentName = format.docType
                 }
 
-                is SdJwtFormat -> format.createCredential()
+                is SdJwtVcFormat -> format.createCredential()
                 else -> throw IllegalArgumentException("Format ${format::class.simpleName} not supported")
             }
 
@@ -195,7 +195,7 @@ class DocumentManagerImpl(
                     checkMsoKey
                 )
 
-                is SdJwtFormat -> format.storeIssuedDocument()
+                is SdJwtVcFormat -> format.storeIssuedDocument()
                 else -> throw IllegalArgumentException("Format ${format::class.simpleName} not supported")
             }
             with(identityDocument) {

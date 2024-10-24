@@ -10,6 +10,8 @@ isCertified: [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-bool
 keyAlias: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html),
 secureArea: SecureArea,
 createdAt: [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html),
+validFrom: [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html),
+validUntil: [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html),
 issuedAt: [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html),
 nameSpacedData: NameSpacedData,
 issuerProvidedData: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html))
