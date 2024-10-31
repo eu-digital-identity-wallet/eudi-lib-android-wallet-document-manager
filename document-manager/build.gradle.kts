@@ -147,6 +147,7 @@ tasks.dokkaGfm.configure {
 
 tasks.register<Jar>("dokkaHtmlJar") {
     group = "documentation"
+    description = "Assembles a jar archive containing the HTML documentation."
     dependsOn(tasks.dokkaHtml)
     from(tasks.dokkaHtml.flatMap { it.outputDirectory })
     archiveClassifier.set("html-docs")
@@ -154,6 +155,7 @@ tasks.register<Jar>("dokkaHtmlJar") {
 
 tasks.register<Jar>("dokkaJavadocJar") {
     group = "documentation"
+    description = "Assembles a jar archive containing the Javadoc documentation."
     dependsOn(tasks.dokkaJavadoc)
     from(tasks.dokkaJavadoc.flatMap { it.outputDirectory })
     archiveClassifier.set("javadoc")
@@ -186,6 +188,7 @@ tasks.generateLicenseReport.configure {
 // Build documentation and license report
 tasks.register<Task>("buildDocumentation") {
     group = "documentation"
+    description = "Builds the documentation and license report."
     dependsOn("dokkaGfm", "generateLicenseReport")
 }
 tasks.assemble.configure {
