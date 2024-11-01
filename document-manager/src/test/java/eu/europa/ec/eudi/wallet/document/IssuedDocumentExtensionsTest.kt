@@ -51,6 +51,7 @@ class TestIssuedDocumentExtensions {
             isCertified = true,
             keyAlias = "keyAlias",
             secureArea = mockk(),
+            documentManagerId = "DocumentManagerId",
             createdAt = Clock.System.now().toJavaInstant(),
             issuedAt = Clock.System.now().toJavaInstant(),
             validFrom = Clock.System.now().toJavaInstant(),

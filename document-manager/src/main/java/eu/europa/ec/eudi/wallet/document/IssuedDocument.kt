@@ -28,6 +28,7 @@ import java.time.Instant
  * @property id the document id
  * @property name the document name
  * @property format the document format
+ * @property documentManagerId the [DocumentManager.identifier] related to this document
  * @property isCertified whether the document is certified
  * @property keyAlias the key alias
  * @property secureArea the secure area
@@ -43,6 +44,7 @@ data class IssuedDocument(
     override val id: DocumentId,
     override val name: String,
     override val format: DocumentFormat,
+    override val documentManagerId: String,
     override val isCertified: Boolean,
     override val keyAlias: String,
     override val secureArea: SecureArea,

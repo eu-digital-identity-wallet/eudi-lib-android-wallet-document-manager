@@ -31,6 +31,7 @@ import java.time.Instant
  * @property id the document id
  * @property name the document name
  * @property format the document format
+ * @property documentManagerId the [DocumentManager.identifier] related to this document
  * @property keyAlias the key alias
  * @property secureArea the secure area
  * @property createdAt the creation date
@@ -43,6 +44,7 @@ sealed interface Document {
     val id: DocumentId
     val name: String
     val format: DocumentFormat
+    val documentManagerId: String
     val keyAlias: String
     val secureArea: SecureArea
     val createdAt: Instant

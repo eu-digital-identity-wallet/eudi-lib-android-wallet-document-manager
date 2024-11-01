@@ -6,6 +6,7 @@
 constructor(id: [DocumentId](../-document-id/index.md),
 name: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html),
 format: [DocumentFormat](../../eu.europa.ec.eudi.wallet.document.format/-document-format/index.md),
+documentManagerId: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html),
 isCertified: [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html),
 keyAlias: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html),
 secureArea: SecureArea,

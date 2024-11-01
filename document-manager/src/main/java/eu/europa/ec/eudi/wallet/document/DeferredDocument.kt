@@ -26,6 +26,7 @@ import java.time.Instant
  * @property id the document id
  * @property name the document name
  * @property format the document format
+ * @property documentManagerId the [DocumentManager.identifier] related to this document
  * @property isCertified whether the document is certified
  * @property keyAlias the key alias
  * @property secureArea the secure area
@@ -36,6 +37,7 @@ class DeferredDocument(
     id: DocumentId,
     name: String,
     format: DocumentFormat,
+    documentManagerId: String,
     isCertified: Boolean,
     keyAlias: String,
     secureArea: SecureArea,
@@ -45,6 +47,7 @@ class DeferredDocument(
     id = id,
     name = name,
     format = format,
+    documentManagerId = documentManagerId,
     isCertified = isCertified,
     keyAlias = keyAlias,
     secureArea = secureArea,
