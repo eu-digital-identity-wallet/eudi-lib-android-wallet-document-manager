@@ -104,7 +104,7 @@ $dokka.location:eu.europa.ec.eudi.wallet.document/Outcome/getOrNull/#/PointingTo
 $dokka.location:eu.europa.ec.eudi.wallet.document/Outcome/getOrThrow/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-outcome/get-or-throw.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/Outcome/isFailure/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-outcome/is-failure.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/Outcome/isSuccess/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-outcome/is-success.md
-$dokka.location:eu.europa.ec.eudi.wallet.document/Outcome/result/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-outcome/result.md
+$dokka.location:eu.europa.ec.eudi.wallet.document/Outcome/kotlinResult/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-outcome/kotlin-result.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/Outcome/toString/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-outcome/to-string.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/ProofOfDeletion///PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-proof-of-deletion/index.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/SharedSecret///PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-shared-secret/index.md
