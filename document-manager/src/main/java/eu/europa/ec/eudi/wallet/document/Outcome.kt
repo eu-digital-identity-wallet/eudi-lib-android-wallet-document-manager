@@ -19,17 +19,26 @@ package eu.europa.ec.eudi.wallet.document
 /**
  * Outcome for encapsulating success or failure of a computation for document manager operations.
  * Wraps a [Result] instance to provide Java interop.
+ *
+ * @property kotlinResult the [Result] instance that this [Outcome] wraps.
+ * @property isSuccess `true` if instance represents a successful outcome.
+ * @property isFailure `true` if instance represents a failed outcome.
+ *
  */
-class Outcome<out T> internal constructor(val result: Result<T>) {
+class Outcome<out T> private constructor(val kotlinResult: Result<T>) {
     companion object {
         /**
          * Returns an instance that encapsulates the given [value] as successful value.
+         * @param value the value to encapsulate
+         * @return an instance that encapsulates the given [value] as successful value
          */
         @JvmStatic
         fun <T> success(value: T): Outcome<T> = Outcome(Result.success(value))
 
         /**
          * Returns an instance that encapsulates the given [Throwable] as failure.
+         * @param throwable the [Throwable] to encapsulate
+         * @return an instance that encapsulates the given [Throwable] as failure
          */
         @JvmStatic
         fun <T> failure(throwable: Throwable): Outcome<T> =
@@ -37,36 +46,40 @@ class Outcome<out T> internal constructor(val result: Result<T>) {
     }
 
     /**
-     * Returns `true` if [result] instance represents a successful outcome.
+     * Returns `true` if instance represents a successful outcome.
      * In this case [eu.europa.ec.eudi.wallet.document.Outcome.isFailure] return `false` .
      */
     val isSuccess: Boolean
-        get() = result.isSuccess
+        get() = kotlinResult.isSuccess
 
     /**
-     * Returns `true` if [result] instance represents a failed outcome.
+     * Returns `true` if instance represents a failed outcome.
      * In this case [eu.europa.ec.eudi.wallet.document.Outcome.isSuccess] returns `false`.
      */
     val isFailure: Boolean
-        get() = result.isFailure
+        get() = kotlinResult.isFailure
 
     /**
      * Returns the encapsulated value if this instance represents a successful outcome or `null`
      * if it is failure.
+     * @return the encapsulated value if this instance represents a successful outcome or `null`
      */
-    fun getOrNull(): T? = result.getOrNull()
+    fun getOrNull(): T? = kotlinResult.getOrNull()
 
     /**
      * Returns the encapsulated exception if this instance represents a failure outcome or `null`
      * if it is success.
+     * @return the encapsulated exception if this instance represents a failure outcome or `null`
      */
-    fun exceptionOrNull(): Throwable? = result.exceptionOrNull()
+    fun exceptionOrNull(): Throwable? = kotlinResult.exceptionOrNull()
 
     /**
      * Returns the encapsulated value if this instance represents a successful outcome or throws
      * the encapsulated exception if it is failure.
+     * @return the encapsulated value if this instance represents a successful outcome
+     * @throws Throwable the encapsulated exception if this instance represents a failure outcome
      */
-    fun getOrThrow(): T = result.getOrThrow()
+    fun getOrThrow(): T = kotlinResult.getOrThrow()
 
     override fun toString(): String =
         if (isSuccess) "Outcome(value = ${getOrNull()})"

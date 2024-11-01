@@ -10,3 +10,15 @@ fun &lt;[T](success.md)&gt; [success](success.md)(value: [T](success.md)): [Outc
 &lt;[T](success.md)&gt;
 
 Returns an instance that encapsulates the given [value](success.md) as successful value.
+
+#### Return
+
+an instance that encapsulates the given [value](success.md) as successful value
+
+#### Parameters
+
+androidJvm
+
+|       |                          |
+|-------|--------------------------|
+| value | the value to encapsulate |

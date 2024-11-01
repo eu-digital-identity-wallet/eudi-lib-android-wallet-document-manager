@@ -7,3 +7,7 @@ fun [exceptionOrNull](exception-or-null.md)(): [Throwable](https://kotlinlang.or
 
 Returns the encapsulated exception if this instance represents a failure outcome or `null` if it is
 success.
+
+#### Return
+
+the encapsulated exception if this instance represents a failure outcome or `null`
