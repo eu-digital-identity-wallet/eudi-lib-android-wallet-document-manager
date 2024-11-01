@@ -74,6 +74,7 @@ class DocumentManagerImplTest {
         val documentFormat = unsignedDocument.format as MsoMdocFormat
         assertEquals("eu.europa.ec.eudi.pid.1", documentFormat.docType)
         assertFalse(unsignedDocument.isKeyInvalidated)
+        assertEquals(documentManager.identifier, unsignedDocument.documentManagerId)
 
         val issuerData = getResourceAsText("eu_pid.hex").hexToByteArray(HexFormat.Default)
 
@@ -83,6 +84,7 @@ class DocumentManagerImplTest {
 
         // assert that usnigned document remains unsigned
         assertEquals("EU PID", issuedDocument.name)
+        assertEquals(documentManager.identifier, issuedDocument.documentManagerId)
 
         assertTrue(issuedDocument.isCertified)
         assertTrue(issuedDocument.issuerProvidedData.isNotEmpty())

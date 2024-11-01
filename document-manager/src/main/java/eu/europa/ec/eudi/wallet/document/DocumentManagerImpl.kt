@@ -33,6 +33,7 @@ import eu.europa.ec.eudi.wallet.document.internal.clearDeferredRelatedData
 import eu.europa.ec.eudi.wallet.document.internal.createCredential
 import eu.europa.ec.eudi.wallet.document.internal.createdAt
 import eu.europa.ec.eudi.wallet.document.internal.deferredRelatedData
+import eu.europa.ec.eudi.wallet.document.internal.documentManagerId
 import eu.europa.ec.eudi.wallet.document.internal.documentName
 import eu.europa.ec.eudi.wallet.document.internal.issuedAt
 import eu.europa.ec.eudi.wallet.document.internal.randomBytes
@@ -146,9 +147,10 @@ class DocumentManagerImpl(
     ): Outcome<UnsignedDocument> {
         var documentId: String? = null
         return try {
-            documentId = PREFIX + UUID.randomUUID().toString()
+            documentId = DOCUMENT_ID_PREFIX + UUID.randomUUID().toString()
             val domain = identifier
             val identityDocument = documentStore.createDocument(documentId).apply {
+                this.documentManagerId = identifier
                 this.documentName = documentId
                 this.attestationChallenge = attestationChallenge ?: 10.randomBytes
                 this.createdAt = Clock.System.now().toJavaInstant()
@@ -237,6 +239,6 @@ class DocumentManagerImpl(
 
     companion object {
         private const val TAG = "DocumentManagerImpl"
-        const val PREFIX = "DocumentManagerImpl_Document_"
+        const val DOCUMENT_ID_PREFIX = "DocumentManagerImpl_Document_"
     }
 }
