@@ -2,7 +2,9 @@
 
 # DocumentManagerImpl
 
-class [DocumentManagerImpl](index.md)(val storageEngine: StorageEngine, val secureArea:
+class [DocumentManagerImpl](index.md)(val
+identifier: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html), val
+storageEngine: StorageEngine, val secureArea:
 SecureArea) : [DocumentManager](../-document-manager/index.md)
 
 Document Manager Implementation
@@ -11,16 +13,17 @@ Document Manager Implementation
 
 androidJvm
 
-|               |                    |
-|---------------|--------------------|
-| storageEngine | the storage engine |
-| secureArea    | the secure area    |
+|               |                                        |
+|---------------|----------------------------------------|
+| identifier    | the identifier of the document manager |
+| storageEngine | the storage engine                     |
+| secureArea    | the secure area                        |
 
 ## Constructors
 
-|                                                  |                                                                                   |
-|--------------------------------------------------|-----------------------------------------------------------------------------------|
-| [DocumentManagerImpl](-document-manager-impl.md) | [androidJvm]<br>constructor(storageEngine: StorageEngine, secureArea: SecureArea) |
+|                                                  |                                                                                                                                                                                 |
+|--------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [DocumentManagerImpl](-document-manager-impl.md) | [androidJvm]<br>constructor(identifier: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html), storageEngine: StorageEngine, secureArea: SecureArea) |
 
 ## Types
 

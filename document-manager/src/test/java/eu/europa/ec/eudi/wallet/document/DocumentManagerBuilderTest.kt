@@ -24,9 +24,27 @@ import kotlin.test.assertIs
 class DocumentManagerBuilderTest {
 
     @Test
+    fun `build should throw exception when identifier is not set`() {
+        // Given
+        val builder = DocumentManager.Builder()
+            .setSecureArea(secureArea)
+            .setStorageEngine(storageEngine)
+
+        // When
+        val exception = assertFailsWith<IllegalArgumentException> {
+            builder.build()
+        }
+
+        // Then
+        assertEquals("Identifier is required", exception.message)
+    }
+
+    @Test
     fun `build should throw exception when storageEngine is not set`() {
         // Given
         val builder = DocumentManager.Builder()
+            .setIdentifier("document_manager")
+            .setSecureArea(secureArea)
 
         // When
         val exception = assertFailsWith<IllegalArgumentException> {
@@ -41,6 +59,7 @@ class DocumentManagerBuilderTest {
     fun `build should throw exception when secureArea is not set`() {
         // Given
         val builder = DocumentManager.Builder()
+            .setIdentifier("document_manager")
             .setStorageEngine(storageEngine)
 
         // When
@@ -55,12 +74,14 @@ class DocumentManagerBuilderTest {
     @Test
     fun `build should return DocumentManagerImpl with the provided storageEngine and secureArea as dependencies`() {
         val builder = DocumentManager.Builder()
+            .setIdentifier("document_manager")
             .setStorageEngine(storageEngine)
             .setSecureArea(secureArea)
 
         val documentManager = builder.build()
 
         assertIs<DocumentManagerImpl>(documentManager)
+        assertEquals("document_manager", documentManager.identifier)
         assertEquals(storageEngine, documentManager.storageEngine)
         assertEquals(secureArea, documentManager.secureArea)
     }
@@ -69,12 +90,14 @@ class DocumentManagerBuilderTest {
     fun `verify that companion object operator invoke returns DocumentManagerImpl instance`() {
         // When
         val documentManager = DocumentManager {
+            setIdentifier("document_manager")
             setStorageEngine(eu.europa.ec.eudi.wallet.document.storageEngine)
             setSecureArea(eu.europa.ec.eudi.wallet.document.secureArea)
         }
 
         // Then
         assertIs<DocumentManagerImpl>(documentManager)
+        assertEquals("document_manager", documentManager.identifier)
         assertEquals(storageEngine, documentManager.storageEngine)
         assertEquals(secureArea, documentManager.secureArea)
     }

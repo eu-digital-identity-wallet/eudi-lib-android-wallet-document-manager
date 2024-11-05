@@ -58,6 +58,7 @@ class SampleDocumentManagerImplTest {
         fun setUp() {
             documentManager = SampleDocumentManagerImpl(
                 DocumentManagerImpl(
+                    identifier = "document_manager",
                     storageEngine = storageEngine,
                     secureArea = secureArea
                 )
@@ -139,6 +140,7 @@ class SampleDocumentManagerImplTest {
         val storageEngine = EphemeralStorageEngine()
         val documentManager = SampleDocumentManagerImpl(
             DocumentManagerImpl(
+                identifier = "document_manager",
                 storageEngine = storageEngine,
                 secureArea = SoftwareSecureArea(storageEngine)
             )
@@ -168,6 +170,7 @@ class SampleDocumentManagerImplTest {
         val storageEngine = EphemeralStorageEngine()
         val documentManager = SampleDocumentManagerImpl(
             DocumentManagerImpl(
+                identifier = "document_manager",
                 storageEngine = storageEngine,
                 secureArea = SoftwareSecureArea(storageEngine)
             )
@@ -197,6 +200,7 @@ class SampleDocumentManagerImplTest {
         val storageEngine = EphemeralStorageEngine()
         val documentManager = SampleDocumentManagerImpl(
             DocumentManagerImpl(
+                identifier = "document_manager",
                 storageEngine = storageEngine,
                 secureArea = SoftwareSecureArea(storageEngine)
             )

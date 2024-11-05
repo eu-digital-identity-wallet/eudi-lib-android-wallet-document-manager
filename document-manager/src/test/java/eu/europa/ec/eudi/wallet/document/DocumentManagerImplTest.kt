@@ -42,6 +42,7 @@ class DocumentManagerImplTest {
     @BeforeTest
     fun setUp() {
         documentManager = DocumentManagerImpl(
+            identifier = "document_manager",
             storageEngine = storageEngine,
             secureArea = secureArea
         )

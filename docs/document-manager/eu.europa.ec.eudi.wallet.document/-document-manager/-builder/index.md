@@ -15,15 +15,17 @@ Builder class to create a [DocumentManager](../index.md) instance.
 
 ## Properties
 
-| Name                               | Summary                                                                                                                              |
-|------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
-| [secureArea](secure-area.md)       | [androidJvm]<br>var [secureArea](secure-area.md): SecureArea?<br>the secure area to use for managing the keys                        |
-| [storageEngine](storage-engine.md) | [androidJvm]<br>var [storageEngine](storage-engine.md): StorageEngine?<br>the storage engine to use for storing/retrieving documents |
+| Name                               | Summary                                                                                                                                                                      |
+|------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [identifier](identifier.md)        | [androidJvm]<br>var [identifier](identifier.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)?<br>the identifier of the document manager |
+| [secureArea](secure-area.md)       | [androidJvm]<br>var [secureArea](secure-area.md): SecureArea?<br>the secure area to use for managing the keys                                                                |
+| [storageEngine](storage-engine.md) | [androidJvm]<br>var [storageEngine](storage-engine.md): StorageEngine?<br>the storage engine to use for storing/retrieving documents                                         |
 
 ## Functions
 
-| Name                                      | Summary                                                                                                                                                                                             |
-|-------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [build](build.md)                         | [androidJvm]<br>fun [build](build.md)(): [DocumentManager](../index.md)<br>Build a [DocumentManager](../index.md) instance.                                                                         |
-| [setSecureArea](set-secure-area.md)       | [androidJvm]<br>fun [setSecureArea](set-secure-area.md)(secureArea: SecureArea): [DocumentManager.Builder](index.md)<br>Set the secure area to use for managing the keys.                           |
-| [setStorageEngine](set-storage-engine.md) | [androidJvm]<br>fun [setStorageEngine](set-storage-engine.md)(storageEngine: StorageEngine): [DocumentManager.Builder](index.md)<br>Set the storage engine to use for storing/retrieving documents. |
+| Name                                      | Summary                                                                                                                                                                                                                                  |
+|-------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [build](build.md)                         | [androidJvm]<br>fun [build](build.md)(): [DocumentManager](../index.md)<br>Build a [DocumentManager](../index.md) instance.                                                                                                              |
+| [setIdentifier](set-identifier.md)        | [androidJvm]<br>fun [setIdentifier](set-identifier.md)(identifier: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)): [DocumentManager.Builder](index.md)<br>Set the identifier of the document manager. |
+| [setSecureArea](set-secure-area.md)       | [androidJvm]<br>fun [setSecureArea](set-secure-area.md)(secureArea: SecureArea): [DocumentManager.Builder](index.md)<br>Set the secure area to use for managing the keys.                                                                |
+| [setStorageEngine](set-storage-engine.md) | [androidJvm]<br>fun [setStorageEngine](set-storage-engine.md)(storageEngine: StorageEngine): [DocumentManager.Builder](index.md)<br>Set the storage engine to use for storing/retrieving documents.                                      |
