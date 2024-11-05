@@ -112,6 +112,7 @@ implementations for StorageEngine and SecureArea for Android devices.
 
 ```kotlin
 val builder = DocumentManager.Builder()
+  .setIdentifier("eudi_wallet_document_manager")
   .setStorageEngine(storageEngine)
   .setSecureArea(secureArea)
 

@@ -112,12 +112,23 @@ interface DocumentManager {
 
     /**
      * Builder class to create a [DocumentManager] instance.
+     * @property identifier the identifier of the document manager
      * @property storageEngine the storage engine to use for storing/retrieving documents
      * @property secureArea the secure area to use for managing the keys
      */
     class Builder {
+        var identifier: String? = null
         var storageEngine: StorageEngine? = null
         var secureArea: SecureArea? = null
+
+        /**
+         * Set the identifier of the document manager.
+         * @param identifier the identifier
+         * @return this builder
+         */
+        fun setIdentifier(identifier: String): Builder = apply {
+            this.identifier = identifier
+        }
 
         /**
          * Set the storage engine to use for storing/retrieving documents.
@@ -143,9 +154,14 @@ interface DocumentManager {
          * @return the document manager
          */
         fun build(): DocumentManager {
+            requireNotNull(identifier) { "Identifier is required" }
             requireNotNull(storageEngine) { "Storage engine is required" }
             requireNotNull(secureArea) { "Secure area is required" }
-            return DocumentManagerImpl(storageEngine!!, secureArea!!)
+            return DocumentManagerImpl(
+                identifier = identifier!!,
+                storageEngine = storageEngine!!,
+                secureArea = secureArea!!
+            )
         }
     }
 

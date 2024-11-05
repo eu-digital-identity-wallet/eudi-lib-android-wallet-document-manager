@@ -51,16 +51,15 @@ import org.jetbrains.annotations.VisibleForTesting
  * @property secureArea the secure area
  *
  * @constructor
+ * @param identifier the identifier of the document manager
  * @param storageEngine the storage engine
  * @param secureArea the secure area
  */
 class DocumentManagerImpl(
+    override val identifier: String,
     val storageEngine: StorageEngine,
-    val secureArea: SecureArea,
+    val secureArea: SecureArea
 ) : DocumentManager {
-
-    override val identifier: String
-        get() = "DocumentManagerImpl"
 
     @VisibleForTesting
     @get:JvmSynthetic
@@ -147,7 +146,7 @@ class DocumentManagerImpl(
     ): Outcome<UnsignedDocument> {
         var documentId: String? = null
         return try {
-            documentId = DOCUMENT_ID_PREFIX + UUID.randomUUID().toString()
+            documentId = "Document_${identifier}_${UUID.randomUUID()}"
             val domain = identifier
             val identityDocument = documentStore.createDocument(documentId).apply {
                 this.documentManagerId = identifier
@@ -239,6 +238,5 @@ class DocumentManagerImpl(
 
     companion object {
         private const val TAG = "DocumentManagerImpl"
-        const val DOCUMENT_ID_PREFIX = "DocumentManagerImpl_Document_"
     }
 }
