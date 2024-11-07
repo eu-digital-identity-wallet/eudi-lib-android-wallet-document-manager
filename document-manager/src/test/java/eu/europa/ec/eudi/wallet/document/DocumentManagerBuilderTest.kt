@@ -17,6 +17,7 @@
 package eu.europa.ec.eudi.wallet.document
 
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
@@ -27,7 +28,7 @@ class DocumentManagerBuilderTest {
     fun `build should throw exception when identifier is not set`() {
         // Given
         val builder = DocumentManager.Builder()
-            .setSecureArea(secureArea)
+            .addSecureArea(secureArea)
             .setStorageEngine(storageEngine)
 
         // When
@@ -44,7 +45,7 @@ class DocumentManagerBuilderTest {
         // Given
         val builder = DocumentManager.Builder()
             .setIdentifier("document_manager")
-            .setSecureArea(secureArea)
+            .addSecureArea(secureArea)
 
         // When
         val exception = assertFailsWith<IllegalArgumentException> {
@@ -56,7 +57,7 @@ class DocumentManagerBuilderTest {
     }
 
     @Test
-    fun `build should throw exception when secureArea is not set`() {
+    fun `build should throw exception when secureAreaRepository is empty`() {
         // Given
         val builder = DocumentManager.Builder()
             .setIdentifier("document_manager")
@@ -68,7 +69,7 @@ class DocumentManagerBuilderTest {
         }
 
         // Then
-        assertEquals("Secure area is required", exception.message)
+        assertEquals("SecureAreaRepository is empty", exception.message)
     }
 
     @Test
@@ -76,14 +77,17 @@ class DocumentManagerBuilderTest {
         val builder = DocumentManager.Builder()
             .setIdentifier("document_manager")
             .setStorageEngine(storageEngine)
-            .setSecureArea(secureArea)
+            .addSecureArea(secureArea)
 
         val documentManager = builder.build()
 
         assertIs<DocumentManagerImpl>(documentManager)
         assertEquals("document_manager", documentManager.identifier)
         assertEquals(storageEngine, documentManager.storageEngine)
-        assertEquals(secureArea, documentManager.secureArea)
+        assertContentEquals(
+            listOf(secureArea),
+            documentManager.secureAreaRepository.implementations
+        )
     }
 
     @Test
@@ -92,13 +96,20 @@ class DocumentManagerBuilderTest {
         val documentManager = DocumentManager {
             setIdentifier("document_manager")
             setStorageEngine(eu.europa.ec.eudi.wallet.document.storageEngine)
-            setSecureArea(eu.europa.ec.eudi.wallet.document.secureArea)
+            addSecureArea(eu.europa.ec.eudi.wallet.document.secureArea)
         }
 
         // Then
         assertIs<DocumentManagerImpl>(documentManager)
         assertEquals("document_manager", documentManager.identifier)
         assertEquals(storageEngine, documentManager.storageEngine)
-        assertEquals(secureArea, documentManager.secureArea)
+        assertContentEquals(
+            listOf(secureArea),
+            documentManager.secureAreaRepository.implementations
+        )
+    }
+
+    @Test
+    fun `verify that setSecureAreaRepository method overrides the default`() {
     }
 }

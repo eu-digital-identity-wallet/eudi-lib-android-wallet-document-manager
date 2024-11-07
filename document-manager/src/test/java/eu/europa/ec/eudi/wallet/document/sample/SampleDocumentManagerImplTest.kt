@@ -20,16 +20,17 @@ import com.android.identity.crypto.Algorithm
 import com.android.identity.crypto.Crypto
 import com.android.identity.securearea.KeyLockedException
 import com.android.identity.securearea.PassphraseConstraints
+import com.android.identity.securearea.SecureAreaRepository
 import com.android.identity.securearea.software.SoftwareCreateKeySettings
 import com.android.identity.securearea.software.SoftwareKeyUnlockData
 import com.android.identity.securearea.software.SoftwareSecureArea
 import com.android.identity.storage.EphemeralStorageEngine
 import eu.europa.ec.eudi.wallet.document.DocumentManagerImpl
 import eu.europa.ec.eudi.wallet.document.IssuedDocument
+import eu.europa.ec.eudi.wallet.document.SecureAreaCreateDocumentSettings
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.getResourceAsText
 import eu.europa.ec.eudi.wallet.document.secureArea
-import eu.europa.ec.eudi.wallet.document.storageEngine
 import io.mockk.every
 import io.mockk.spyk
 import org.junit.AfterClass
@@ -56,16 +57,24 @@ class SampleDocumentManagerImplTest {
         @BeforeClass
         @JvmStatic
         fun setUp() {
+            val secureArea = SoftwareSecureArea(EphemeralStorageEngine())
+            val secureAreaRepository = SecureAreaRepository()
+                .apply { addImplementation(secureArea) }
             documentManager = SampleDocumentManagerImpl(
                 DocumentManagerImpl(
                     identifier = "document_manager",
-                    storageEngine = storageEngine,
-                    secureArea = secureArea
+                    storageEngine = EphemeralStorageEngine(),
+                    secureAreaRepository = secureAreaRepository
                 )
             )
             val createKeySettings = SoftwareCreateKeySettings.Builder().build()
             val loadResult = documentManager.loadMdocSampleDocuments(
-                sampleDocuments, createKeySettings, mapOf(
+                sampleData = sampleDocuments,
+                createSettings = SecureAreaCreateDocumentSettings(
+                    secureAreaIdentifier = secureArea.identifier,
+                    keySettings = createKeySettings,
+                ),
+                documentNamesMap = mapOf(
                     "eu.europa.ec.eudi.pid.1" to "EU PID",
                     "org.iso.18013.5.1.mDL" to "mDL"
                 )
@@ -138,18 +147,25 @@ class SampleDocumentManagerImplTest {
     fun `document sign method should return key locked result if key usage requires unlocking`() {
         // reload sample document with createKeySettings that require PIN
         val storageEngine = EphemeralStorageEngine()
+        val secureAreaRepository = SecureAreaRepository()
+            .apply { addImplementation(SoftwareSecureArea(storageEngine)) }
         val documentManager = SampleDocumentManagerImpl(
             DocumentManagerImpl(
                 identifier = "document_manager",
                 storageEngine = storageEngine,
-                secureArea = SoftwareSecureArea(storageEngine)
+                secureAreaRepository = secureAreaRepository
             )
         )
         val createKeySettings = SoftwareCreateKeySettings.Builder()
             .setPassphraseRequired(true, "1234", PassphraseConstraints.PIN_FOUR_DIGITS)
             .build()
         documentManager.loadMdocSampleDocuments(
-            sampleDocuments, createKeySettings, mapOf(
+            sampleData = sampleDocuments,
+            createSettings = SecureAreaCreateDocumentSettings(
+                secureAreaIdentifier = secureArea.identifier,
+                keySettings = createKeySettings,
+            ),
+            documentNamesMap = mapOf(
                 "eu.europa.ec.eudi.pid.1" to "EU PID",
                 "org.iso.18013.5.1.mDL" to "mDL"
             )
@@ -168,16 +184,23 @@ class SampleDocumentManagerImplTest {
     fun `deleteDocumentById should delete the document`() {
         // reload sample document with createKeySettings that require PIN
         val storageEngine = EphemeralStorageEngine()
+        val secureAreaRepository = SecureAreaRepository()
+            .apply { addImplementation(SoftwareSecureArea(storageEngine)) }
         val documentManager = SampleDocumentManagerImpl(
             DocumentManagerImpl(
                 identifier = "document_manager",
                 storageEngine = storageEngine,
-                secureArea = SoftwareSecureArea(storageEngine)
+                secureAreaRepository = secureAreaRepository
             )
         )
         val createKeySettings = SoftwareCreateKeySettings.Builder().build()
         documentManager.loadMdocSampleDocuments(
-            sampleDocuments, createKeySettings, mapOf(
+            sampleData = sampleDocuments,
+            createSettings = SecureAreaCreateDocumentSettings(
+                secureAreaIdentifier = secureArea.identifier,
+                keySettings = createKeySettings,
+            ),
+            documentNamesMap = mapOf(
                 "eu.europa.ec.eudi.pid.1" to "EU PID",
                 "org.iso.18013.5.1.mDL" to "mDL"
             )
@@ -198,18 +221,25 @@ class SampleDocumentManagerImplTest {
     fun `document sign method should return result success when locked key and passing the keyUnlockData`() {
         // reload sample document with createKeySettings that require PIN
         val storageEngine = EphemeralStorageEngine()
+        val secureAreaRepository = SecureAreaRepository()
+            .apply { addImplementation(SoftwareSecureArea(storageEngine)) }
         val documentManager = SampleDocumentManagerImpl(
             DocumentManagerImpl(
                 identifier = "document_manager",
                 storageEngine = storageEngine,
-                secureArea = SoftwareSecureArea(storageEngine)
+                secureAreaRepository = secureAreaRepository
             )
         )
         val createKeySettings = SoftwareCreateKeySettings.Builder()
             .setPassphraseRequired(true, "1234", PassphraseConstraints.PIN_FOUR_DIGITS)
             .build()
         val loadResult = documentManager.loadMdocSampleDocuments(
-            sampleDocuments, createKeySettings, mapOf(
+            sampleData = sampleDocuments,
+            createSettings = SecureAreaCreateDocumentSettings(
+                secureAreaIdentifier = secureArea.identifier,
+                keySettings = createKeySettings,
+            ),
+            documentNamesMap = mapOf(
                 "eu.europa.ec.eudi.pid.1" to "EU PID",
                 "org.iso.18013.5.1.mDL" to "mDL"
             )

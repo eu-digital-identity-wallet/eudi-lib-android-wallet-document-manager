@@ -21,9 +21,3 @@ androidJvm
 |            |                                |
 |------------|--------------------------------|
 | documentId | the identifier of the document |
-
-#### See also
-
-|                      |
-|----------------------|
-| DeleteDocumentResult |

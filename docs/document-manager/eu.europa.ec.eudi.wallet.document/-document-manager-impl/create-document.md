@@ -5,7 +5,7 @@
 [androidJvm]\
 open override fun [createDocument](create-document.md)(
 format: [DocumentFormat](../../eu.europa.ec.eudi.wallet.document.format/-document-format/index.md),
-createKeySettings: CreateKeySettings,
+createSettings: [CreateDocumentSettings](../-create-document-settings/index.md),
 attestationChallenge: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html)?): [Outcome](../-outcome/index.md)
 &lt;[UnsignedDocument](../-unsigned-document/index.md)&gt;
 
@@ -26,8 +26,9 @@ error.
 
 androidJvm
 
-|                      |                                 |
-|----------------------|---------------------------------|
-| format               | the format of the document      |
-| createKeySettings    | the settings to create the keys |
-| attestationChallenge | the attestation challenge       |
+|                      |                                                                            |
+|----------------------|----------------------------------------------------------------------------|
+| createSetting        | the com.android.identity.securearea.SecureArea to use for the new document |
+| format               | the format of the document                                                 |
+| createKeySettings    | the settings to create the keys                                            |
+| attestationChallenge | the attestation challenge                                                  |

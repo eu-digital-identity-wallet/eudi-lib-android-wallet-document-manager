@@ -19,8 +19,6 @@ package eu.europa.ec.eudi.wallet.document
 import com.android.identity.credential.CredentialFactory
 import com.android.identity.document.DocumentStore
 import com.android.identity.mdoc.credential.MdocCredential
-import com.android.identity.securearea.CreateKeySettings
-import com.android.identity.securearea.SecureArea
 import com.android.identity.securearea.SecureAreaRepository
 import com.android.identity.storage.StorageEngine
 import com.android.identity.util.Logger
@@ -48,17 +46,17 @@ import org.jetbrains.annotations.VisibleForTesting
  *
  * @property identifier the identifier
  * @property storageEngine the storage engine
- * @property secureArea the secure area
+ * @property secureAreaRepository the secure area
  *
  * @constructor
  * @param identifier the identifier of the document manager
  * @param storageEngine the storage engine
- * @param secureArea the secure area
+ * @param secureAreaRepository the secure area
  */
 class DocumentManagerImpl(
     override val identifier: String,
     val storageEngine: StorageEngine,
-    val secureArea: SecureArea
+    val secureAreaRepository: SecureAreaRepository
 ) : DocumentManager {
 
     @VisibleForTesting
@@ -68,15 +66,12 @@ class DocumentManagerImpl(
     @get:VisibleForTesting
     @get:JvmSynthetic
     internal val documentStore by lazy {
-        DocumentStore(storageEngine, SecureAreaRepository().apply {
-            addImplementation(secureArea)
-        }, CredentialFactory().apply {
-            addCredentialImplementation(
-                MdocCredential::class
-            ) { document, dataItem ->
-                MdocCredential(document, dataItem)
-            }
-        })
+        DocumentStore(storageEngine, secureAreaRepository, CredentialFactory()
+            .apply {
+                addCredentialImplementation(MdocCredential::class) { document, dataItem ->
+                    MdocCredential(document, dataItem)
+                }
+            })
     }
 
     /**
@@ -89,7 +84,7 @@ class DocumentManagerImpl(
         return try {
             documentStore.lookupDocument(documentId)?.toDocument()
         } catch (e: Throwable) {
-            Logger.e(TAG, "Failed to get document with id $documentId", e)
+            Logger.e(TAG, "Failed to lookup document with id $documentId", e)
             null
         }
     }
@@ -103,8 +98,7 @@ class DocumentManagerImpl(
     override fun getDocuments(predicate: ((Document) -> Boolean)?): List<Document> {
         return try {
             documentStore.listDocuments()
-                .mapNotNull { documentStore.lookupDocument(it) }
-                .map { it.toDocument() as Document }
+                .mapNotNull { getDocumentById(it) }
                 .filter { predicate?.invoke(it) != false }
         } catch (e: Throwable) {
             Logger.e(TAG, "Failed to get documents", e)
@@ -134,6 +128,7 @@ class DocumentManagerImpl(
      * contains the keys and the method to proof the ownership of the keys, that can be used with an issuer
      * to retrieve the document's claims. After that the document can be stored using [storeIssuedDocument] or [storeDeferredDocument].
      *
+     * @param createSetting the [com.android.identity.securearea.SecureArea] to use for the new document
      * @param format the format of the document
      * @param createKeySettings the settings to create the keys
      * @param attestationChallenge the attestation challenge
@@ -141,11 +136,17 @@ class DocumentManagerImpl(
      */
     override fun createDocument(
         format: DocumentFormat,
-        createKeySettings: CreateKeySettings,
+        createSettings: CreateDocumentSettings,
         attestationChallenge: ByteArray?
     ): Outcome<UnsignedDocument> {
         var documentId: String? = null
         return try {
+            require(createSettings is SecureAreaCreateDocumentSettings) {
+                "Invalid createSettings. Instance of [${SecureAreaCreateDocumentSettings::class}] expected"
+            }
+            val secureArea =
+                secureAreaRepository.getImplementation(createSettings.secureAreaIdentifier)
+                    ?: throw IllegalArgumentException("SecureArea '${createSettings.secureAreaIdentifier}' not registered")
             documentId = "Document_${identifier}_${UUID.randomUUID()}"
             val domain = identifier
             val identityDocument = documentStore.createDocument(documentId).apply {
@@ -156,7 +157,9 @@ class DocumentManagerImpl(
             }
             when (format) {
                 is MsoMdocFormat -> {
-                    format.createCredential(domain, identityDocument, secureArea, createKeySettings)
+                    format.createCredential(
+                        domain, identityDocument, secureArea, createSettings.keySettings
+                    )
                     identityDocument.documentName = format.docType
                 }
 

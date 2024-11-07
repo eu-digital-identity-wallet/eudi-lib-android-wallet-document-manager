@@ -114,7 +114,7 @@ implementations for StorageEngine and SecureArea for Android devices.
 val builder = DocumentManager.Builder()
   .setIdentifier("eudi_wallet_document_manager")
   .setStorageEngine(storageEngine)
-  .setSecureArea(secureArea)
+  .addSecureArea(secureArea)
 
 val documentManager = builder.build()
 ```
@@ -143,6 +143,7 @@ classDiagram
         + id DocumentId
         + name String
         + format DocumentFormat
+      + documentManagerId: String
         + keyAlias String
         + secureArea SecureArea
         + createdAt Instant
@@ -154,14 +155,18 @@ classDiagram
         + keyAgreement(otherPublicKey ByteArray, keyUnlockData KeyUnlockData?) SharedSecretResult
     }
   class UnsignedDocument
-    class DeferredDocument {
-      + relatedData ByteArray
-    }
-    class IssuedDocument {
+
+  class DeferredDocument {
+    + relatedData ByteArray
+  }
+
+  class IssuedDocument {
       + issuedAt Instant
       + nameSpacedDataInBytes NameSpacedValues~ByteArray~
-        + nameSpacedDataDecoded NameSpacedValues~Any?~
-        + nameSpaces NameSpaces
+    + nameSpacedDataDecoded NameSpacedValues~Any?~
+    + nameSpaces NameSpaces
+    + issuerProvidedData: ByteArray
+    + isValidAt(time: Instant) Boolean
     }
 ```
 
@@ -221,10 +226,13 @@ try {
   // Construct the createKeySettings that will be used to create the key
   // for the document. Here we use SoftwareCreateKeySettings as an example
   // provided by the identity-credential library
-  val createKeySettings = SoftwareCreateKeySettings.Builder().build()
+  val createSettings = SecureAreaCreateDocumentSettings(
+    secureAreaIdentifier = secureArea.identifier,
+    keySettings = SoftwareCreateKeySettings.Builder().build()
+  )
   val createDocumentResult = documentManager.createDocument(
     format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-    createKeySettings = createKeySettings
+    createSettings = createSettings
   )
   val unsignedDocument = createDocumentResult.getOrThrow()
   val publicKeyBytes = unsignedDocument.publicKeyCoseBytes
@@ -259,6 +267,12 @@ try {
   val issuedDocument = storeResult.getOrThrow()
 } catch (e: Throwable) {
   // Handle the exception
+}
+
+// ...
+
+fun sendToIssuer(publicKeyCoseBytes: ByteArray, signatureCoseBytes: ByteArray): ByteArray {
+  TODO("Send publicKey and proof of possession signature to issuer and retrieve document's data")
 }
 ```
 
@@ -303,16 +317,24 @@ val sampleDocumentManager = SampleDocumentManager.Builder()
 
 val sampleMdocDocuments: ByteArray = readFileWithSampleData()
 
-val createKeySettings = SoftwareCreateKeySettings.Builder().build()
+val createSettings = SecureAreaCreateDocumentSettings(
+  secureAreaIdentifier = secureArea.identifier,
+  keySettings = SoftwareCreateKeySettings.Builder().build()
+)
 val loadResult = sampleDocumentManager.loadMdocSampleDocuments(
   sampleData = sampleMdocDocuments,
-  createKeySettings = createKeySettings,
+  createSettings = createSettings,
   documentNamesMap = mapOf(
     "eu.europa.ec.eudi.pid.1" to "EU PID",
     "org.iso.18013.5.1.mDL" to "mDL"
   )
 )
+
 val documentIds: List<DocumentId> = loadResult.getOrThrow()
+
+// ...
+
+fun readFileWithSampleData(): ByteArray = TODO("Reads the bytes from file with sample documents")
 ```
 
 Method `SampleDocumentManager.loadMdocSampleDocuments()` expects sampleData to be in CBOR format

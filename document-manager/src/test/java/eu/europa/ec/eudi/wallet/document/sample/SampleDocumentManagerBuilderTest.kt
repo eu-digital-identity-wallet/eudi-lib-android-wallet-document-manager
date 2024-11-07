@@ -77,7 +77,7 @@ class SampleDocumentManagerBuilderTest {
         // When
         val documentManager = SampleDocumentManager.build {
             setIdentifier("document_manager")
-            setSecureArea(eu.europa.ec.eudi.wallet.document.secureArea)
+            addSecureArea(eu.europa.ec.eudi.wallet.document.secureArea)
             setStorageEngine(eu.europa.ec.eudi.wallet.document.storageEngine)
         }
 

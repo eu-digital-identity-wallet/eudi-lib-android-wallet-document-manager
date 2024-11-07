@@ -17,7 +17,7 @@
 
 package eu.europa.ec.eudi.wallet.document.sample
 
-import com.android.identity.securearea.CreateKeySettings
+import eu.europa.ec.eudi.wallet.document.CreateDocumentSettings
 import eu.europa.ec.eudi.wallet.document.DocType
 import eu.europa.ec.eudi.wallet.document.DocumentId
 import eu.europa.ec.eudi.wallet.document.DocumentManager
@@ -56,10 +56,9 @@ interface SampleDocumentManager : DocumentManager {
      * Loads the sample documents that are in mdoc format into the document manager.
      *
      * @param sampleData the sample data in mdoc format to be loaded in cbor format
-     * @param createKeySettings the settings for creating keys for the sample documents
+     * @param createSettings the settings for creating new documents for the sample
      * @param documentNamesMap the names of the documents per docType
-     * @return [LoadSampleResult.Success] if the sample data has been loaded successfully.
-     * Otherwise, returns [LoadSampleResult.Failure], with the error message.
+     * @return returns the documentIds if successfully loaded, otherwise a error
      *
      * Expected sampleData format is CBOR. The CBOR data must be in the following structure:
      *
@@ -90,7 +89,7 @@ interface SampleDocumentManager : DocumentManager {
      */
     fun loadMdocSampleDocuments(
         sampleData: ByteArray,
-        createKeySettings: CreateKeySettings,
+        createSettings: CreateDocumentSettings,
         documentNamesMap: Map<DocType, String>? = null
     ): Outcome<List<DocumentId>>
 
