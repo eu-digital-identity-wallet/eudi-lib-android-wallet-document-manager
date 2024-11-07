@@ -15,8 +15,8 @@
  */
 package eu.europa.ec.eudi.wallet.document.sample
 
-import com.android.identity.securearea.CreateKeySettings
 import com.upokecenter.cbor.CBORObject
+import eu.europa.ec.eudi.wallet.document.CreateDocumentSettings
 import eu.europa.ec.eudi.wallet.document.DocType
 import eu.europa.ec.eudi.wallet.document.DocumentId
 import eu.europa.ec.eudi.wallet.document.DocumentManager
@@ -47,7 +47,7 @@ class SampleDocumentManagerImpl(
 
     override fun loadMdocSampleDocuments(
         sampleData: ByteArray,
-        createKeySettings: CreateKeySettings,
+        createSettings: CreateDocumentSettings,
         documentNamesMap: Map<DocType, String>?
     ): Outcome<List<DocumentId>> {
         try {
@@ -58,8 +58,10 @@ class SampleDocumentManagerImpl(
                 val docType = documentCbor["docType"].AsString()
                 val issuerSigned = documentCbor["issuerSigned"]
                 val nameSpaces = issuerSigned["nameSpaces"]
-                val unsignedDocument = createDocument(MsoMdocFormat(docType), createKeySettings)
-                    .getOrThrow()
+                val unsignedDocument = createDocument(
+                    format = MsoMdocFormat(docType),
+                    createSettings = createSettings
+                ).getOrThrow()
                 unsignedDocument.name = documentNamesMap?.get(docType) ?: docType
                 val authKey = unsignedDocument.publicKeyCoseBytes.toEcPublicKey
                 val mso = generateMso(DIGEST_ALG, docType, authKey, nameSpaces)

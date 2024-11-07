@@ -16,8 +16,8 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import com.android.identity.securearea.CreateKeySettings
 import com.android.identity.securearea.SecureArea
+import com.android.identity.securearea.SecureAreaRepository
 import com.android.identity.storage.StorageEngine
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 
@@ -63,7 +63,6 @@ interface DocumentManager {
      *
      * @param documentId the identifier of the document
      * @return the result of the deletion. If successful, it will return a proof of deletion. If not, it will return an error.
-     * @see [DeleteDocumentResult]
      */
     fun deleteDocumentById(documentId: DocumentId): Outcome<ProofOfDeletion?>
 
@@ -74,13 +73,13 @@ interface DocumentManager {
      * to retrieve the document's claims. After that the document can be stored using [storeIssuedDocument] or [storeDeferredDocument].
      *
      * @param format the format of the document
-     * @param createKeySettings the settings to create the keys
+     * @param createSettings the [SecureArea] to use for the new document
      * @param attestationChallenge the attestation challenge
      * @return the result of the creation. If successful, it will return the document. If not, it will return an error.
      */
     fun createDocument(
         format: DocumentFormat,
-        createKeySettings: CreateKeySettings,
+        createSettings: CreateDocumentSettings,
         attestationChallenge: ByteArray? = null
     ): Outcome<UnsignedDocument>
 
@@ -119,7 +118,7 @@ interface DocumentManager {
     class Builder {
         var identifier: String? = null
         var storageEngine: StorageEngine? = null
-        var secureArea: SecureArea? = null
+        var secureAreaRepository = SecureAreaRepository()
 
         /**
          * Set the identifier of the document manager.
@@ -140,12 +139,21 @@ interface DocumentManager {
         }
 
         /**
-         * Set the secure area to use for managing the keys.
+         * Sets the [secureAreaRepository] that will be used for documents' keys management
+         * @param secureAreaRepository the secure area repository
+         * @return this builder
+         */
+        fun setSecureAreaRepository(secureAreaRepository: SecureAreaRepository) = apply {
+            this.secureAreaRepository = secureAreaRepository
+        }
+
+        /**
+         * Adds a [SecureArea] implementation to [secureAreaRepository]
          * @param secureArea the secure area
          * @return this builder
          */
-        fun setSecureArea(secureArea: SecureArea): Builder = apply {
-            this.secureArea = secureArea
+        fun addSecureArea(secureArea: SecureArea): Builder = apply {
+            this.secureAreaRepository.addImplementation(secureArea)
         }
 
         /**
@@ -156,11 +164,11 @@ interface DocumentManager {
         fun build(): DocumentManager {
             requireNotNull(identifier) { "Identifier is required" }
             requireNotNull(storageEngine) { "Storage engine is required" }
-            requireNotNull(secureArea) { "Secure area is required" }
+            require(secureAreaRepository.implementations.isNotEmpty()) { "SecureAreaRepository is empty" }
             return DocumentManagerImpl(
                 identifier = identifier!!,
                 storageEngine = storageEngine!!,
-                secureArea = secureArea!!
+                secureAreaRepository = secureAreaRepository
             )
         }
     }

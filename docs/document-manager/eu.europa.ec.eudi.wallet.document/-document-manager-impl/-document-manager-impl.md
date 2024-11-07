@@ -5,14 +5,14 @@
 [androidJvm]\
 constructor(
 identifier: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html),
-storageEngine: StorageEngine, secureArea: SecureArea)
+storageEngine: StorageEngine, secureAreaRepository: SecureAreaRepository)
 
 #### Parameters
 
 androidJvm
 
-|               |                                        |
-|---------------|----------------------------------------|
-| identifier    | the identifier of the document manager |
-| storageEngine | the storage engine                     |
-| secureArea    | the secure area                        |
+|                      |                                        |
+|----------------------|----------------------------------------|
+| identifier           | the identifier of the document manager |
+| storageEngine        | the storage engine                     |
+| secureAreaRepository | the secure area                        |

@@ -24,7 +24,12 @@ import com.android.identity.mdoc.response.DeviceResponseGenerator
 import com.android.identity.mdoc.response.DeviceResponseParser
 import com.android.identity.mdoc.response.DocumentGenerator
 import com.android.identity.mdoc.util.MdocUtil
+import com.android.identity.securearea.SecureArea
+import com.android.identity.securearea.SecureAreaRepository
 import com.android.identity.securearea.software.SoftwareCreateKeySettings
+import com.android.identity.securearea.software.SoftwareSecureArea
+import com.android.identity.storage.EphemeralStorageEngine
+import com.android.identity.storage.StorageEngine
 import com.android.identity.util.Constants
 import com.upokecenter.cbor.CBORObject
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
@@ -33,23 +38,32 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import org.junit.Assert
+import org.junit.Assert.assertThrows
 import kotlin.test.*
 
 class DocumentManagerImplTest {
 
     lateinit var documentManager: DocumentManagerImpl
+    lateinit var storageEngine: StorageEngine
+    lateinit var secureArea: SecureArea
+    lateinit var secureAreaRepository: SecureAreaRepository
 
     @BeforeTest
     fun setUp() {
+        storageEngine = EphemeralStorageEngine()
+        secureArea = SoftwareSecureArea(storageEngine)
+        secureAreaRepository = SecureAreaRepository()
+            .apply { addImplementation(secureArea) }
         documentManager = DocumentManagerImpl(
             identifier = "document_manager",
-            storageEngine = storageEngine,
-            secureArea = secureArea
+            storageEngine = EphemeralStorageEngine(),
+            secureAreaRepository = secureAreaRepository
         )
     }
 
     @AfterTest
     fun tearDown() {
+        storageEngine.deleteAll()
         documentManager.getDocuments().forEach { documentManager.deleteDocumentById(it.id) }
     }
 
@@ -62,7 +76,10 @@ class DocumentManagerImplTest {
         val createKeySettings = SoftwareCreateKeySettings.Builder().build()
         val createDocumentResult = documentManager.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-            createKeySettings = createKeySettings
+            createSettings = SecureAreaCreateDocumentSettings(
+                secureAreaIdentifier = secureArea.identifier,
+                keySettings = createKeySettings
+            )
         )
         assertTrue(createDocumentResult.isSuccess)
         val unsignedDocument = createDocumentResult.getOrThrow()
@@ -98,7 +115,10 @@ class DocumentManagerImplTest {
     fun `should return failure result when unsupported format is used to create document`() {
         val createDocumentResult = documentManager.createDocument(
             format = UnsupportedDocumentFormat,
-            createKeySettings = SoftwareCreateKeySettings.Builder().build()
+            createSettings = SecureAreaCreateDocumentSettings(
+                secureAreaIdentifier = secureArea.identifier,
+                keySettings = SoftwareCreateKeySettings.Builder().build()
+            )
         )
         assertTrue(createDocumentResult.isFailure)
         assertIs<IllegalArgumentException>(createDocumentResult.exceptionOrNull())
@@ -121,7 +141,10 @@ class DocumentManagerImplTest {
     fun `should return failure result when public keys of document and mso don't match`() {
         val createDocumentResult = documentManager.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-            createKeySettings = SoftwareCreateKeySettings.Builder().build()
+            createSettings = SecureAreaCreateDocumentSettings(
+                secureAreaIdentifier = secureArea.identifier,
+                keySettings = SoftwareCreateKeySettings.Builder().build()
+            )
         )
         assertTrue(createDocumentResult.isSuccess)
         val document = createDocumentResult.getOrThrow()
@@ -157,7 +180,10 @@ class DocumentManagerImplTest {
     fun `should create an unsigned document and store it as deferred`() {
         val createDocumentResult = documentManager.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-            createKeySettings = SoftwareCreateKeySettings.Builder().build()
+            createSettings = SecureAreaCreateDocumentSettings(
+                secureAreaIdentifier = secureArea.identifier,
+                keySettings = SoftwareCreateKeySettings.Builder().build()
+            )
         )
         assertTrue(createDocumentResult.isSuccess)
         val document = createDocumentResult.getOrThrow()
@@ -195,7 +221,10 @@ class DocumentManagerImplTest {
 
         val createDocumentResult = documentManager.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-            createKeySettings = SoftwareCreateKeySettings.Builder().build()
+            createSettings = SecureAreaCreateDocumentSettings(
+                secureAreaIdentifier = secureArea.identifier,
+                keySettings = SoftwareCreateKeySettings.Builder().build()
+            )
         )
         assertTrue(createDocumentResult.isSuccess)
         val document = spyk(createDocumentResult.getOrThrow()) {
@@ -215,7 +244,10 @@ class DocumentManagerImplTest {
         documentManager.checkMsoKey = false
         val createDocumentResult = documentManager.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-            createKeySettings = SoftwareCreateKeySettings.Builder().build()
+            createSettings = SecureAreaCreateDocumentSettings(
+                secureAreaIdentifier = secureArea.identifier,
+                keySettings = SoftwareCreateKeySettings.Builder().build()
+            )
         )
         assertTrue(createDocumentResult.isSuccess)
         val document = createDocumentResult.getOrThrow()
@@ -260,4 +292,121 @@ class DocumentManagerImplTest {
         )
     }
 
+    @Test
+    fun `createDocument fails if invalid createSettings is provided`() {
+        val result = documentManager.createDocument(
+            format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
+            createSettings = object : CreateDocumentSettings {}
+        )
+
+        assertTrue(result.isFailure)
+        val exception = assertThrows(IllegalArgumentException::class.java) {
+            result.getOrThrow()
+        }
+        assertEquals(
+            "Invalid createSettings. Instance of [class eu.europa.ec.eudi.wallet.document.SecureAreaDocumentSettings] expected",
+            exception.message
+        )
+    }
+
+    @Test
+    fun `createDocument fails if secureArea is not registered`() {
+        val invalidIdentifier = "Not Existing SecureArea"
+        val result = documentManager.createDocument(
+            format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
+            createSettings = SecureAreaCreateDocumentSettings(
+                secureAreaIdentifier = invalidIdentifier,
+                keySettings = SoftwareCreateKeySettings.Builder().build()
+            )
+        )
+
+        assertTrue(result.isFailure)
+        val exception = assertThrows(IllegalArgumentException::class.java) {
+            result.getOrThrow()
+        }
+        assertEquals("SecureArea '$invalidIdentifier' not registered", exception.message)
+    }
+
+    @Test
+    fun `createDocument uses the correct secureArea for document`() {
+        val secureArea2 = object : SecureArea by SoftwareSecureArea(EphemeralStorageEngine()) {
+            override val identifier: String
+                get() = "${secureArea.identifier}2"
+        }
+        val secureAreaRepository = SecureAreaRepository()
+            .apply {
+                addImplementation(secureArea)
+                addImplementation(secureArea2)
+            }
+        val documentManager = DocumentManagerImpl(
+            identifier = "document_manager",
+            storageEngine = storageEngine,
+            secureAreaRepository = secureAreaRepository
+        )
+        val createKeySettings = SoftwareCreateKeySettings.Builder().build()
+        val document1 = documentManager.createDocument(
+            format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
+            createSettings = SecureAreaCreateDocumentSettings(
+                secureAreaIdentifier = secureArea.identifier,
+                keySettings = createKeySettings,
+            )
+        ).getOrThrow()
+
+        val document2 = documentManager.createDocument(
+            format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
+            createSettings = SecureAreaCreateDocumentSettings(
+                secureAreaIdentifier = secureArea2.identifier,
+                keySettings = createKeySettings,
+            )
+        ).getOrThrow()
+
+        assertEquals(secureArea.identifier, document1.secureArea.identifier)
+        assertEquals(secureArea2.identifier, document2.secureArea.identifier)
+    }
+
+    @Test
+    fun `verify that getDocuments returns only the documents from remaining secureArea after removing a secure area from the repository `() {
+        val storage = EphemeralStorageEngine()
+        val secureArea1 = SoftwareSecureArea(storage)
+        val secureArea2 = object : SecureArea by SoftwareSecureArea(EphemeralStorageEngine()) {
+            override val identifier: String
+                get() = "${secureArea.identifier}2"
+        }
+        val documentManager1 = DocumentManagerImpl(
+            identifier = "document_manager_1",
+            secureAreaRepository = SecureAreaRepository().apply {
+                addImplementation(secureArea1)
+                addImplementation(secureArea2)
+            },
+            storageEngine = storage
+        )
+        documentManager1.createDocument(
+            format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
+            createSettings = SecureAreaCreateDocumentSettings(
+                secureAreaIdentifier = secureArea1.identifier,
+                keySettings = SoftwareCreateKeySettings.Builder().build()
+            )
+        )
+        documentManager1.createDocument(
+            format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
+            createSettings = SecureAreaCreateDocumentSettings(
+                secureAreaIdentifier = secureArea2.identifier,
+                keySettings = SoftwareCreateKeySettings.Builder().build()
+            )
+        )
+
+        val documentsFrom1 = documentManager1.getDocuments()
+        assertEquals(2, documentsFrom1.size)
+
+        val documentManager2 = DocumentManagerImpl(
+            identifier = "document_manager_2",
+            secureAreaRepository = SecureAreaRepository().apply {
+                addImplementation(secureArea1)
+            },
+            storageEngine = storage
+        )
+
+        val documentsFrom2 = documentManager2.getDocuments()
+        assertEquals(1, documentsFrom2.size)
+    }
 }

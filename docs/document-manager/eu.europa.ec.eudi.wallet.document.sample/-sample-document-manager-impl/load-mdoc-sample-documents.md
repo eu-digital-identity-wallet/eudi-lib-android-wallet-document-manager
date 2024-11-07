@@ -5,7 +5,7 @@
 [androidJvm]\
 open override fun [loadMdocSampleDocuments](load-mdoc-sample-documents.md)(
 sampleData: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html),
-createKeySettings: CreateKeySettings,
+createSettings: [CreateDocumentSettings](../../eu.europa.ec.eudi.wallet.document/-create-document-settings/index.md),
 documentNamesMap: [Map](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-map/index.html)
 &lt;[DocType](../../eu.europa.ec.eudi.wallet.document/-doc-type/index.md), [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)
 &gt;?): [Outcome](../../eu.europa.ec.eudi.wallet.document/-outcome/index.md)
@@ -16,8 +16,7 @@ Loads the sample documents that are in mdoc format into the document manager.
 
 #### Return
 
-LoadSampleResult.Success if the sample data has been loaded successfully. Otherwise, returns
-LoadSampleResult.Failure, with the error message.
+returns the documentIds if successfully loaded, otherwise a error
 
 Expected sampleData format is CBOR. The CBOR data must be in the following structure:
 
@@ -50,8 +49,8 @@ IssuerAuth = COSE_Sign1 ; The payload is MobileSecurityObjectBytes
 
 androidJvm
 
-|                   |                                                            |
-|-------------------|------------------------------------------------------------|
-| sampleData        | the sample data in mdoc format to be loaded in cbor format |
-| createKeySettings | the settings for creating keys for the sample documents    |
-| documentNamesMap  | the names of the documents per docType                     |
+|                  |                                                            |
+|------------------|------------------------------------------------------------|
+| sampleData       | the sample data in mdoc format to be loaded in cbor format |
+| createSettings   | the settings for creating new documents for the sample     |
+| documentNamesMap | the names of the documents per docType                     |

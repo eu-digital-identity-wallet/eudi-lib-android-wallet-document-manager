@@ -5,7 +5,7 @@
 [androidJvm]\
 abstract fun [createDocument](create-document.md)(
 format: [DocumentFormat](../../eu.europa.ec.eudi.wallet.document.format/-document-format/index.md),
-createKeySettings: CreateKeySettings,
+createSettings: [CreateDocumentSettings](../-create-document-settings/index.md),
 attestationChallenge: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html)? =
 null): [Outcome](../-outcome/index.md)&lt;[UnsignedDocument](../-unsigned-document/index.md)&gt;
 
@@ -26,8 +26,8 @@ error.
 
 androidJvm
 
-|                      |                                 |
-|----------------------|---------------------------------|
-| format               | the format of the document      |
-| createKeySettings    | the settings to create the keys |
-| attestationChallenge | the attestation challenge       |
+|                      |                                            |
+|----------------------|--------------------------------------------|
+| format               | the format of the document                 |
+| createSettings       | the SecureArea to use for the new document |
+| attestationChallenge | the attestation challenge                  |
