@@ -11,7 +11,7 @@ null): [Outcome](../-outcome/index.md)&lt;EcSignature&gt;
 Sign the data with the document key
 
 If the key is locked, the key unlock data must be provided to unlock the key before signing the
-data. Otherwise, the method will return SignResult.KeyLocked.
+data. Otherwise, the method will return [Outcome](../-outcome/index.md) with the EcSignature.
 
 #### Return
 

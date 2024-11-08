@@ -63,7 +63,7 @@ sealed interface Document {
      * Sign the data with the document key
      *
      * If the key is locked, the key unlock data must be provided to unlock the key
-     * before signing the data. Otherwise, the method will return [SignResult.KeyLocked].
+     * before signing the data. Otherwise, the method will return [Outcome] with the [EcSignature].
      *
      * @param dataToSign the data to sign
      * @param algorithm the algorithm to use for signing
@@ -92,7 +92,7 @@ sealed interface Document {
      * Creates a shared secret given the other party's public key
      *
      * If the key is locked, the key unlock data must be provided to unlock the key
-     * before creating the shared secret. Otherwise, the method will return [SharedSecretResult.KeyLocked].
+     * before creating the shared secret. Otherwise, the method will return [Outcome] with the [SharedSecret].
      *
      * @param otherPublicKey the other party's public key
      * @param keyUnlockData the key unlock data needed to unlock the key

@@ -16,9 +16,11 @@
 
 package eu.europa.ec.eudi.wallet.document
 
+import com.android.identity.securearea.SecureArea
 import com.android.identity.securearea.software.SoftwareSecureArea
 import com.android.identity.storage.EphemeralStorageEngine
+import com.android.identity.storage.StorageEngine
 
-val storageEngine = EphemeralStorageEngine()
-val secureArea = SoftwareSecureArea(storageEngine)
+val storageEngineFixture: StorageEngine = EphemeralStorageEngine()
+val secureAreaFixture: SecureArea = SoftwareSecureArea(storageEngineFixture)
 

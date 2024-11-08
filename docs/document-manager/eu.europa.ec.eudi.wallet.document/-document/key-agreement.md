@@ -11,7 +11,8 @@ keyUnlockData: KeyUnlockData? = null): [Outcome](../-outcome/index.md)
 Creates a shared secret given the other party's public key
 
 If the key is locked, the key unlock data must be provided to unlock the key before creating the
-shared secret. Otherwise, the method will return SharedSecretResult.KeyLocked.
+shared secret. Otherwise, the method will return [Outcome](../-outcome/index.md) with
+the [SharedSecret](../-shared-secret/index.md).
 
 #### Return
 

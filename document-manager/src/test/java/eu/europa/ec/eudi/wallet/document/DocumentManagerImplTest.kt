@@ -304,7 +304,7 @@ class DocumentManagerImplTest {
             result.getOrThrow()
         }
         assertEquals(
-            "Invalid createSettings. Instance of [class eu.europa.ec.eudi.wallet.document.SecureAreaDocumentSettings] expected",
+            "Invalid createSettings. Instance of [class eu.europa.ec.eudi.wallet.document.SecureAreaCreateDocumentSettings] expected",
             exception.message
         )
     }
@@ -366,28 +366,29 @@ class DocumentManagerImplTest {
 
     @Test
     fun `verify that getDocuments returns only the documents from remaining secureArea after removing a secure area from the repository `() {
+        val documentManagerIdentifier = "document_manager"
         val storage = EphemeralStorageEngine()
         val secureArea1 = SoftwareSecureArea(storage)
         val secureArea2 = object : SecureArea by SoftwareSecureArea(EphemeralStorageEngine()) {
             override val identifier: String
                 get() = "${secureArea.identifier}2"
         }
-        val documentManager1 = DocumentManagerImpl(
-            identifier = "document_manager_1",
+        val documentManagerWithTwoSecureAreas = DocumentManagerImpl(
+            identifier = documentManagerIdentifier,
             secureAreaRepository = SecureAreaRepository().apply {
                 addImplementation(secureArea1)
                 addImplementation(secureArea2)
             },
             storageEngine = storage
         )
-        documentManager1.createDocument(
+        documentManagerWithTwoSecureAreas.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
             createSettings = SecureAreaCreateDocumentSettings(
                 secureAreaIdentifier = secureArea1.identifier,
                 keySettings = SoftwareCreateKeySettings.Builder().build()
             )
         )
-        documentManager1.createDocument(
+        documentManagerWithTwoSecureAreas.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
             createSettings = SecureAreaCreateDocumentSettings(
                 secureAreaIdentifier = secureArea2.identifier,
@@ -395,18 +396,66 @@ class DocumentManagerImplTest {
             )
         )
 
-        val documentsFrom1 = documentManager1.getDocuments()
-        assertEquals(2, documentsFrom1.size)
+        val documentsFromTwoSecureAreas = documentManagerWithTwoSecureAreas.getDocuments()
+        assertEquals(2, documentsFromTwoSecureAreas.size)
 
-        val documentManager2 = DocumentManagerImpl(
-            identifier = "document_manager_2",
+        // Create a new DocumentManager with the same identifier
+        // having only the one of the previous two secure areas
+        val documentManagerWithOneSecureArea = DocumentManagerImpl(
+            identifier = documentManagerIdentifier,
             secureAreaRepository = SecureAreaRepository().apply {
                 addImplementation(secureArea1)
             },
             storageEngine = storage
         )
+        // We expect to list only the documents that their keys are present in secureArea1
+        val documentsFromOneSecureArea = documentManagerWithOneSecureArea.getDocuments()
+        assertEquals(1, documentsFromOneSecureArea.size)
+    }
 
-        val documentsFrom2 = documentManager2.getDocuments()
-        assertEquals(1, documentsFrom2.size)
+    @Test
+    fun `verify that each documentManager returns only its documents`() {
+        val documentManager1 = DocumentManagerImpl(
+            identifier = "document_manager_1",
+            secureAreaRepository = SecureAreaRepository().apply {
+                addImplementation(secureAreaFixture)
+            },
+            storageEngine = storageEngineFixture
+        )
+
+        val documentManager2 = DocumentManagerImpl(
+            identifier = "document_manager_2",
+            secureAreaRepository = SecureAreaRepository().apply {
+                addImplementation(secureAreaFixture)
+            },
+            storageEngine = storageEngineFixture
+        )
+
+        documentManager1.createDocument(
+            format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
+            createSettings = SecureAreaCreateDocumentSettings(
+                secureAreaIdentifier = secureAreaFixture.identifier,
+                keySettings = SoftwareCreateKeySettings.Builder().build()
+            )
+        )
+        documentManager2.createDocument(
+            format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
+            createSettings = SecureAreaCreateDocumentSettings(
+                secureAreaIdentifier = secureAreaFixture.identifier,
+                keySettings = SoftwareCreateKeySettings.Builder().build()
+            )
+        )
+
+        assertEquals(1, documentManager1.getDocuments().size)
+        assertEquals(1, documentManager2.getDocuments().size)
+
+        val document1 = documentManager1.getDocuments().first()
+        val document2 = documentManager2.getDocuments().first()
+        assertNotEquals(document1, document2)
+
+        assertTrue(document1.id.startsWith(documentManager1.prefix))
+        assertTrue(document2.id.startsWith(documentManager2.prefix))
+        assertEquals(documentManager1.identifier, document1.documentManagerId)
+        assertEquals(documentManager2.identifier, document2.documentManagerId)
     }
 }
