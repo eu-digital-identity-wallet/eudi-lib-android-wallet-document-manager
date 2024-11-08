@@ -63,6 +63,10 @@ class DocumentManagerImpl(
     @get:JvmSynthetic
     internal var checkMsoKey: Boolean = true
 
+    @VisibleForTesting
+    @get:JvmSynthetic
+    internal val prefix = "Document_${identifier}_"
+
     @get:VisibleForTesting
     @get:JvmSynthetic
     internal val documentStore by lazy {
@@ -82,6 +86,9 @@ class DocumentManagerImpl(
      */
     override fun getDocumentById(documentId: DocumentId): Document? {
         return try {
+            if (!documentId.startsWith(prefix)) {
+                return null
+            }
             documentStore.lookupDocument(documentId)?.toDocument()
         } catch (e: Throwable) {
             Logger.e(TAG, "Failed to lookup document with id $documentId", e)
@@ -98,6 +105,7 @@ class DocumentManagerImpl(
     override fun getDocuments(predicate: ((Document) -> Boolean)?): List<Document> {
         return try {
             documentStore.listDocuments()
+                .filter { it.startsWith(prefix) }
                 .mapNotNull { getDocumentById(it) }
                 .filter { predicate?.invoke(it) != false }
         } catch (e: Throwable) {
@@ -128,9 +136,8 @@ class DocumentManagerImpl(
      * contains the keys and the method to proof the ownership of the keys, that can be used with an issuer
      * to retrieve the document's claims. After that the document can be stored using [storeIssuedDocument] or [storeDeferredDocument].
      *
-     * @param createSetting the [com.android.identity.securearea.SecureArea] to use for the new document
      * @param format the format of the document
-     * @param createKeySettings the settings to create the keys
+     * @param createSettings the [SecureAreaCreateDocumentSettings] to use for the new document
      * @param attestationChallenge the attestation challenge
      * @return the result of the creation. If successful, it will return the document. If not, it will return an error.
      */
@@ -147,7 +154,7 @@ class DocumentManagerImpl(
             val secureArea =
                 secureAreaRepository.getImplementation(createSettings.secureAreaIdentifier)
                     ?: throw IllegalArgumentException("SecureArea '${createSettings.secureAreaIdentifier}' not registered")
-            documentId = "Document_${identifier}_${UUID.randomUUID()}"
+            documentId = "${prefix}${UUID.randomUUID()}"
             val domain = identifier
             val identityDocument = documentStore.createDocument(documentId).apply {
                 this.documentManagerId = identifier

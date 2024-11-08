@@ -83,34 +83,20 @@ data class IssuedDocument(
     val nameSpaces: NameSpaces
         get() = nameSpacedDataInBytes.mapValues { it.value.keys.toList() }
 
-
-    override fun hashCode(): Int {
-        var result = id.hashCode()
-        result = 31 * result + name.hashCode()
-        result = 31 * result + format.hashCode()
-        result = 31 * result + isCertified.hashCode()
-        result = 31 * result + keyAlias.hashCode()
-        result = 31 * result + secureArea.hashCode()
-        result = 31 * result + createdAt.hashCode()
-        result = 31 * result + issuedAt.hashCode()
-        result = 31 * result + Cbor.encode(nameSpacedData.toDataItem()).contentHashCode()
-        result = 31 * result + issuerProvidedData.contentHashCode()
-        return result
-    }
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as IssuedDocument
+        if (other !is IssuedDocument) return false
 
         if (id != other.id) return false
         if (name != other.name) return false
         if (format != other.format) return false
+        if (documentManagerId != other.documentManagerId) return false
         if (isCertified != other.isCertified) return false
         if (keyAlias != other.keyAlias) return false
         if (secureArea != other.secureArea) return false
         if (createdAt != other.createdAt) return false
+        if (validFrom != other.validFrom) return false
+        if (validUntil != other.validUntil) return false
         if (issuedAt != other.issuedAt) return false
         if (!Cbor.encode(nameSpacedData.toDataItem())
                 .contentEquals(Cbor.encode(other.nameSpacedData.toDataItem()))
@@ -118,5 +104,22 @@ data class IssuedDocument(
         if (!issuerProvidedData.contentEquals(other.issuerProvidedData)) return false
 
         return true
+    }
+
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + name.hashCode()
+        result = 31 * result + format.hashCode()
+        result = 31 * result + documentManagerId.hashCode()
+        result = 31 * result + isCertified.hashCode()
+        result = 31 * result + keyAlias.hashCode()
+        result = 31 * result + secureArea.hashCode()
+        result = 31 * result + createdAt.hashCode()
+        result = 31 * result + validFrom.hashCode()
+        result = 31 * result + validUntil.hashCode()
+        result = 31 * result + issuedAt.hashCode()
+        result = 31 * result + Cbor.encode(nameSpacedData.toDataItem()).contentHashCode()
+        result = 31 * result + issuerProvidedData.contentHashCode()
+        return result
     }
 }

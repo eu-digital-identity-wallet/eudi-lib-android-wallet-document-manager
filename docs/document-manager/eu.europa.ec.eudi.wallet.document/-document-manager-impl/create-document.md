@@ -26,9 +26,8 @@ error.
 
 androidJvm
 
-|                      |                                                                            |
-|----------------------|----------------------------------------------------------------------------|
-| createSetting        | the com.android.identity.securearea.SecureArea to use for the new document |
-| format               | the format of the document                                                 |
-| createKeySettings    | the settings to create the keys                                            |
-| attestationChallenge | the attestation challenge                                                  |
+|                      |                                                                                                                       |
+|----------------------|-----------------------------------------------------------------------------------------------------------------------|
+| format               | the format of the document                                                                                            |
+| createSettings       | the [SecureAreaCreateDocumentSettings](../-secure-area-create-document-settings/index.md) to use for the new document |
+| attestationChallenge | the attestation challenge                                                                                             |

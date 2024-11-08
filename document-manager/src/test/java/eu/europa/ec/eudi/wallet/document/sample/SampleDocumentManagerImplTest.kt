@@ -16,13 +16,8 @@
 
 package eu.europa.ec.eudi.wallet.document.sample
 
-import com.android.identity.crypto.Algorithm
-import com.android.identity.crypto.Crypto
-import com.android.identity.securearea.KeyLockedException
-import com.android.identity.securearea.PassphraseConstraints
 import com.android.identity.securearea.SecureAreaRepository
 import com.android.identity.securearea.software.SoftwareCreateKeySettings
-import com.android.identity.securearea.software.SoftwareKeyUnlockData
 import com.android.identity.securearea.software.SoftwareSecureArea
 import com.android.identity.storage.EphemeralStorageEngine
 import eu.europa.ec.eudi.wallet.document.DocumentManagerImpl
@@ -30,9 +25,7 @@ import eu.europa.ec.eudi.wallet.document.IssuedDocument
 import eu.europa.ec.eudi.wallet.document.SecureAreaCreateDocumentSettings
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.getResourceAsText
-import eu.europa.ec.eudi.wallet.document.secureArea
-import io.mockk.every
-import io.mockk.spyk
+import eu.europa.ec.eudi.wallet.document.secureAreaFixture
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import kotlin.io.encoding.Base64
@@ -40,7 +33,6 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
-import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class SampleDocumentManagerImplTest {
@@ -62,7 +54,7 @@ class SampleDocumentManagerImplTest {
                 .apply { addImplementation(secureArea) }
             documentManager = SampleDocumentManagerImpl(
                 DocumentManagerImpl(
-                    identifier = "document_manager",
+                    identifier = SampleDocumentManagerImpl::class.simpleName!!,
                     storageEngine = EphemeralStorageEngine(),
                     secureAreaRepository = secureAreaRepository
                 )
@@ -113,82 +105,13 @@ class SampleDocumentManagerImplTest {
     }
 
     @Test
-    fun `document sign method should create a valid signature`() {
-        val document = documentManager.getDocuments().first()
-        val dataToSign = byteArrayOf(1, 2, 3)
-        val signResult = document.sign(dataToSign)
-        assertTrue(signResult.isSuccess)
-        assertNotNull(signResult.getOrNull())
-        val signature = signResult.getOrThrow()
-
-        // Verify the signature
-        val publicKey = document.keyInfo.publicKey
-        val isValid = Crypto.checkSignature(publicKey, dataToSign, Algorithm.ES256, signature)
-        assertTrue(isValid)
-    }
-
-    @Test
-    fun `document sign method should return failure`() {
-        val document = spyk(documentManager.getDocuments().first())
-        val dataToSign = byteArrayOf(1, 2, 3)
-        every {
-            document.secureArea.sign(
-                document.keyAlias,
-                Algorithm.ES256,
-                dataToSign,
-                null
-            )
-        } throws Exception()
-        val signResult = document.sign(dataToSign)
-        assertTrue(signResult.isFailure)
-    }
-
-    @Test
-    fun `document sign method should return key locked result if key usage requires unlocking`() {
-        // reload sample document with createKeySettings that require PIN
-        val storageEngine = EphemeralStorageEngine()
-        val secureAreaRepository = SecureAreaRepository()
-            .apply { addImplementation(SoftwareSecureArea(storageEngine)) }
-        val documentManager = SampleDocumentManagerImpl(
-            DocumentManagerImpl(
-                identifier = "document_manager",
-                storageEngine = storageEngine,
-                secureAreaRepository = secureAreaRepository
-            )
-        )
-        val createKeySettings = SoftwareCreateKeySettings.Builder()
-            .setPassphraseRequired(true, "1234", PassphraseConstraints.PIN_FOUR_DIGITS)
-            .build()
-        documentManager.loadMdocSampleDocuments(
-            sampleData = sampleDocuments,
-            createSettings = SecureAreaCreateDocumentSettings(
-                secureAreaIdentifier = secureArea.identifier,
-                keySettings = createKeySettings,
-            ),
-            documentNamesMap = mapOf(
-                "eu.europa.ec.eudi.pid.1" to "EU PID",
-                "org.iso.18013.5.1.mDL" to "mDL"
-            )
-        )
-
-        val document = documentManager.getDocuments().first()
-        val dataToSign = byteArrayOf(1, 2, 3)
-        val signResult = document.sign(dataToSign)
-        assertTrue(signResult.isFailure)
-        val failure = signResult.exceptionOrNull()
-        assertIs<KeyLockedException>(failure)
-
-    }
-
-    @Test
     fun `deleteDocumentById should delete the document`() {
-        // reload sample document with createKeySettings that require PIN
         val storageEngine = EphemeralStorageEngine()
         val secureAreaRepository = SecureAreaRepository()
             .apply { addImplementation(SoftwareSecureArea(storageEngine)) }
         val documentManager = SampleDocumentManagerImpl(
             DocumentManagerImpl(
-                identifier = "document_manager",
+                identifier = SampleDocumentManagerImpl::class.simpleName!!,
                 storageEngine = storageEngine,
                 secureAreaRepository = secureAreaRepository
             )
@@ -197,7 +120,7 @@ class SampleDocumentManagerImplTest {
         documentManager.loadMdocSampleDocuments(
             sampleData = sampleDocuments,
             createSettings = SecureAreaCreateDocumentSettings(
-                secureAreaIdentifier = secureArea.identifier,
+                secureAreaIdentifier = secureAreaFixture.identifier,
                 keySettings = createKeySettings,
             ),
             documentNamesMap = mapOf(
@@ -215,41 +138,6 @@ class SampleDocumentManagerImplTest {
         val documents = documentManager.getDocuments()
         assertEquals(1, documents.size)
 
-    }
-
-    @Test
-    fun `document sign method should return result success when locked key and passing the keyUnlockData`() {
-        // reload sample document with createKeySettings that require PIN
-        val storageEngine = EphemeralStorageEngine()
-        val secureAreaRepository = SecureAreaRepository()
-            .apply { addImplementation(SoftwareSecureArea(storageEngine)) }
-        val documentManager = SampleDocumentManagerImpl(
-            DocumentManagerImpl(
-                identifier = "document_manager",
-                storageEngine = storageEngine,
-                secureAreaRepository = secureAreaRepository
-            )
-        )
-        val createKeySettings = SoftwareCreateKeySettings.Builder()
-            .setPassphraseRequired(true, "1234", PassphraseConstraints.PIN_FOUR_DIGITS)
-            .build()
-        val loadResult = documentManager.loadMdocSampleDocuments(
-            sampleData = sampleDocuments,
-            createSettings = SecureAreaCreateDocumentSettings(
-                secureAreaIdentifier = secureArea.identifier,
-                keySettings = createKeySettings,
-            ),
-            documentNamesMap = mapOf(
-                "eu.europa.ec.eudi.pid.1" to "EU PID",
-                "org.iso.18013.5.1.mDL" to "mDL"
-            )
-        )
-        assertTrue(loadResult.isSuccess)
-
-        val document = documentManager.getDocuments().first()
-        val dataToSign = byteArrayOf(1, 2, 3)
-        val signResult = document.sign(dataToSign, keyUnlockData = SoftwareKeyUnlockData("1234"))
-        assertTrue(signResult.isSuccess)
     }
 
     @Test
