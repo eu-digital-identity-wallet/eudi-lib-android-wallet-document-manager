@@ -11,12 +11,25 @@ document.
 
 #### See also
 
-|                                                                                       |                                                                                                                                                                                    |
-|---------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [SecureAreaCreateDocumentSettings](../-secure-area-create-document-settings/index.md) | implementation that is used with the [DocumentManagerImpl.createDocument](../-document-manager-impl/create-document.md) that depends on com.android.identity.securearea.SecureArea |
+|                                                                          |                |
+|--------------------------------------------------------------------------|----------------|
+| [CreateDocumentSettingsImpl](../-create-document-settings-impl/index.md) | implementation |
 
 #### Inheritors
 
-|                                                                                       |
-|---------------------------------------------------------------------------------------|
-| [SecureAreaCreateDocumentSettings](../-secure-area-create-document-settings/index.md) |
+|                                                                          |
+|--------------------------------------------------------------------------|
+| [CreateDocumentSettingsImpl](../-create-document-settings-impl/index.md) |
+
+## Types
+
+| Name                             | Summary                                                 |
+|----------------------------------|---------------------------------------------------------|
+| [Companion](-companion/index.md) | [androidJvm]<br>object [Companion](-companion/index.md) |
+
+## Properties
+
+| Name                                              | Summary                                                                                                                                                          |
+|---------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [createKeySettings](create-key-settings.md)       | [androidJvm]<br>abstract val [createKeySettings](create-key-settings.md): CreateKeySettings                                                                      |
+| [secureAreaIdentifier](secure-area-identifier.md) | [androidJvm]<br>abstract val [secureAreaIdentifier](secure-area-identifier.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html) |

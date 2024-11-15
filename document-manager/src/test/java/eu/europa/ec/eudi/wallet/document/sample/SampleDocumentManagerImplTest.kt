@@ -20,9 +20,9 @@ import com.android.identity.securearea.SecureAreaRepository
 import com.android.identity.securearea.software.SoftwareCreateKeySettings
 import com.android.identity.securearea.software.SoftwareSecureArea
 import com.android.identity.storage.EphemeralStorageEngine
+import eu.europa.ec.eudi.wallet.document.CreateDocumentSettings
 import eu.europa.ec.eudi.wallet.document.DocumentManagerImpl
 import eu.europa.ec.eudi.wallet.document.IssuedDocument
-import eu.europa.ec.eudi.wallet.document.SecureAreaCreateDocumentSettings
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.getResourceAsText
 import eu.europa.ec.eudi.wallet.document.secureAreaFixture
@@ -62,9 +62,9 @@ class SampleDocumentManagerImplTest {
             val createKeySettings = SoftwareCreateKeySettings.Builder().build()
             val loadResult = documentManager.loadMdocSampleDocuments(
                 sampleData = sampleDocuments,
-                createSettings = SecureAreaCreateDocumentSettings(
+                createSettings = CreateDocumentSettings(
                     secureAreaIdentifier = secureArea.identifier,
-                    keySettings = createKeySettings,
+                    createKeySettings = createKeySettings,
                 ),
                 documentNamesMap = mapOf(
                     "eu.europa.ec.eudi.pid.1" to "EU PID",
@@ -119,9 +119,9 @@ class SampleDocumentManagerImplTest {
         val createKeySettings = SoftwareCreateKeySettings.Builder().build()
         documentManager.loadMdocSampleDocuments(
             sampleData = sampleDocuments,
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureAreaFixture.identifier,
-                keySettings = createKeySettings,
+                createKeySettings = createKeySettings,
             ),
             documentNamesMap = mapOf(
                 "eu.europa.ec.eudi.pid.1" to "EU PID",

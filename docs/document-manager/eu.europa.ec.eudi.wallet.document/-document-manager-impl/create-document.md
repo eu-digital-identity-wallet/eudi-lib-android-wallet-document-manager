@@ -5,8 +5,7 @@
 [androidJvm]\
 open override fun [createDocument](create-document.md)(
 format: [DocumentFormat](../../eu.europa.ec.eudi.wallet.document.format/-document-format/index.md),
-createSettings: [CreateDocumentSettings](../-create-document-settings/index.md),
-attestationChallenge: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html)?): [Outcome](../-outcome/index.md)
+createSettings: [CreateDocumentSettings](../-create-document-settings/index.md)): [Outcome](../-outcome/index.md)
 &lt;[UnsignedDocument](../-unsigned-document/index.md)&gt;
 
 Create a new document. This method will create a new document with the given format and keys
@@ -26,8 +25,7 @@ error.
 
 androidJvm
 
-|                      |                                                                                                                       |
-|----------------------|-----------------------------------------------------------------------------------------------------------------------|
-| format               | the format of the document                                                                                            |
-| createSettings       | the [SecureAreaCreateDocumentSettings](../-secure-area-create-document-settings/index.md) to use for the new document |
-| attestationChallenge | the attestation challenge                                                                                             |
+|                |                                                                  |
+|----------------|------------------------------------------------------------------|
+| format         | the format of the document                                       |
+| createSettings | the SecureAreaCreateDocumentSettings to use for the new document |

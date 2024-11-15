@@ -76,9 +76,9 @@ class DocumentManagerImplTest {
         val createKeySettings = SoftwareCreateKeySettings.Builder().build()
         val createDocumentResult = documentManager.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureArea.identifier,
-                keySettings = createKeySettings
+                createKeySettings = createKeySettings
             )
         )
         assertTrue(createDocumentResult.isSuccess)
@@ -115,9 +115,9 @@ class DocumentManagerImplTest {
     fun `should return failure result when unsupported format is used to create document`() {
         val createDocumentResult = documentManager.createDocument(
             format = UnsupportedDocumentFormat,
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureArea.identifier,
-                keySettings = SoftwareCreateKeySettings.Builder().build()
+                createKeySettings = SoftwareCreateKeySettings.Builder().build()
             )
         )
         assertTrue(createDocumentResult.isFailure)
@@ -141,9 +141,9 @@ class DocumentManagerImplTest {
     fun `should return failure result when public keys of document and mso don't match`() {
         val createDocumentResult = documentManager.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureArea.identifier,
-                keySettings = SoftwareCreateKeySettings.Builder().build()
+                createKeySettings = SoftwareCreateKeySettings.Builder().build()
             )
         )
         assertTrue(createDocumentResult.isSuccess)
@@ -180,9 +180,9 @@ class DocumentManagerImplTest {
     fun `should create an unsigned document and store it as deferred`() {
         val createDocumentResult = documentManager.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureArea.identifier,
-                keySettings = SoftwareCreateKeySettings.Builder().build()
+                createKeySettings = SoftwareCreateKeySettings.Builder().build()
             )
         )
         assertTrue(createDocumentResult.isSuccess)
@@ -221,9 +221,9 @@ class DocumentManagerImplTest {
 
         val createDocumentResult = documentManager.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureArea.identifier,
-                keySettings = SoftwareCreateKeySettings.Builder().build()
+                createKeySettings = SoftwareCreateKeySettings.Builder().build()
             )
         )
         assertTrue(createDocumentResult.isSuccess)
@@ -244,9 +244,9 @@ class DocumentManagerImplTest {
         documentManager.checkMsoKey = false
         val createDocumentResult = documentManager.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureArea.identifier,
-                keySettings = SoftwareCreateKeySettings.Builder().build()
+                createKeySettings = SoftwareCreateKeySettings.Builder().build()
             )
         )
         assertTrue(createDocumentResult.isSuccess)
@@ -293,30 +293,13 @@ class DocumentManagerImplTest {
     }
 
     @Test
-    fun `createDocument fails if invalid createSettings is provided`() {
-        val result = documentManager.createDocument(
-            format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-            createSettings = object : CreateDocumentSettings {}
-        )
-
-        assertTrue(result.isFailure)
-        val exception = assertThrows(IllegalArgumentException::class.java) {
-            result.getOrThrow()
-        }
-        assertEquals(
-            "Invalid createSettings. Instance of [class eu.europa.ec.eudi.wallet.document.SecureAreaCreateDocumentSettings] expected",
-            exception.message
-        )
-    }
-
-    @Test
     fun `createDocument fails if secureArea is not registered`() {
         val invalidIdentifier = "Not Existing SecureArea"
         val result = documentManager.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = invalidIdentifier,
-                keySettings = SoftwareCreateKeySettings.Builder().build()
+                createKeySettings = SoftwareCreateKeySettings.Builder().build()
             )
         )
 
@@ -346,17 +329,17 @@ class DocumentManagerImplTest {
         val createKeySettings = SoftwareCreateKeySettings.Builder().build()
         val document1 = documentManager.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureArea.identifier,
-                keySettings = createKeySettings,
+                createKeySettings = createKeySettings,
             )
         ).getOrThrow()
 
         val document2 = documentManager.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureArea2.identifier,
-                keySettings = createKeySettings,
+                createKeySettings = createKeySettings,
             )
         ).getOrThrow()
 
@@ -383,16 +366,16 @@ class DocumentManagerImplTest {
         )
         documentManagerWithTwoSecureAreas.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureArea1.identifier,
-                keySettings = SoftwareCreateKeySettings.Builder().build()
+                createKeySettings = SoftwareCreateKeySettings.Builder().build()
             )
         )
         documentManagerWithTwoSecureAreas.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureArea2.identifier,
-                keySettings = SoftwareCreateKeySettings.Builder().build()
+                createKeySettings = SoftwareCreateKeySettings.Builder().build()
             )
         )
 
@@ -433,16 +416,16 @@ class DocumentManagerImplTest {
 
         documentManager1.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureAreaFixture.identifier,
-                keySettings = SoftwareCreateKeySettings.Builder().build()
+                createKeySettings = SoftwareCreateKeySettings.Builder().build()
             )
         )
         documentManager2.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureAreaFixture.identifier,
-                keySettings = SoftwareCreateKeySettings.Builder().build()
+                createKeySettings = SoftwareCreateKeySettings.Builder().build()
             )
         )
 

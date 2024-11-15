@@ -107,27 +107,6 @@ internal var IdentityDocument.nameSpacedData: NameSpacedData
     }
 
 /**
- * The attestation challenge stored in applicationData under the key "attestationChallenge"
- * The attestation challenge is passed from [eu.europa.ec.eudi.wallet.document.DocumentManager.createDocument]
- * method
- *
- * If not present, an empty byte array is returned
- */
-internal var IdentityDocument.attestationChallenge: ByteArray
-    @JvmSynthetic
-    get() = try {
-        applicationData.getData("attestationChallenge")
-    } catch (_: Throwable) {
-        // handle missing attestationChallenge field
-        // since the attestationChallenge field was not present in the earlier versions of the app
-        ByteArray(0)
-    }
-    @JvmSynthetic
-    set(value) {
-        applicationData.setData("attestationChallenge", value)
-    }
-
-/**
  * Deferred related data stored in applicationData under the key "deferredRelatedData"
  * set by [eu.europa.ec.eudi.wallet.document.DocumentManager.storeDeferredDocument]
  * method

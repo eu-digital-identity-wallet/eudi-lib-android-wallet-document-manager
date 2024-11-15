@@ -3,4 +3,4 @@
 # storageEngine
 
 [androidJvm]\
-val [storageEngine](storage-engine.md): StorageEngine
+open override val [storageEngine](storage-engine.md): StorageEngine
