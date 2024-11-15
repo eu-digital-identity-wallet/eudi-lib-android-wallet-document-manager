@@ -26,7 +26,6 @@ import com.android.identity.util.UUID
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
-import eu.europa.ec.eudi.wallet.document.internal.attestationChallenge
 import eu.europa.ec.eudi.wallet.document.internal.clearDeferredRelatedData
 import eu.europa.ec.eudi.wallet.document.internal.createCredential
 import eu.europa.ec.eudi.wallet.document.internal.createdAt
@@ -34,7 +33,6 @@ import eu.europa.ec.eudi.wallet.document.internal.deferredRelatedData
 import eu.europa.ec.eudi.wallet.document.internal.documentManagerId
 import eu.europa.ec.eudi.wallet.document.internal.documentName
 import eu.europa.ec.eudi.wallet.document.internal.issuedAt
-import eu.europa.ec.eudi.wallet.document.internal.randomBytes
 import eu.europa.ec.eudi.wallet.document.internal.storeIssuedDocument
 import eu.europa.ec.eudi.wallet.document.internal.toDocument
 import kotlinx.datetime.Clock
@@ -55,8 +53,8 @@ import org.jetbrains.annotations.VisibleForTesting
  */
 class DocumentManagerImpl(
     override val identifier: String,
-    val storageEngine: StorageEngine,
-    val secureAreaRepository: SecureAreaRepository
+    override val storageEngine: StorageEngine,
+    override val secureAreaRepository: SecureAreaRepository
 ) : DocumentManager {
 
     @VisibleForTesting
@@ -138,19 +136,14 @@ class DocumentManagerImpl(
      *
      * @param format the format of the document
      * @param createSettings the [SecureAreaCreateDocumentSettings] to use for the new document
-     * @param attestationChallenge the attestation challenge
      * @return the result of the creation. If successful, it will return the document. If not, it will return an error.
      */
     override fun createDocument(
         format: DocumentFormat,
-        createSettings: CreateDocumentSettings,
-        attestationChallenge: ByteArray?
+        createSettings: CreateDocumentSettings
     ): Outcome<UnsignedDocument> {
         var documentId: String? = null
         return try {
-            require(createSettings is SecureAreaCreateDocumentSettings) {
-                "Invalid createSettings. Instance of [${SecureAreaCreateDocumentSettings::class}] expected"
-            }
             val secureArea =
                 secureAreaRepository.getImplementation(createSettings.secureAreaIdentifier)
                     ?: throw IllegalArgumentException("SecureArea '${createSettings.secureAreaIdentifier}' not registered")
@@ -159,13 +152,12 @@ class DocumentManagerImpl(
             val identityDocument = documentStore.createDocument(documentId).apply {
                 this.documentManagerId = identifier
                 this.documentName = documentId
-                this.attestationChallenge = attestationChallenge ?: 10.randomBytes
                 this.createdAt = Clock.System.now().toJavaInstant()
             }
             when (format) {
                 is MsoMdocFormat -> {
                     format.createCredential(
-                        domain, identityDocument, secureArea, createSettings.keySettings
+                        domain, identityDocument, secureArea, createSettings.createKeySettings
                     )
                     identityDocument.documentName = format.docType
                 }

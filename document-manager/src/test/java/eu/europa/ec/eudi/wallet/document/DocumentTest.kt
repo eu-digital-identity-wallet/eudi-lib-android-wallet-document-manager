@@ -51,9 +51,9 @@ class DocumentTest {
         val documentFormat = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
         val unsignedDocument = documentManager.createDocument(
             format = documentFormat,
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureAreaFixture.identifier,
-                keySettings = SoftwareCreateKeySettings.Builder().build()
+                createKeySettings = SoftwareCreateKeySettings.Builder().build()
             )
         ).getOrThrow()
 
@@ -81,9 +81,9 @@ class DocumentTest {
         val documentFormat = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
         val unsignedDocument = documentManager.createDocument(
             format = documentFormat,
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureAreaFixture.identifier,
-                keySettings = SoftwareCreateKeySettings.Builder().build()
+                createKeySettings = SoftwareCreateKeySettings.Builder().build()
             )
         ).getOrThrow()
 
@@ -121,9 +121,9 @@ class DocumentTest {
         val documentFormat = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
         val unsignedDocument = documentManager.createDocument(
             format = documentFormat,
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureAreaFixture.identifier,
-                keySettings = SoftwareCreateKeySettings.Builder().build()
+                createKeySettings = SoftwareCreateKeySettings.Builder().build()
             )
         ).getOrThrow()
 
@@ -154,9 +154,9 @@ class DocumentTest {
         val documentFormat = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
         val unsignedDocument = documentManager.createDocument(
             format = documentFormat,
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureAreaFixture.identifier,
-                keySettings = SoftwareCreateKeySettings.Builder()
+                createKeySettings = SoftwareCreateKeySettings.Builder()
                     .setPassphraseRequired(true, "1234", PassphraseConstraints.PIN_FOUR_DIGITS)
                     .build()
             )
@@ -180,9 +180,9 @@ class DocumentTest {
         val documentFormat = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
         val unsignedDocument = documentManager.createDocument(
             format = documentFormat,
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureAreaFixture.identifier,
-                keySettings = SoftwareCreateKeySettings.Builder()
+                createKeySettings = SoftwareCreateKeySettings.Builder()
                     .setKeyPurposes(setOf(KeyPurpose.AGREE_KEY)) // leave out SIGN on purpose
                     .build()
             )
@@ -204,9 +204,9 @@ class DocumentTest {
         val documentFormat = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
         val unsignedDocument = documentManager.createDocument(
             format = documentFormat,
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureAreaFixture.identifier,
-                keySettings = SoftwareCreateKeySettings.Builder().build()
+                createKeySettings = SoftwareCreateKeySettings.Builder().build()
             )
         ).getOrThrow()
         val dataToSign = byteArrayOf(1, 2, 3)
@@ -232,9 +232,9 @@ class DocumentTest {
         val documentFormat = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
         val unsignedDocument = documentManager.createDocument(
             format = documentFormat,
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureAreaFixture.identifier,
-                keySettings = SoftwareCreateKeySettings.Builder()
+                createKeySettings = SoftwareCreateKeySettings.Builder()
                     .setPassphraseRequired(true, "1234", PassphraseConstraints.PIN_FOUR_DIGITS)
                     .build()
             )
@@ -265,9 +265,9 @@ class DocumentTest {
         val documentFormat = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
         val unsignedDocument = documentManager.createDocument(
             format = documentFormat,
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureAreaFixture.identifier,
-                keySettings = SoftwareCreateKeySettings.Builder()
+                createKeySettings = SoftwareCreateKeySettings.Builder()
                     .setKeyPurposes(setOf(KeyPurpose.AGREE_KEY))
                     .setPassphraseRequired(true, "1234", PassphraseConstraints.PIN_FOUR_DIGITS)
                     .build()
@@ -297,9 +297,9 @@ class DocumentTest {
         val documentFormat = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
         val unsignedDocument = documentManager.createDocument(
             format = documentFormat,
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureAreaFixture.identifier,
-                keySettings = SoftwareCreateKeySettings.Builder()
+                createKeySettings = SoftwareCreateKeySettings.Builder()
                     .setKeyPurposes(setOf(KeyPurpose.SIGN)) // leave out AGREE_KEY on purpose
                     .build()
             )
@@ -327,9 +327,9 @@ class DocumentTest {
         val documentFormat = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
         val unsignedDocument = documentManager.createDocument(
             format = documentFormat,
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureAreaFixture.identifier,
-                keySettings = SoftwareCreateKeySettings.Builder()
+                createKeySettings = SoftwareCreateKeySettings.Builder()
                     .setKeyPurposes(setOf(KeyPurpose.AGREE_KEY))
                     .build()
             )
@@ -363,9 +363,9 @@ class DocumentTest {
         val documentFormat = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
         val unsignedDocument = documentManager.createDocument(
             format = documentFormat,
-            createSettings = SecureAreaCreateDocumentSettings(
+            createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureAreaFixture.identifier,
-                keySettings = SoftwareCreateKeySettings.Builder()
+                createKeySettings = SoftwareCreateKeySettings.Builder()
                     .setKeyPurposes(setOf(KeyPurpose.AGREE_KEY))
                     .setPassphraseRequired(true, "1234", PassphraseConstraints.PIN_FOUR_DIGITS)
                     .build()

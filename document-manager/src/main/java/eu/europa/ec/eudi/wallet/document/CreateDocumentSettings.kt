@@ -16,12 +16,37 @@
 
 package eu.europa.ec.eudi.wallet.document
 
+import com.android.identity.securearea.CreateKeySettings
+
 /**
  * Interface that defines the required settings when creating a document with
  * [DocumentManager.createDocument]. Implementors of [DocumentManager] may
  * introduce custom requirements for creating a document.
  *
- * @see [SecureAreaCreateDocumentSettings] implementation that is used with the
- * [DocumentManagerImpl.createDocument] that depends on [com.android.identity.securearea.SecureArea]
+ * @see [CreateDocumentSettingsImpl] implementation
  */
-interface CreateDocumentSettings
+interface CreateDocumentSettings {
+
+    val secureAreaIdentifier: String
+    val createKeySettings: CreateKeySettings
+
+    companion object {
+        /**
+         * Create a new instance of [CreateDocumentSettings] for [DocumentManagerImpl.createDocument]
+         * that uses the [com.android.identity.securearea.SecureArea].
+         *
+         * @param secureAreaIdentifier the [com.android.identity.securearea.SecureArea.identifier]
+         * where the document's keys should be stored
+         * @param createKeySettings the [CreateKeySettings] implementation that accompanies the provided
+         * [com.android.identity.securearea.SecureArea]
+         * @return a new instance of [CreateDocumentSettings]
+         */
+        operator fun invoke(
+            secureAreaIdentifier: String,
+            createKeySettings: CreateKeySettings,
+        ): CreateDocumentSettings = CreateDocumentSettingsImpl(
+            secureAreaIdentifier = secureAreaIdentifier,
+            createKeySettings = createKeySettings,
+        )
+    }
+}

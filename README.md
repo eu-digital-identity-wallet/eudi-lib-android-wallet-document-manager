@@ -224,11 +224,11 @@ the DocumentManager.
 try {
   // create a new document
   // Construct the createKeySettings that will be used to create the key
-  // for the document. Here we use SoftwareCreateKeySettings as an example
+  // for the document. Here SoftwareCreateKeySettings is used as an example
   // provided by the identity-credential library
-  val createSettings = SecureAreaCreateDocumentSettings(
+  val createSettings = CreateDocumentSettings(
     secureAreaIdentifier = secureArea.identifier,
-    keySettings = SoftwareCreateKeySettings.Builder().build()
+    createKeySettings = SoftwareCreateKeySettings.Builder().build()
   )
   val createDocumentResult = documentManager.createDocument(
     format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
@@ -317,9 +317,9 @@ val sampleDocumentManager = SampleDocumentManager.Builder()
 
 val sampleMdocDocuments: ByteArray = readFileWithSampleData()
 
-val createSettings = SecureAreaCreateDocumentSettings(
+val createSettings = CreateDocumentSettings(
   secureAreaIdentifier = secureArea.identifier,
-  keySettings = SoftwareCreateKeySettings.Builder().build()
+  createKeySettings = SoftwareCreateKeySettings.Builder().build()
 )
 val loadResult = sampleDocumentManager.loadMdocSampleDocuments(
   sampleData = sampleMdocDocuments,

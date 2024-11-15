@@ -19,15 +19,11 @@ package eu.europa.ec.eudi.wallet.document
 import com.android.identity.securearea.CreateKeySettings
 
 /**
- * [CreateDocumentSettings] implementation for [DocumentManagerImpl] that uses the
- * [com.android.identity.securearea.SecureArea].
- *
- * @property secureAreaIdentifier the [com.android.identity.securearea.SecureArea.identifier]
- *   where the document's keys should be stored
- * @property keySettings the [CreateKeySettings] implementation that accompanies the
- *   provided [com.android.identity.securearea.SecureArea]
+ * Implementation of [CreateDocumentSettings]
+ * @property secureAreaIdentifier the secure area identifier where the document's keys should be stored
+ * @property createKeySettings the create key settings that accompanies the provided secure area
  */
-data class SecureAreaCreateDocumentSettings(
-    val secureAreaIdentifier: String,
-    val keySettings: CreateKeySettings,
+data class CreateDocumentSettingsImpl(
+    override val secureAreaIdentifier: String,
+    override val createKeySettings: CreateKeySettings,
 ) : CreateDocumentSettings

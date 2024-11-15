@@ -41,6 +41,8 @@ import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 interface DocumentManager {
 
     val identifier: String
+    val storageEngine: StorageEngine
+    val secureAreaRepository: SecureAreaRepository
 
     /**
      * Retrieve a document by its identifier.
@@ -73,14 +75,12 @@ interface DocumentManager {
      * to retrieve the document's claims. After that the document can be stored using [storeIssuedDocument] or [storeDeferredDocument].
      *
      * @param format the format of the document
-     * @param createSettings the [SecureArea] to use for the new document
-     * @param attestationChallenge the attestation challenge
+     * @param createSettings the settings to create the document with
      * @return the result of the creation. If successful, it will return the document. If not, it will return an error.
      */
     fun createDocument(
         format: DocumentFormat,
         createSettings: CreateDocumentSettings,
-        attestationChallenge: ByteArray? = null
     ): Outcome<UnsignedDocument>
 
     /**
