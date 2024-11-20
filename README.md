@@ -161,8 +161,8 @@ classDiagram
   }
 
   class IssuedDocument {
-      + issuedAt Instant
-      + nameSpacedDataInBytes NameSpacedValues~ByteArray~
+    + issuedAt Instant
+    + nameSpacedDataInBytes NameSpacedValues~ByteArray~
     + nameSpacedDataDecoded NameSpacedValues~Any?~
     + nameSpaces NameSpaces
     + issuerProvidedData: ByteArray
@@ -209,8 +209,8 @@ try {
 Adding a new document to the DocumentManager is a two-step process. First, a new document must be
 created using the createDocument method. The method returns an UnsignedDocument object that contains
 the keys that will be used for signing the proof of possession for the issuer. Creating a new
-document requires the document format and the create key settings. The create key settings can be
-used to specify the way the keys are created.
+document requires the document format and a CreateDocumentSettings object. The latter is needed to
+specify the secure area identifier and the create key settings that will be used to create the key.
 
 After the document is created, the user must retrieve the document's data from the issuer and store
 it in the DocumentManager using the storeIssuedDocument method.
@@ -223,9 +223,8 @@ the DocumentManager.
 ```kotlin
 try {
   // create a new document
-  // Construct the createKeySettings that will be used to create the key
-  // for the document. Here SoftwareCreateKeySettings is used as an example
-  // provided by the identity-credential library
+  // Construct the CreateDocumentSettings that will be used to create the key
+  // for the document.
   val createSettings = CreateDocumentSettings(
     secureAreaIdentifier = secureArea.identifier,
     createKeySettings = SoftwareCreateKeySettings.Builder().build()
