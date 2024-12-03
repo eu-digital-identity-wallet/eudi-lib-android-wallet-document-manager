@@ -20,6 +20,7 @@ import com.android.identity.securearea.SecureArea
 import com.android.identity.securearea.SecureAreaRepository
 import com.android.identity.storage.StorageEngine
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
+import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData
 
 /**
  * The DocumentManager interface is the main entry point to interact with documents.
@@ -81,6 +82,7 @@ interface DocumentManager {
     fun createDocument(
         format: DocumentFormat,
         createSettings: CreateDocumentSettings,
+        documentMetaData: DocumentMetaData? = null
     ): Outcome<UnsignedDocument>
 
     /**
