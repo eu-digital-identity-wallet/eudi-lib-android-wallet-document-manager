@@ -14,12 +14,14 @@ json = "20240303"
 kotlin = "2.0.10"
 kotlinx-datetime = "0.6.0"
 kotlinx-io = "0.4.0"
+kotlinx-serialization-json = "1.7.3"
 mavenPublish = "0.27.0"
 mockk = "1.13.5"
 sonarqube = "5.1.0.4882"
 eudi-sd-jwt-vc-kt = "0.7.0"
 nimbus = "9.37.3"
 ktor = "2.3.6"
+annotationJvm = "1.9.1"
 
 [libraries]
 bouncy-castle-pkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncy-castle" }
@@ -33,7 +35,9 @@ json = { module = "org.json:json", version.ref = "json" }
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinx-datetime" }
 kotlinx-io-bytestring = { group = "org.jetbrains.kotlinx", name = "kotlinx-io-bytestring", version.ref = "kotlinx-io" }
 kotlinx-io-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-io-core", version.ref = "kotlinx-io" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization-json" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+annotation-jvm = { group = "androidx.annotation", name = "annotation-jvm", version.ref = "annotationJvm" }
 nimbus-jose-jwt = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbus" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
@@ -48,3 +52,4 @@ dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "mavenPublish" }
 sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

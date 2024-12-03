@@ -19,6 +19,8 @@ package eu.europa.ec.eudi.wallet.document
 import com.android.identity.securearea.SecureArea
 import eu.europa.ec.eudi.wallet.document.format.DocumentData
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
+import eu.europa.ec.eudi.wallet.document.internal.toObject
+import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData
 import java.time.Instant
 
 /**
@@ -31,6 +33,7 @@ import java.time.Instant
  * @property keyAlias the key alias
  * @property secureArea the secure area
  * @property createdAt the creation date
+ * @property documentMetaData the document metadata
  * @property issuedAt the issuance date
  * @property issuerProvidedData the issuer provided data
  * @property data the document data (format specific)
@@ -43,6 +46,7 @@ data class IssuedDocument(
     override val keyAlias: String,
     override val secureArea: SecureArea,
     override val createdAt: Instant,
+    override val documentMetaData: DocumentMetaData?,
     val validFrom: Instant,
     val validUntil: Instant,
     val issuedAt: Instant,

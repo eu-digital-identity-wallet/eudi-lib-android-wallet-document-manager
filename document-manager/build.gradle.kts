@@ -23,6 +23,7 @@ import com.vanniktech.maven.publish.AndroidMultiVariantLibrary
 import java.util.Locale
 
 plugins {
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.dokka)
@@ -100,6 +101,7 @@ android {
 
 dependencies {
 
+
     // Google identity
     api(libs.google.identity) {
         exclude(group = "org.bouncycastle")
@@ -110,6 +112,7 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.io.core)
     implementation(libs.kotlinx.io.bytestring)
+    implementation(libs.kotlinx.serialization.json)
 
     // CBOR
     implementation(libs.cbor)
@@ -127,6 +130,7 @@ dependencies {
 
     implementation(libs.bouncy.castle.prov)
     implementation(libs.bouncy.castle.pkix)
+    implementation(libs.annotation.jvm)
 
     testImplementation(kotlin("test"))
     testImplementation(libs.mockk)

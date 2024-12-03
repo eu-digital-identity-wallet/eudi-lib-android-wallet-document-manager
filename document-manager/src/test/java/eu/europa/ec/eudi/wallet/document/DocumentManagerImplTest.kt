@@ -34,11 +34,24 @@ import com.android.identity.util.Constants
 import com.upokecenter.cbor.CBORObject
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocData
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
+import eu.europa.ec.eudi.wallet.document.format.UnsupportedDocumentFormat
+import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData
+import eu.europa.ec.eudi.wallet.document.mock_data.DocumentMetaDataMockData
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.spyk
+import kotlinx.serialization.json.Json
 import org.junit.Assert
 import org.junit.Assert.assertThrows
-import kotlin.test.*
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
+import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class DocumentManagerImplTest {
 
@@ -56,7 +69,8 @@ class DocumentManagerImplTest {
         documentManager = DocumentManagerImpl(
             identifier = "document_manager",
             storageEngine = EphemeralStorageEngine(),
-            secureAreaRepository = secureAreaRepository
+            secureAreaRepository = secureAreaRepository,
+            json = Json
         )
     }
 
@@ -143,6 +157,52 @@ class DocumentManagerImplTest {
         val storeDocumentResult = documentManager.storeIssuedDocument(document, issuerData)
         assertTrue(storeDocumentResult.isFailure)
         assertIs<IllegalArgumentException>(storeDocumentResult.exceptionOrNull())
+    }
+
+    @Test
+    fun `should not crash when documentMetaData is null`() {
+        // Given
+        val format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
+        val createSettings =
+            CreateDocumentSettings(
+                secureAreaIdentifier = secureArea.identifier,
+                createKeySettings = SoftwareCreateKeySettings.Builder().build()
+            )
+        // When
+        val result = documentManager.createDocument(
+            format = format,
+            createSettings= createSettings,
+            documentMetaData = null)
+
+        // Then
+        assertTrue(result.isSuccess)
+    }
+
+    @Test
+    fun `Given mocked claims When Creating a document and retrieving it THEN it should have the correct document metadata`() {
+        // Given
+        val documentMetaDataMock : DocumentMetaData = DocumentMetaDataMockData.getData()
+        val documentManager = DocumentManagerImpl(
+            identifier = "document_manager_1",
+            secureAreaRepository = SecureAreaRepository().apply {
+                addImplementation(secureAreaFixture)
+            },
+            storageEngine = storageEngineFixture
+        )
+        // When
+        documentManager.createDocument(
+            format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
+            createSettings = CreateDocumentSettings(
+                secureAreaIdentifier = secureAreaFixture.identifier,
+                createKeySettings = SoftwareCreateKeySettings.Builder().build()
+            ),
+            documentMetaData = documentMetaDataMock
+        )
+
+        // Then
+        assertEquals(1, documentManager.getDocuments().size)
+        val document = documentManager.getDocuments().first()
+        assertEquals(expected = document.documentMetaData, actual = documentMetaDataMock)
     }
 
     @Test
