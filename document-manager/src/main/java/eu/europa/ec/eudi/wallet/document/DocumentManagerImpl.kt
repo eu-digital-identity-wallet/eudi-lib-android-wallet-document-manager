@@ -144,7 +144,7 @@ class DocumentManagerImpl(
      * to retrieve the document's claims. After that the document can be stored using [storeIssuedDocument] or [storeDeferredDocument].
      *
      * @param format the format of the document
-     * @param createSettings the [SecureAreaCreateDocumentSettings] to use for the new document
+     * @param createSettings the [CreateDocumentSettings] to use for the new document
      * @param documentMetaData the [DocumentMetaData] data regarding document display
      * @return the result of the creation. If successful, it will return the document. If not, it will return an error.
      */

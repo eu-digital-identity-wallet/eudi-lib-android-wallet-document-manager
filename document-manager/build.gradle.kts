@@ -130,7 +130,6 @@ dependencies {
 
     implementation(libs.bouncy.castle.prov)
     implementation(libs.bouncy.castle.pkix)
-    implementation(libs.annotation.jvm)
 
     testImplementation(kotlin("test"))
     testImplementation(libs.mockk)
