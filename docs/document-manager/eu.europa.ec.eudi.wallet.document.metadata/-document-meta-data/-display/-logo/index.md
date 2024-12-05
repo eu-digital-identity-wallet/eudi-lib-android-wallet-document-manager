@@ -20,7 +20,7 @@ Logo information.
 
 ## Properties
 
-| Name                                   | Summary                                                                                                                                                                                                 |
-|----------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [alternativeText](alternative-text.md) | [androidJvm]<br>val [alternativeText](alternative-text.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)? = null                                                    |
-| [uri](uri.md)                          | [androidJvm]<br>@Serializable(with = [URISerializer::class](../../../-u-r-i-serializer/index.md))<br>val [uri](uri.md): [URI](https://developer.android.com/reference/kotlin/java/net/URI.html)? = null |
+| Name                                   | Summary                                                                                                                                                          |
+|----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [alternativeText](alternative-text.md) | [androidJvm]<br>val [alternativeText](alternative-text.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)? = null             |
+| [uri](uri.md)                          | [androidJvm]<br>@Serializable(with = URISerializer::class)<br>val [uri](uri.md): [URI](https://developer.android.com/reference/kotlin/java/net/URI.html)? = null |

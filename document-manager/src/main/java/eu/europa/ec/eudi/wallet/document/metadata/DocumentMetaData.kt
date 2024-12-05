@@ -113,7 +113,7 @@ internal object LocaleSerializer : KSerializer<Locale> {
         encoder.encodeString(value.toString())
 }
 
-object URISerializer : KSerializer<URI> {
+internal object URISerializer : KSerializer<URI> {
     override val descriptor: SerialDescriptor =
         PrimitiveSerialDescriptor("URI", PrimitiveKind.STRING)
 

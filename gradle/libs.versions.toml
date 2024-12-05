@@ -21,7 +21,6 @@ sonarqube = "5.1.0.4882"
 eudi-sd-jwt-vc-kt = "0.7.0"
 nimbus = "9.37.3"
 ktor = "2.3.6"
-annotationJvm = "1.9.1"
 
 [libraries]
 bouncy-castle-pkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncy-castle" }
@@ -37,7 +36,6 @@ kotlinx-io-bytestring = { group = "org.jetbrains.kotlinx", name = "kotlinx-io-by
 kotlinx-io-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-io-core", version.ref = "kotlinx-io" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization-json" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
-annotation-jvm = { group = "androidx.annotation", name = "annotation-jvm", version.ref = "annotationJvm" }
 nimbus-jose-jwt = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbus" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }

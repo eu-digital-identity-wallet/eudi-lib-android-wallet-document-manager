@@ -29,5 +29,5 @@ androidJvm
 |                  |                                                                                                                                       |
 |------------------|---------------------------------------------------------------------------------------------------------------------------------------|
 | format           | the format of the document                                                                                                            |
-| createSettings   | the SecureAreaCreateDocumentSettings to use for the new document                                                                      |
+| createSettings   | the [CreateDocumentSettings](../-create-document-settings/index.md) to use for the new document                                       |
 | documentMetaData | the [DocumentMetaData](../../eu.europa.ec.eudi.wallet.document.metadata/-document-meta-data/index.md) data regarding document display |
