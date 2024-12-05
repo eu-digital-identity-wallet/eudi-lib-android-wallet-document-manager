@@ -18,6 +18,10 @@ package eu.europa.ec.eudi.wallet.document.sample
 
 import com.android.identity.securearea.software.SoftwareSecureArea
 import com.android.identity.storage.EphemeralStorageEngine
+import com.android.identity.securearea.SecureArea
+import com.android.identity.securearea.software.SoftwareSecureArea
+import com.android.identity.storage.EphemeralStorageEngine
+import com.android.identity.storage.StorageEngine
 import eu.europa.ec.eudi.wallet.document.DocumentManager
 import eu.europa.ec.eudi.wallet.document.DocumentManagerImpl
 import io.mockk.mockk
@@ -28,6 +32,9 @@ import kotlin.test.assertIs
 import kotlin.test.assertSame
 
 class SampleDocumentManagerBuilderTest {
+
+    val storageEngineFixture: StorageEngine = EphemeralStorageEngine()
+    val secureAreaFixture: SecureArea = SoftwareSecureArea(storageEngineFixture)
 
     @Test
     fun `build should throw exception when document manager is not set`() {
@@ -77,12 +84,10 @@ class SampleDocumentManagerBuilderTest {
     fun `verify that companion object build method returns SampleDocumentManagerImpl instance`() {
 
         // When
-        val storageEngine = EphemeralStorageEngine()
-        val secureArea = SoftwareSecureArea(storageEngine)
         val documentManager = SampleDocumentManager.build {
             setIdentifier("document_manager")
-            addSecureArea(secureArea)
-            setStorageEngine(storageEngine)
+            addSecureArea(secureAreaFixture)
+            setStorageEngine(storageEngineFixture)
         }
 
         // Then

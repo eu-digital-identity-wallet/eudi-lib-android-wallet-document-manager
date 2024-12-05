@@ -40,7 +40,7 @@ import java.time.Instant
  * @property keyInfo the key info
  * @property publicKeyCoseBytes the public key cose bytes
  * @property isKeyInvalidated whether the key is invalidated
- * @property documentMetaData the document metadata
+ * @property metadata the document metadata
  */
 sealed interface Document {
     val id: DocumentId
@@ -61,7 +61,8 @@ sealed interface Document {
     val isKeyInvalidated: Boolean
         get() = secureArea.getKeyInvalidated(keyAlias)
 
-    val documentMetaData : DocumentMetaData?
+    val metadata: DocumentMetaData?
+
     /**
      * Sign the data with the document key
      *

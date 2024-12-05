@@ -5,7 +5,8 @@
 [androidJvm]\
 open override fun [createDocument](create-document.md)(
 format: [DocumentFormat](../../eu.europa.ec.eudi.wallet.document.format/-document-format/index.md),
-createSettings: [CreateDocumentSettings](../-create-document-settings/index.md)): [Outcome](../-outcome/index.md)
+createSettings: [CreateDocumentSettings](../-create-document-settings/index.md),
+documentMetaData: [DocumentMetaData](../../eu.europa.ec.eudi.wallet.document.metadata/-document-meta-data/index.md)?): [Outcome](../-outcome/index.md)
 &lt;[UnsignedDocument](../-unsigned-document/index.md)&gt;
 
 Create a new document. This method will create a new document with the given format and keys
@@ -25,7 +26,8 @@ error.
 
 androidJvm
 
-|                |                                                                  |
-|----------------|------------------------------------------------------------------|
-| format         | the format of the document                                       |
-| createSettings | the SecureAreaCreateDocumentSettings to use for the new document |
+|                  |                                                                                                                                       |
+|------------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| format           | the format of the document                                                                                                            |
+| createSettings   | the SecureAreaCreateDocumentSettings to use for the new document                                                                      |
+| documentMetaData | the [DocumentMetaData](../../eu.europa.ec.eudi.wallet.document.metadata/-document-meta-data/index.md) data regarding document display |

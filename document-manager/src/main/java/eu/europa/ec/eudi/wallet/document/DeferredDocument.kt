@@ -54,5 +54,5 @@ class DeferredDocument(
     keyAlias = keyAlias,
     secureArea = secureArea,
     createdAt = createdAt,
-    documentMetaData = documentMetaData
+    metadata = documentMetaData
 )

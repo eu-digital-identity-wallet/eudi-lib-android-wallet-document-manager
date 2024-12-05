@@ -31,7 +31,7 @@ import java.time.Instant
  * @property keyAlias the key alias
  * @property secureArea the secure area
  * @property createdAt the creation date
- * @property documentMetaData the document metadata
+ * @property metadata the document metadata
  */
 open class UnsignedDocument(
     override val id: DocumentId,
@@ -42,5 +42,5 @@ open class UnsignedDocument(
     override val keyAlias: String,
     override val secureArea: SecureArea,
     override val createdAt: Instant,
-    override val documentMetaData: DocumentMetaData?
+    override val metadata: DocumentMetaData?
 ) : Document
