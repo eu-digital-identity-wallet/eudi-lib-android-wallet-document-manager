@@ -16,7 +16,11 @@
 
 package eu.europa.ec.eudi.wallet.document
 
+import com.android.identity.securearea.SecureArea
 import com.android.identity.securearea.SecureAreaRepository
+import com.android.identity.securearea.software.SoftwareSecureArea
+import com.android.identity.storage.EphemeralStorageEngine
+import com.android.identity.storage.StorageEngine
 import com.android.identity.securearea.software.SoftwareSecureArea
 import com.android.identity.storage.EphemeralStorageEngine
 import kotlin.test.Test
@@ -30,7 +34,7 @@ class DocumentManagerBuilderTest {
 
     val storageEngine = EphemeralStorageEngine()
     val secureArea = SoftwareSecureArea(storageEngine)
-    
+
     @Test
     fun `build should throw exception when identifier is not set`() {
         // Given

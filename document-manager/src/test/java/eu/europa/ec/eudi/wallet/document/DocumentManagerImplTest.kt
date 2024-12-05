@@ -40,7 +40,6 @@ import eu.europa.ec.eudi.wallet.document.mock_data.DocumentMetaDataMockData
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
-import kotlinx.serialization.json.Json
 import org.junit.Assert
 import org.junit.Assert.assertThrows
 import kotlin.test.AfterTest
@@ -50,6 +49,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -70,7 +70,6 @@ class DocumentManagerImplTest {
             identifier = "document_manager",
             storageEngine = EphemeralStorageEngine(),
             secureAreaRepository = secureAreaRepository,
-            json = Json
         )
     }
 
@@ -171,38 +170,45 @@ class DocumentManagerImplTest {
         // When
         val result = documentManager.createDocument(
             format = format,
-            createSettings= createSettings,
-            documentMetaData = null)
+            createSettings = createSettings,
+            documentMetaData = null
+        )
+
 
         // Then
+        val document = result.getOrThrow()
+        assertNull(document.metadata)
         assertTrue(result.isSuccess)
     }
 
     @Test
     fun `Given mocked claims When Creating a document and retrieving it THEN it should have the correct document metadata`() {
         // Given
-        val documentMetaDataMock : DocumentMetaData = DocumentMetaDataMockData.getData()
+        val documentMetaDataMock: DocumentMetaData = DocumentMetaDataMockData.getData()
         val documentManager = DocumentManagerImpl(
             identifier = "document_manager_1",
             secureAreaRepository = SecureAreaRepository().apply {
-                addImplementation(secureAreaFixture)
+                addImplementation(secureArea)
             },
-            storageEngine = storageEngineFixture
+            storageEngine = storageEngine
         )
         // When
-        documentManager.createDocument(
+        val unsignedDocument = documentManager.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
             createSettings = CreateDocumentSettings(
-                secureAreaIdentifier = secureAreaFixture.identifier,
+                secureAreaIdentifier = secureArea.identifier,
                 createKeySettings = SoftwareCreateKeySettings.Builder().build()
             ),
             documentMetaData = documentMetaDataMock
-        )
+        ).getOrThrow()
 
         // Then
-        assertEquals(1, documentManager.getDocuments().size)
-        val document = documentManager.getDocuments().first()
-        assertEquals(expected = document.documentMetaData, actual = documentMetaDataMock)
+        assertEquals(documentMetaDataMock, unsignedDocument.metadata)
+
+        // Then
+        val document = documentManager.getDocumentById(unsignedDocument.id)
+        assertNotNull(document)
+        assertEquals(expected = documentMetaDataMock, actual = document.metadata)
     }
 
     @Test

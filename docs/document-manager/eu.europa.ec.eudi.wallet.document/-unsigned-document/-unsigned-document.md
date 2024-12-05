@@ -10,4 +10,5 @@ documentManagerId: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/
 isCertified: [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html),
 keyAlias: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html),
 secureArea: SecureArea,
-createdAt: [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html))
+createdAt: [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html),
+metadata: [DocumentMetaData](../../eu.europa.ec.eudi.wallet.document.metadata/-document-meta-data/index.md)?)

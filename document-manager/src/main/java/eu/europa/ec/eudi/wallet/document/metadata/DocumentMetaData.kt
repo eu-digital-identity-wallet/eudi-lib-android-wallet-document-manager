@@ -1,5 +1,22 @@
+/*
+ * Copyright (c) 2024 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package eu.europa.ec.eudi.wallet.document.metadata
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -8,6 +25,7 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonClassDiscriminator
 import java.net.URI
 import java.util.Locale
 
@@ -17,23 +35,25 @@ import java.util.Locale
 @Serializable
 data class DocumentMetaData(
     val display: List<Display>,
-    val claims: Map<ClaimName, Claim>?
+    val claims: Map<out ClaimName, Claim>?
 ) {
 
+    @OptIn(ExperimentalSerializationApi::class)
     @Serializable
-    data class MsoMdocClaimName(
-        override val name: String,
-        val nameSpace: String
-    ) : ClaimName
-
-    @Serializable
-    data class SdJwtVcsClaimName(
-        override val name: String,
-    ): ClaimName
-
-    @Serializable(with= ClaimNameSerializer::class)
-    interface ClaimName {
+    @JsonClassDiscriminator("type")
+    sealed interface ClaimName {
         val name: String
+
+        @Serializable
+        data class MsoMdoc(
+            override val name: String,
+            val nameSpace: String
+        ) : ClaimName
+
+        @Serializable
+        data class SdJwtVc(
+            override val name: String
+        ) : ClaimName
     }
 
     /**
@@ -106,32 +126,34 @@ object URISerializer : KSerializer<URI> {
     }
 }
 
-
-object ClaimNameSerializer : KSerializer<DocumentMetaData.ClaimName> {
-    override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("ClaimName", PrimitiveKind.STRING)
-
-    override fun serialize(encoder: Encoder, value: DocumentMetaData.ClaimName) {
-        val key = when (value) {
-            is DocumentMetaData.MsoMdocClaimName -> "Mso:${value.nameSpace}:${value.name}"
-            is DocumentMetaData.SdJwtVcsClaimName -> "SdJwt:${value.name}"
-            else -> throw IllegalArgumentException("Unknown ClaimName type")
-        }
-        encoder.encodeString(key)
-    }
-
-    override fun deserialize(decoder: Decoder): DocumentMetaData.ClaimName {
-        val key = decoder.decodeString()
-        return when {
-            key.startsWith("Mso:") -> {
-                val parts = key.split(":")
-                DocumentMetaData.MsoMdocClaimName(name = parts[2], nameSpace = parts[1])
-            }
-            key.startsWith("SdJwt:") -> {
-                val parts = key.split(":")
-                DocumentMetaData.SdJwtVcsClaimName(name = parts[1])
-            }
-            else -> throw IllegalArgumentException("Unknown ClaimName key format")
-        }
-    }
-}
+//
+//object ClaimNameSerializer : KSerializer<DocumentMetaData.ClaimName> {
+//    override val descriptor: SerialDescriptor =
+//        PrimitiveSerialDescriptor("ClaimName", PrimitiveKind.STRING)
+//
+//    override fun serialize(encoder: Encoder, value: DocumentMetaData.ClaimName) {
+//        val key = when (value) {
+//            is DocumentMetaData.ClaimName.MsoMdoc -> "Mso:${value.nameSpace}:${value.name}"
+//            is DocumentMetaData.ClaimName.SdJwtVc -> "SdJwt:${value.name}"
+//            else -> throw IllegalArgumentException("Unknown ClaimName type")
+//        }
+//        encoder.encodeString(key)
+//    }
+//
+//    override fun deserialize(decoder: Decoder): DocumentMetaData.ClaimName {
+//        val key = decoder.decodeString()
+//        return when {
+//            key.startsWith("Mso:") -> {
+//                val (_, nameSpace, identifier) = key.split(":", limit = 3)
+//                DocumentMetaData.ClaimName.MsoMdoc(name = identifier, nameSpace = nameSpace)
+//            }
+//
+//            key.startsWith("SdJwt:") -> {
+//                val (_, identifier) = key.split(":", limit = 2)
+//                DocumentMetaData.ClaimName.SdJwtVc(name = identifier)
+//            }
+//
+//            else -> throw IllegalArgumentException("Unknown ClaimName key format")
+//        }
+//    }
+//}
