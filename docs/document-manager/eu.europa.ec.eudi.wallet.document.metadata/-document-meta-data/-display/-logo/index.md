@@ -2,7 +2,6 @@
 
 # Logo
 
-[androidJvm]\
 @Serializable
 
 data class [Logo](index.md)(val
@@ -12,6 +11,12 @@ null) : [Serializable](https://developer.android.com/reference/kotlin/java/io/Se
 
 Logo information.
 
+#### See also
+
+|                                                                         |
+|-------------------------------------------------------------------------|
+| [URI](https://developer.android.com/reference/kotlin/java/net/URI.html) |
+
 ## Constructors
 
 |                  |                                                                                                                                                                                                                              |
@@ -20,7 +25,7 @@ Logo information.
 
 ## Properties
 
-| Name                                   | Summary                                                                                                                                                          |
-|----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [alternativeText](alternative-text.md) | [androidJvm]<br>val [alternativeText](alternative-text.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)? = null             |
-| [uri](uri.md)                          | [androidJvm]<br>@Serializable(with = URISerializer::class)<br>val [uri](uri.md): [URI](https://developer.android.com/reference/kotlin/java/net/URI.html)? = null |
+| Name                                   | Summary                                                                                                                                                                                  |
+|----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [alternativeText](alternative-text.md) | [androidJvm]<br>val [alternativeText](alternative-text.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)? = null<br>the alternative text of the logo |
+| [uri](uri.md)                          | [androidJvm]<br>@Serializable(with = URISerializer::class)<br>val [uri](uri.md): [URI](https://developer.android.com/reference/kotlin/java/net/URI.html)? = null<br>the URI of the logo  |

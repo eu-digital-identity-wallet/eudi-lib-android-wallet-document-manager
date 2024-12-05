@@ -8,6 +8,8 @@
 data class [SdJwtVc](index.md)(val
 name: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)) : [DocumentMetaData.ClaimName](../index.md)
 
+SdJwtVc claim name.
+
 ## Constructors
 
 |                          |                                                                                                                     |
@@ -16,6 +18,6 @@ name: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index
 
 ## Properties
 
-| Name            | Summary                                                                                                                             |
-|-----------------|-------------------------------------------------------------------------------------------------------------------------------------|
-| [name](name.md) | [androidJvm]<br>open override val [name](name.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html) |
+| Name            | Summary                                                                                                                                                      |
+|-----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [name](name.md) | [androidJvm]<br>open override val [name](name.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)<br>the name of the claim |

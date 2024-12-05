@@ -33,8 +33,6 @@ import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
 import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData
 import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import java.time.Instant
 import kotlin.jvm.Throws
 import com.android.identity.document.Document as IdentityDocument
@@ -69,11 +67,6 @@ internal val IdentityDocument.state: DocumentState
 /**
  * The metadata stored in applicationData under the key "metadata"
  */
-private val metadataJson = Json {
-    ignoreUnknownKeys = true
-    allowStructuredMapKeys = true
-    classDiscriminator = "type"
-}
 internal var IdentityDocument.metadata: DocumentMetaData?
     @JvmSynthetic
     @Throws(IllegalArgumentException::class, SerializationException::class)
@@ -85,10 +78,10 @@ internal var IdentityDocument.metadata: DocumentMetaData?
      */
     get() {
         return try {
-            applicationData.getString("metadata")
+            applicationData.getData("metadata")
         } catch (_: Throwable) {
             null
-        }?.let { metadataJson.decodeFromString(it) }
+        }?.let { DocumentMetaData.fromByteArray(it) }
     }
     @JvmSynthetic
     @Throws(IllegalArgumentException::class, SerializationException::class)
@@ -99,7 +92,7 @@ internal var IdentityDocument.metadata: DocumentMetaData?
      * @throws SerializationException if the metadata fails to serialize
      */
     set(value) {
-        applicationData.setString("metadata", metadataJson.encodeToString(value))
+        applicationData.setData("metadata", value?.toByteArray())
     }
 
 /**
