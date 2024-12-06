@@ -6,6 +6,5 @@
 constructor(
 display: [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)
 &lt;[DocumentMetaData.Display](-display/index.md)&gt;,
-claims: [Map](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-map/index.html)
-&lt;out [DocumentMetaData.ClaimName](-claim-name/index.md), [DocumentMetaData.Claim](-claim/index.md)
-&gt;?)
+claims: [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)
+&lt;[DocumentMetaData.Claim](-claim/index.md)&gt;?)

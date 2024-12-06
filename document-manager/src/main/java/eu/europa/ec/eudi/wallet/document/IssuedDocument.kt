@@ -19,7 +19,6 @@ package eu.europa.ec.eudi.wallet.document
 import com.android.identity.securearea.SecureArea
 import eu.europa.ec.eudi.wallet.document.format.DocumentData
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
-import eu.europa.ec.eudi.wallet.document.internal.toObject
 import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData
 import java.time.Instant
 

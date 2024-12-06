@@ -39,16 +39,17 @@ object DocumentMetaDataMockData {
         )
 
         // Create claims
-        val msoClaimName = DocumentMetaData.ClaimName.MsoMdoc(
+        val msoClaimName = DocumentMetaData.Claim.Name.MsoMdoc(
             name = "MsoClaim",
             nameSpace = "namespace.mso"
         )
-        val sdJwtClaimName = DocumentMetaData.ClaimName.SdJwtVc(
+        val sdJwtClaimName = DocumentMetaData.Claim.Name.SdJwtVc(
             name = "SdJwtClaim"
         )
 
-        val claims : Map<DocumentMetaData.ClaimName, DocumentMetaData.Claim> = mapOf(
-            msoClaimName to DocumentMetaData.Claim(
+        val claims: List<DocumentMetaData.Claim> = listOf(
+            DocumentMetaData.Claim(
+                name = msoClaimName,
                 mandatory = true,
                 valueType = "string",
                 display = listOf(
@@ -58,7 +59,8 @@ object DocumentMetaDataMockData {
                     )
                 )
             ),
-            sdJwtClaimName to DocumentMetaData.Claim(
+            DocumentMetaData.Claim(
+                name = sdJwtClaimName,
                 mandatory = false,
                 valueType = "integer",
                 display = listOf(

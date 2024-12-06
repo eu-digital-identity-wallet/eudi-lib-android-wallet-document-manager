@@ -7,7 +7,7 @@
 data class [Logo](index.md)(val
 uri: [URI](https://developer.android.com/reference/kotlin/java/net/URI.html)? = null, val
 alternativeText: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)? =
-null) : [Serializable](https://developer.android.com/reference/kotlin/java/io/Serializable.html)
+null)
 
 Logo information.
 
