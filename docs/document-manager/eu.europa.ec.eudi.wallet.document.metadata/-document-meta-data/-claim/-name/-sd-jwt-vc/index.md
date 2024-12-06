@@ -1,4 +1,4 @@
-//[document-manager](../../../../../index.md)/[eu.europa.ec.eudi.wallet.document.metadata](../../../index.md)/[DocumentMetaData](../../index.md)/[ClaimName](../index.md)/[SdJwtVc](index.md)
+//[document-manager](../../../../../../index.md)/[eu.europa.ec.eudi.wallet.document.metadata](../../../../index.md)/[DocumentMetaData](../../../index.md)/[Claim](../../index.md)/[Name](../index.md)/[SdJwtVc](index.md)
 
 # SdJwtVc
 
@@ -6,7 +6,7 @@
 @Serializable
 
 data class [SdJwtVc](index.md)(val
-name: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)) : [DocumentMetaData.ClaimName](../index.md)
+name: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)) : [DocumentMetaData.Claim.Name](../index.md)
 
 SdJwtVc claim name.
 

@@ -227,7 +227,6 @@ internal inline fun <reified D : Document> IdentityDocument.toDocument(): D {
             validUntil = credential.validUntil.toJavaInstant(),
             issuerProvidedData = credential.issuerProvidedData,
             metadata = metadata,
-            documentMetaData = documentMetaData,
             data = when (documentFormat) {
                 is MsoMdocFormat -> MsoMdocData(
                     format = documentFormat,

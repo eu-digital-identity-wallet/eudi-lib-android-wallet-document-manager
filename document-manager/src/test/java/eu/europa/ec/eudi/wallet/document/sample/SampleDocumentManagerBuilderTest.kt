@@ -16,8 +16,6 @@
 
 package eu.europa.ec.eudi.wallet.document.sample
 
-import com.android.identity.securearea.software.SoftwareSecureArea
-import com.android.identity.storage.EphemeralStorageEngine
 import com.android.identity.securearea.SecureArea
 import com.android.identity.securearea.software.SoftwareSecureArea
 import com.android.identity.storage.EphemeralStorageEngine

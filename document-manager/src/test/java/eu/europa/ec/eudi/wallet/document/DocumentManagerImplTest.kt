@@ -34,12 +34,10 @@ import com.android.identity.util.Constants
 import com.upokecenter.cbor.CBORObject
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocData
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
-import eu.europa.ec.eudi.wallet.document.format.UnsupportedDocumentFormat
 import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData
 import eu.europa.ec.eudi.wallet.document.mock_data.DocumentMetaDataMockData
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.spyk
 import org.junit.Assert
 import org.junit.Assert.assertThrows
 import kotlin.test.AfterTest

@@ -1,4 +1,4 @@
-//[document-manager](../../../../../index.md)/[eu.europa.ec.eudi.wallet.document.metadata](../../../index.md)/[DocumentMetaData](../../index.md)/[ClaimName](../index.md)/[MsoMdoc](index.md)
+//[document-manager](../../../../../../index.md)/[eu.europa.ec.eudi.wallet.document.metadata](../../../../index.md)/[DocumentMetaData](../../../index.md)/[Claim](../../index.md)/[Name](../index.md)/[MsoMdoc](index.md)
 
 # MsoMdoc
 
@@ -7,7 +7,7 @@
 
 data class [MsoMdoc](index.md)(val
 name: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html), val
-nameSpace: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)) : [DocumentMetaData.ClaimName](../index.md)
+nameSpace: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)) : [DocumentMetaData.Claim.Name](../index.md)
 
 MsoMdoc claim name.
 

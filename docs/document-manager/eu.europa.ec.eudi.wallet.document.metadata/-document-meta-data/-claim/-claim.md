@@ -3,7 +3,7 @@
 # Claim
 
 [androidJvm]\
-constructor(
+constructor(name: [DocumentMetaData.Claim.Name](-name/index.md),
 mandatory: [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)? =
 false,
 valueType: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)? = null,
