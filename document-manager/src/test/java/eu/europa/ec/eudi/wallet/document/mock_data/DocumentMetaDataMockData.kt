@@ -72,10 +72,21 @@ object DocumentMetaDataMockData {
             )
         )
 
+        val issuerDisplay: List<DocumentMetaData.Display> = listOf(
+            DocumentMetaData.Display(
+                name = "Greek Goverment",
+                locale = Locale.ENGLISH
+            )
+        )
+
+
         // Create and return DocumentMetaData
         return DocumentMetaData(
             display = displays,
-            claims = claims
+            claims = claims,
+            issuerDisplay= issuerDisplay,
+            documentConfigurationIdentifier = "docId",
+            credentialIssuerIdentifier = "credId"
         )
     }
 }
