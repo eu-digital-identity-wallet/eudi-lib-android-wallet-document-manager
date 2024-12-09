@@ -16,6 +16,10 @@
 
 package eu.europa.ec.eudi.wallet.document.metadata
 
+import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Display
+import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc
+import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.SdJwtVc
+import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Display.Logo
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -34,8 +38,11 @@ import java.util.Locale
  */
 @Serializable
 data class DocumentMetaData(
+    val documentConfigurationIdentifier: String,
     val display: List<Display>,
-    val claims: List<Claim>?
+    val claims: List<Claim>?,
+    val credentialIssuerIdentifier: String,
+    val issuerDisplay: List<Display>?
 ) {
 
     /**
