@@ -70,9 +70,9 @@ class DocumentManagerImplTest {
     @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun `should create document and store issued document`() {
-        // set checkMsoKey to false to avoid checking the MSO key
+        // set checkDevicePublicKey to false to avoid checking the MSO key
         // since we are using fixed issuer data
-        documentManager.checkMsoKey = false
+        documentManager.checkDevicePublicKey = false
         val createKeySettings = SoftwareCreateKeySettings.Builder().build()
         val createDocumentResult = documentManager.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
@@ -107,8 +107,8 @@ class DocumentManagerImplTest {
         assertTrue(issuedDocument.isCertified)
         assertTrue(issuedDocument.issuerProvidedData.isNotEmpty())
 
-        assertEquals(1, issuedDocument.nameSpaces.keys.size)
-        assertEquals(33, issuedDocument.nameSpaces.entries.first().value.size)
+        assertEquals(1, (issuedDocument as MsoMdocIssuedDocument).nameSpaces.keys.size)
+        assertEquals(33, (issuedDocument as MsoMdocIssuedDocument).nameSpaces.entries.first().value.size)
     }
 
     @Test
@@ -239,9 +239,9 @@ class DocumentManagerImplTest {
     @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun `should generate the correct digest id for a document given an issuer data`() {
-        // set checkMsoKey to false to avoid checking the MSO key
+        // set checkDevicePublicKey to false to avoid checking the MSO key
         // since we are using fixed issuer data
-        documentManager.checkMsoKey = false
+        documentManager.checkDevicePublicKey = false
         val createDocumentResult = documentManager.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
             createSettings = CreateDocumentSettings(
@@ -258,7 +258,7 @@ class DocumentManagerImplTest {
         assertTrue(storeResult.isSuccess)
         val issuedDocument = storeResult.getOrThrow()
         val docType = (issuedDocument.format as MsoMdocFormat).docType
-        val dataElements = issuedDocument.nameSpaces.flatMap { (nameSpace, elementIdentifiers) ->
+        val dataElements = (issuedDocument as MsoMdocIssuedDocument).nameSpaces.flatMap { (nameSpace, elementIdentifiers) ->
             elementIdentifiers.map { elementIdentifier ->
                 DocumentRequest.DataElement(nameSpace, elementIdentifier, false)
             }

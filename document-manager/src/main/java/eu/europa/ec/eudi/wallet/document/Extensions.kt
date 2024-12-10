@@ -25,7 +25,7 @@ import org.json.JSONObject
  * @return [JSONObject]
  */
 @get:JvmName("nameSpacedDataAsJSONObject")
-val IssuedDocument.nameSpacedDataJSONObject: JSONObject
+val MsoMdocIssuedDocument.nameSpacedDataJSONObject: JSONObject
     get() = JSONObject(nameSpacedDataDecoded)
 
 /**

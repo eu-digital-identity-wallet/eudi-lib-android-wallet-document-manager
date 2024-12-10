@@ -19,9 +19,74 @@ package eu.europa.ec.eudi.wallet.document
 import com.android.identity.cbor.Cbor
 import com.android.identity.document.NameSpacedData
 import com.android.identity.securearea.SecureArea
-import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
+import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
+import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
 import eu.europa.ec.eudi.wallet.document.internal.toObject
+import kotlinx.serialization.json.JsonElement
 import java.time.Instant
+
+sealed interface IssuedDocument : Document {
+    val validFrom: Instant
+    val validUntil: Instant
+    val issuedAt: Instant
+    val issuerProvidedData: ByteArray
+}
+
+data class SdJwtVcIssuedDocument(
+    override val id: DocumentId,
+    override val name: String,
+    override val format: SdJwtVcFormat,
+    override val documentManagerId: String,
+    override val isCertified: Boolean,
+    override val keyAlias: String,
+    override val secureArea: SecureArea,
+    override val createdAt: Instant,
+    override val validFrom: Instant,
+    override val validUntil: Instant,
+    override val issuedAt: Instant,
+    override val issuerProvidedData: ByteArray,
+    val claims: Claims
+) : IssuedDocument {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as SdJwtVcIssuedDocument
+
+        if (id != other.id) return false
+        if (name != other.name) return false
+        if (format != other.format) return false
+        if (documentManagerId != other.documentManagerId) return false
+        if (isCertified != other.isCertified) return false
+        if (keyAlias != other.keyAlias) return false
+        if (secureArea != other.secureArea) return false
+        if (createdAt != other.createdAt) return false
+        if (validFrom != other.validFrom) return false
+        if (validUntil != other.validUntil) return false
+        if (issuedAt != other.issuedAt) return false
+        if (!issuerProvidedData.contentEquals(other.issuerProvidedData)) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + name.hashCode()
+        result = 31 * result + format.hashCode()
+        result = 31 * result + documentManagerId.hashCode()
+        result = 31 * result + isCertified.hashCode()
+        result = 31 * result + keyAlias.hashCode()
+        result = 31 * result + secureArea.hashCode()
+        result = 31 * result + createdAt.hashCode()
+        result = 31 * result + validFrom.hashCode()
+        result = 31 * result + validUntil.hashCode()
+        result = 31 * result + issuedAt.hashCode()
+        result = 31 * result + issuerProvidedData.contentHashCode()
+        return result
+    }
+}
+
+class Claim(val name: String, val value: JsonElement, val selectivelyDisclosable: Boolean = false)
+typealias Claims = List<Claim>
 
 /**
  * Represents an Issued Document
@@ -40,21 +105,21 @@ import java.time.Instant
  * @property nameSpacedDataDecoded the name spaced data represented as a map with decoded values
  * @property nameSpaces the name spaces and their element identifiers
  */
-data class IssuedDocument(
+data class MsoMdocIssuedDocument(
     override val id: DocumentId,
     override val name: String,
-    override val format: DocumentFormat,
+    override val format: MsoMdocFormat,
     override val documentManagerId: String,
     override val isCertified: Boolean,
     override val keyAlias: String,
     override val secureArea: SecureArea,
     override val createdAt: Instant,
-    val validFrom: Instant,
-    val validUntil: Instant,
-    val issuedAt: Instant,
-    val nameSpacedData: NameSpacedData,
-    val issuerProvidedData: ByteArray
-) : Document {
+    override val validFrom: Instant,
+    override val validUntil: Instant,
+    override val issuedAt: Instant,
+    override val issuerProvidedData: ByteArray,
+    val nameSpacedData: NameSpacedData
+    ) : IssuedDocument {
 
     /**
      * Check if the document is valid at a given time, based on the validFrom and validUntil fields
@@ -85,7 +150,7 @@ data class IssuedDocument(
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is IssuedDocument) return false
+        if (other !is MsoMdocIssuedDocument) return false
 
         if (id != other.id) return false
         if (name != other.name) return false

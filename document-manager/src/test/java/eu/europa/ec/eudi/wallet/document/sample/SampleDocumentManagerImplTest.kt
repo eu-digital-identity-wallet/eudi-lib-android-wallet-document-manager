@@ -23,6 +23,7 @@ import com.android.identity.storage.EphemeralStorageEngine
 import eu.europa.ec.eudi.wallet.document.CreateDocumentSettings
 import eu.europa.ec.eudi.wallet.document.DocumentManagerImpl
 import eu.europa.ec.eudi.wallet.document.IssuedDocument
+import eu.europa.ec.eudi.wallet.document.MsoMdocIssuedDocument
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.getResourceAsText
 import eu.europa.ec.eudi.wallet.document.secureAreaFixture
@@ -147,7 +148,7 @@ class SampleDocumentManagerImplTest {
         }.first()
 
         assertIs<IssuedDocument>(document)
-        val data = document.nameSpacedDataDecoded
+        val data = (document as MsoMdocIssuedDocument).nameSpacedDataDecoded
         assertEquals(1, data.size)
         assertEquals("org.iso.18013.5.1", data.keys.first())
     }

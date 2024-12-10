@@ -16,7 +16,9 @@
 
 package eu.europa.ec.eudi.wallet.document.format
 
+import eu.europa.ec.eudi.wallet.document.Vct
+
 /**
  * Represents a SdJwtVc Format for the [eu.europa.ec.eudi.wallet.document.Document]
  */
-data object SdJwtVcFormat : DocumentFormat
+data class SdJwtVcFormat(val vct: Vct) : DocumentFormat

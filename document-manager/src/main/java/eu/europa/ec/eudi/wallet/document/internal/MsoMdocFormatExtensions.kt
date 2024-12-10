@@ -51,7 +51,7 @@ internal fun MsoMdocFormat.storeIssuedDocument(
     unsignedDocument: UnsignedDocument,
     identityDocument: IdentityDocument,
     data: ByteArray,
-    checkMsoKey: Boolean
+    checkDevicePublicKey: Boolean
 ) {
     val issuerSigned = CBORObject.DecodeFromBytes(data)
     val issuerAuthBytes = issuerSigned["issuerAuth"].EncodeToBytes()
@@ -60,7 +60,7 @@ internal fun MsoMdocFormat.storeIssuedDocument(
     val mso = MobileSecurityObjectParser(msoBytes).parse()
     if (mso.deviceKey != unsignedDocument.keyInfo.publicKey) {
         val msg = "Public key in MSO does not match the one in the request"
-        if (checkMsoKey) {
+        if (checkDevicePublicKey) {
             throw IllegalArgumentException(msg)
         }
     }

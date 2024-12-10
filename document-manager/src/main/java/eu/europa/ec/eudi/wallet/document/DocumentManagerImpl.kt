@@ -35,6 +35,7 @@ import eu.europa.ec.eudi.wallet.document.internal.documentName
 import eu.europa.ec.eudi.wallet.document.internal.issuedAt
 import eu.europa.ec.eudi.wallet.document.internal.storeIssuedDocument
 import eu.europa.ec.eudi.wallet.document.internal.toDocument
+import io.ktor.client.HttpClient
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toJavaInstant
 import org.jetbrains.annotations.VisibleForTesting
@@ -54,12 +55,15 @@ import org.jetbrains.annotations.VisibleForTesting
 class DocumentManagerImpl(
     override val identifier: String,
     override val storageEngine: StorageEngine,
-    override val secureAreaRepository: SecureAreaRepository
+    override val secureAreaRepository: SecureAreaRepository,
+    val ktorHttpClientFactory: (() -> HttpClient)? = null
+    // TODO: list trusted certificates
+
 ) : DocumentManager {
 
     @VisibleForTesting
     @get:JvmSynthetic
-    internal var checkMsoKey: Boolean = true
+    internal var checkDevicePublicKey: Boolean = true
 
     @VisibleForTesting
     @get:JvmSynthetic
@@ -162,7 +166,12 @@ class DocumentManagerImpl(
                     identityDocument.documentName = format.docType
                 }
 
-                is SdJwtVcFormat -> format.createCredential()
+                is SdJwtVcFormat -> {
+                    format.createCredential(
+                        domain, identityDocument, secureArea, createSettings.createKeySettings
+                    )
+                    identityDocument.documentName = format.vct
+                }
                 else -> throw IllegalArgumentException("Format ${format::class.simpleName} not supported")
             }
 
@@ -195,10 +204,16 @@ class DocumentManagerImpl(
                     unsignedDocument,
                     identityDocument,
                     issuerProvidedData,
-                    checkMsoKey
+                    checkDevicePublicKey
                 )
 
-                is SdJwtVcFormat -> format.storeIssuedDocument()
+                is SdJwtVcFormat -> format.storeIssuedDocument(
+                    unsignedDocument,
+                    identityDocument,
+                    issuerProvidedData,
+                    checkDevicePublicKey,
+                    ktorHttpClientFactory
+                )
                 else -> throw IllegalArgumentException("Format ${format::class.simpleName} not supported")
             }
             with(identityDocument) {

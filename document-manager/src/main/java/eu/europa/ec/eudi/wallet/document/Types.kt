@@ -25,4 +25,5 @@ typealias NameSpaces = Map<NameSpace, List<ElementIdentifier>>
 typealias NameSpacedValues<T> = Map<NameSpace, Map<ElementIdentifier, T>>
 typealias ProofOfDeletion = ByteArray
 typealias SharedSecret = ByteArray
+typealias Vct = String
 

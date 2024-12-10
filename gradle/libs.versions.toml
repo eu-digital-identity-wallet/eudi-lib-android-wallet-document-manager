@@ -17,12 +17,15 @@ kotlinx-io = "0.4.0"
 mavenPublish = "0.27.0"
 mockk = "1.13.5"
 sonarqube = "5.1.0.4882"
+eudi-sd-jwt-vc-kt = "0.7.0"
+nimbus = "9.37.3"
 
 [libraries]
 bouncy-castle-pkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncy-castle" }
 bouncy-castle-prov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncy-castle" }
 cbor = { module = "com.upokecenter:cbor", version.ref = "cbor" }
 cose = { module = "com.augustcellars.cose:cose-java", version.ref = "cose" }
+eudi-sd-jwt-vc-kt = { module = "eu.europa.ec.eudi:eudi-lib-jvm-sdjwt-kt", version.ref = "eudi-sd-jwt-vc-kt" }
 google-identity = { module = "com.android.identity:identity", version.ref = "google-identity" }
 google-identity-mdoc = { module = "com.android.identity:identity-mdoc", version.ref = "google-identity-mdoc" }
 json = { module = "org.json:json", version.ref = "json" }
@@ -30,6 +33,7 @@ kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime",
 kotlinx-io-bytestring = { group = "org.jetbrains.kotlinx", name = "kotlinx-io-bytestring", version.ref = "kotlinx-io" }
 kotlinx-io-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-io-core", version.ref = "kotlinx-io" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+nimbus-jose-jwt = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbus" }
 
 [plugins]
 android-library = { id = "com.android.library", version.ref = "agp" }
