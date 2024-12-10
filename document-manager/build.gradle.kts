@@ -115,6 +115,10 @@ dependencies {
     implementation(libs.cbor)
     implementation(libs.cose)
 
+    // sd-jwt-vc
+    implementation(libs.eudi.sd.jwt.vc.kt)
+    implementation(libs.nimbus.jose.jwt)
+
     implementation(libs.bouncy.castle.prov)
     implementation(libs.bouncy.castle.pkix)
 

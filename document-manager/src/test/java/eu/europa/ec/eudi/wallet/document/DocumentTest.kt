@@ -89,7 +89,7 @@ class DocumentTest {
 
         val issuerData = getResourceAsText("eu_pid.hex").hexToByteArray(HexFormat.Default)
         // disable mso check since we are providing sample data
-        (documentManager as DocumentManagerImpl).checkMsoKey = false
+        (documentManager as DocumentManagerImpl).checkDevicePublicKey = false
         val issuedDocument =
             documentManager.storeIssuedDocument(unsignedDocument, issuerData).getOrThrow()
 
@@ -97,7 +97,7 @@ class DocumentTest {
 
         assertEquals(unsignedDocument.createdAt, issuedDocument.createdAt)
         assertNotEquals(issuedDocument.createdAt, issuedDocument.issuedAt)
-        assertTrue(issuedDocument.nameSpaces.isNotEmpty())
+        assertTrue((issuedDocument as MsoMdocIssuedDocument).nameSpaces.isNotEmpty())
         assertTrue(issuedDocument.validFrom.isBefore(issuedDocument.validUntil))
         assertTrue(issuedDocument.isValidAt(Clock.System.now().toJavaInstant()))
         assertTrue(issuedDocument.issuerProvidedData.isNotEmpty())

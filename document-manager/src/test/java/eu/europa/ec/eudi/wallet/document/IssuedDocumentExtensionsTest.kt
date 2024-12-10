@@ -44,7 +44,7 @@ class TestIssuedDocumentExtensions {
             }.EncodeToBytes())
             .build()
 
-        val issuedDocument = IssuedDocument(
+        val issuedDocument = MsoMdocIssuedDocument(
             id = "id",
             name = "name",
             format = mockk(),
