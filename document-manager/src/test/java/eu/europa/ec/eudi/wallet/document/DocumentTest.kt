@@ -24,6 +24,9 @@ import com.android.identity.securearea.KeyPurpose
 import com.android.identity.securearea.PassphraseConstraints
 import com.android.identity.securearea.software.SoftwareCreateKeySettings
 import com.android.identity.securearea.software.SoftwareKeyUnlockData
+import com.android.identity.securearea.software.SoftwareSecureArea
+import com.android.identity.storage.EphemeralStorageEngine
+import eu.europa.ec.eudi.wallet.document.format.MsoMdocClaims
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.internal.toCoseBytes
 import kotlinx.datetime.Clock
@@ -38,6 +41,9 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class DocumentTest {
+
+    val storageEngineFixture = EphemeralStorageEngine()
+    val secureAreaFixture = SoftwareSecureArea(storageEngineFixture)
 
     @Test
     fun `verify properties set correctly`() {
@@ -97,12 +103,14 @@ class DocumentTest {
 
         assertEquals(unsignedDocument.createdAt, issuedDocument.createdAt)
         assertNotEquals(issuedDocument.createdAt, issuedDocument.issuedAt)
-        assertTrue((issuedDocument as MsoMdocIssuedDocument).nameSpaces.isNotEmpty())
+        val claims = issuedDocument.claims
+        assertIs<MsoMdocClaims>(claims)
+        assertTrue(claims.nameSpaces.isNotEmpty())
         assertTrue(issuedDocument.validFrom.isBefore(issuedDocument.validUntil))
         assertTrue(issuedDocument.isValidAt(Clock.System.now().toJavaInstant()))
         assertTrue(issuedDocument.issuerProvidedData.isNotEmpty())
         assertTrue(
-            issuedDocument.nameSpacedData.hasDataElement(
+            claims.nameSpacedData.hasDataElement(
                 "eu.europa.ec.eudi.pid.1",
                 "given_name"
             )

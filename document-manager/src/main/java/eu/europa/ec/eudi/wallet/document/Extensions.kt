@@ -17,21 +17,40 @@
 
 package eu.europa.ec.eudi.wallet.document
 
+import eu.europa.ec.eudi.wallet.document.format.MsoMdocClaims
 import org.json.JSONObject
 
 /**
  * Extension function to convert [IssuedDocument]'s nameSpacedData to [JSONObject]
+ * Applicable only when [IssuedDocument.claims] is [MsoMdocClaims]
  *
  * @return [JSONObject]
  */
 @get:JvmName("nameSpacedDataAsJSONObject")
-val MsoMdocIssuedDocument.nameSpacedDataJSONObject: JSONObject
-    get() = JSONObject(nameSpacedDataDecoded)
+val IssuedDocument.nameSpacedDataJSONObject: JSONObject
+    get() = when (claims) {
+        is MsoMdocClaims -> JSONObject(claims.nameSpacedDataDecoded)
+        else -> JSONObject()
+    }
 
 /**
- * Extension function for [DocumentManager] to get documents using
- * reified type parameter
+ * DocumentManager Extension function that returns a list of documents of type [T].
+ * If [T] is [IssuedDocument], then only [IssuedDocument] will be returned.
+ * If [T] is [UnsignedDocument], then only [UnsignedDocument] will be returned,
+ * excluding [DeferredDocument].
+ * If [T] is [DeferredDocument], then only [DeferredDocument] will be returned.
+ * @receiver DocumentManager
+ * @param T The type of document to be returned
+ * @return List of documents of type [T]
  */
-inline fun <reified D : Document> DocumentManager.getDocuments(): List<D> {
-    return getDocuments().filterIsInstance<D>()
+@Suppress("UNCHECKED_CAST")
+inline fun <reified T : Document> DocumentManager.getDocuments(): List<T> {
+    return when (T::class) {
+        IssuedDocument::class -> getDocuments().filterIsInstance<IssuedDocument>()
+        UnsignedDocument::class -> getDocuments().filterIsInstance<UnsignedDocument>()
+            .filter { it !is DeferredDocument }
+
+        DeferredDocument::class -> getDocuments().filterIsInstance<DeferredDocument>()
+        else -> getDocuments()
+    } as List<T>
 }

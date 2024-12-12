@@ -18,6 +18,7 @@ package eu.europa.ec.eudi.wallet.document
 
 import com.android.identity.document.NameSpacedData
 import com.upokecenter.cbor.CBORObject
+import eu.europa.ec.eudi.wallet.document.format.MsoMdocClaims
 import io.mockk.mockk
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toJavaInstant
@@ -44,7 +45,7 @@ class TestIssuedDocumentExtensions {
             }.EncodeToBytes())
             .build()
 
-        val issuedDocument = MsoMdocIssuedDocument(
+        val issuedDocument = IssuedDocument(
             id = "id",
             name = "name",
             format = mockk(),
@@ -56,7 +57,7 @@ class TestIssuedDocumentExtensions {
             issuedAt = Clock.System.now().toJavaInstant(),
             validFrom = Clock.System.now().toJavaInstant(),
             validUntil = Clock.System.now().plus(10.days).toJavaInstant(),
-            nameSpacedData = nameSpacedData,
+            claims = MsoMdocClaims(nameSpacedData = nameSpacedData),
             issuerProvidedData = byteArrayOf(),
         )
 

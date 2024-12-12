@@ -16,7 +16,22 @@
 
 package eu.europa.ec.eudi.wallet.document.format
 
+import eu.europa.ec.eudi.wallet.document.DocType
+import eu.europa.ec.eudi.wallet.document.Vct
+
 /**
  * Represents a Document Format
  */
 sealed interface DocumentFormat
+
+/**
+ * Represents a MsoMdoc Format for a [eu.europa.ec.eudi.wallet.document.Document]
+ * @property docType the document type
+ */
+data class MsoMdocFormat(val docType: DocType) : DocumentFormat
+
+/**
+ * Represents a SdJwtVc Format for the [eu.europa.ec.eudi.wallet.document.Document]
+ * @property vct the Vct of the document
+ */
+data class SdJwtVcFormat(val vct: Vct) : DocumentFormat

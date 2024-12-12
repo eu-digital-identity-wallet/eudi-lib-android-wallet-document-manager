@@ -46,8 +46,7 @@ class TestGetDocumentsExtension {
         assertSame(deferred, deferredResult[0])
 
         val unsignedResult = documentManager.getDocuments<UnsignedDocument>()
-        assertEquals(2, unsignedResult.size)
+        assertEquals(1, unsignedResult.size)
         assertTrue(unsignedResult.contains(unsigned))
-        assertTrue(unsignedResult.contains(deferred))
     }
 }

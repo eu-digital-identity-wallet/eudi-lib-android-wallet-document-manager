@@ -3,8 +3,31 @@
 # getDocuments
 
 [androidJvm]\
-inline fun &lt;[D](get-documents.md) : [Document](-document/index.md)
+inline fun &lt;[T](get-documents.md) : [Document](-document/index.md)
 &gt; [DocumentManager](-document-manager/index.md).[getDocuments](get-documents.md)(): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)
-&lt;[D](get-documents.md)&gt;
+&lt;[T](get-documents.md)&gt;
 
-Extension function for [DocumentManager](-document-manager/index.md) to get documents using reified type parameter
+DocumentManager Extension function that returns a list of documents of type [T](get-documents.md).
+If [T](get-documents.md) is [IssuedDocument](-issued-document/index.md), then
+only [IssuedDocument](-issued-document/index.md) will be returned. If [T](get-documents.md)
+is [UnsignedDocument](-unsigned-document/index.md), then
+only [UnsignedDocument](-unsigned-document/index.md) will be returned,
+excluding [DeferredDocument](-deferred-document/index.md). If [T](get-documents.md)
+is [DeferredDocument](-deferred-document/index.md), then
+only [DeferredDocument](-deferred-document/index.md) will be returned.
+
+#### Receiver
+
+DocumentManager
+
+#### Return
+
+List of documents of type [T](get-documents.md)
+
+#### Parameters
+
+androidJvm
+
+|   |                                     |
+|---|-------------------------------------|
+| T | The type of document to be returned |

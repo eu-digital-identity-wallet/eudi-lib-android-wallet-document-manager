@@ -17,6 +17,8 @@
 package eu.europa.ec.eudi.wallet.document
 
 import com.android.identity.securearea.SecureAreaRepository
+import com.android.identity.securearea.software.SoftwareSecureArea
+import com.android.identity.storage.EphemeralStorageEngine
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -26,12 +28,15 @@ import kotlin.test.assertSame
 
 class DocumentManagerBuilderTest {
 
+    val storageEngine = EphemeralStorageEngine()
+    val secureArea = SoftwareSecureArea(storageEngine)
+    
     @Test
     fun `build should throw exception when identifier is not set`() {
         // Given
         val builder = DocumentManager.Builder()
-            .addSecureArea(secureAreaFixture)
-            .setStorageEngine(storageEngineFixture)
+            .addSecureArea(secureArea)
+            .setStorageEngine(storageEngine)
 
         // When
         val exception = assertFailsWith<IllegalArgumentException> {
@@ -47,7 +52,7 @@ class DocumentManagerBuilderTest {
         // Given
         val builder = DocumentManager.Builder()
             .setIdentifier("document_manager")
-            .addSecureArea(secureAreaFixture)
+            .addSecureArea(secureArea)
 
         // When
         val exception = assertFailsWith<IllegalArgumentException> {
@@ -63,7 +68,7 @@ class DocumentManagerBuilderTest {
         // Given
         val builder = DocumentManager.Builder()
             .setIdentifier("document_manager")
-            .setStorageEngine(storageEngineFixture)
+            .setStorageEngine(storageEngine)
 
         // When
         val exception = assertFailsWith<IllegalArgumentException> {
@@ -78,16 +83,16 @@ class DocumentManagerBuilderTest {
     fun `build should return DocumentManagerImpl with the provided storageEngine and secureArea as dependencies`() {
         val builder = DocumentManager.Builder()
             .setIdentifier("document_manager")
-            .setStorageEngine(storageEngineFixture)
-            .addSecureArea(secureAreaFixture)
+            .setStorageEngine(storageEngine)
+            .addSecureArea(secureArea)
 
         val documentManager = builder.build()
 
         assertIs<DocumentManagerImpl>(documentManager)
         assertEquals("document_manager", documentManager.identifier)
-        assertEquals(storageEngineFixture, documentManager.storageEngine)
+        assertEquals(storageEngine, documentManager.storageEngine)
         assertContentEquals(
-            listOf(secureAreaFixture),
+            listOf(secureArea),
             documentManager.secureAreaRepository.implementations
         )
     }
@@ -97,16 +102,16 @@ class DocumentManagerBuilderTest {
         // When
         val documentManager = DocumentManager {
             setIdentifier("document_manager")
-            setStorageEngine(storageEngineFixture)
-            addSecureArea(secureAreaFixture)
+            setStorageEngine(this@DocumentManagerBuilderTest.storageEngine)
+            addSecureArea(this@DocumentManagerBuilderTest.secureArea)
         }
 
         // Then
         assertIs<DocumentManagerImpl>(documentManager)
         assertEquals("document_manager", documentManager.identifier)
-        assertEquals(storageEngineFixture, documentManager.storageEngine)
+        assertEquals(storageEngine, documentManager.storageEngine)
         assertContentEquals(
-            listOf(secureAreaFixture),
+            listOf(secureArea),
             documentManager.secureAreaRepository.implementations
         )
     }
@@ -115,10 +120,10 @@ class DocumentManagerBuilderTest {
     fun `verify that setSecureAreaRepository method overrides the default`() {
         val builder = DocumentManager.Builder()
             .setIdentifier("documentManager")
-            .setStorageEngine(storageEngineFixture)
+            .setStorageEngine(storageEngine)
 
         val secureAreaRepository = SecureAreaRepository().apply {
-            addImplementation(secureAreaFixture)
+            addImplementation(secureArea)
         }
 
         builder.setSecureAreaRepository(secureAreaRepository)
