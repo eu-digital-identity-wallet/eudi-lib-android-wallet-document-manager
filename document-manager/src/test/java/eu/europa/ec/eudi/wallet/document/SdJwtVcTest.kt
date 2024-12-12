@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2024 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package eu.europa.ec.eudi.wallet.document
 
 import com.android.identity.securearea.SecureArea
@@ -9,7 +25,10 @@ import com.android.identity.storage.StorageEngine
 import eu.europa.ec.eudi.sdjwt.SdJwt
 import eu.europa.ec.eudi.sdjwt.unverifiedIssuanceFrom
 import eu.europa.ec.eudi.sdjwt.vc.SdJwtVcVerifier
+import eu.europa.ec.eudi.wallet.document.format.SdJwtVcClaim
+import eu.europa.ec.eudi.wallet.document.format.SdJwtVcClaims
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
+import eu.europa.ec.eudi.wallet.document.internal.parse
 import io.mockk.InternalPlatformDsl.toStr
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
@@ -60,7 +79,12 @@ class SdJwtVcTest {
         }.map { it.claim().first to it.claim().second }
 
         val parsedClaims = (nonSelectivelyDisclosable + selectivelyDisclosable).map {
-            Claim(it.first.toStr(), it.second, selectivelyDisclosable.contains(it))
+            SdJwtVcClaim(
+                it.first.toStr(),
+                it.second.parse(),
+                it.second.toString(),
+                selectivelyDisclosable.contains(it)
+            )
         }
 
         assertEquals(5, nonSelectivelyDisclosable.size)
@@ -128,7 +152,10 @@ class SdJwtVcTest {
             .replace("\n", "")
             .replace("\r", "")
 
-        val storeDocumentResult = documentManager.storeIssuedDocument(unsignedDocument, sdjwtVcData.toByteArray(Charsets.US_ASCII))
+        val storeDocumentResult = documentManager.storeIssuedDocument(
+            unsignedDocument,
+            sdjwtVcData.toByteArray(Charsets.US_ASCII)
+        )
         assertTrue(storeDocumentResult.isSuccess)
         val issuedDocument = storeDocumentResult.getOrThrow()
 
@@ -138,11 +165,12 @@ class SdJwtVcTest {
 
         assertTrue(issuedDocument.isCertified)
         assertTrue(issuedDocument.issuerProvidedData.isNotEmpty())
-
-        assertEquals(28, (issuedDocument as SdJwtVcIssuedDocument).claims.size)
+        val claims = issuedDocument.claims
+        assertIs<SdJwtVcClaims>(claims)
+        assertEquals(28, claims.claims.size)
 
         val documents = documentManager.getDocuments()
         assertEquals(1, documents.size)
-        assertTrue(documents.first() is SdJwtVcIssuedDocument)
+        assertIs<SdJwtVcFormat>(documents.first().format)
     }
 }

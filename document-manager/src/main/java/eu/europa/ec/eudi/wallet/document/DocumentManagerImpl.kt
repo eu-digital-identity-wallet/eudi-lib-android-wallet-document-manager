@@ -172,7 +172,6 @@ class DocumentManagerImpl(
                     )
                     identityDocument.documentName = format.vct
                 }
-                else -> throw IllegalArgumentException("Format ${format::class.simpleName} not supported")
             }
 
             documentStore.addDocument(identityDocument)

@@ -21,15 +21,14 @@ import com.android.identity.document.NameSpacedData
 import com.android.identity.mdoc.credential.MdocCredential
 import eu.europa.ec.eudi.sdjwt.SdJwt
 import eu.europa.ec.eudi.sdjwt.unverifiedIssuanceFrom
-import eu.europa.ec.eudi.wallet.document.Claim
 import eu.europa.ec.eudi.wallet.document.DeferredDocument
 import eu.europa.ec.eudi.wallet.document.Document
 import eu.europa.ec.eudi.wallet.document.IssuedDocument
-import eu.europa.ec.eudi.wallet.document.MsoMdocIssuedDocument
-import eu.europa.ec.eudi.wallet.document.SdJwtVcIssuedDocument
 import eu.europa.ec.eudi.wallet.document.UnsignedDocument
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
+import eu.europa.ec.eudi.wallet.document.format.MsoMdocClaims
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
+import eu.europa.ec.eudi.wallet.document.format.SdJwtVcClaims
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
 import kotlinx.datetime.toJavaInstant
 import java.time.Instant
@@ -180,45 +179,34 @@ internal inline fun <reified D : Document> IdentityDocument.toDocument(): D {
             keyAlias = credential.alias,
         )
 
-        DocumentState.ISSUED -> {
-            when(documentFormat) {
-                is MsoMdocFormat -> {
-                    MsoMdocIssuedDocument(
-                        id = name,
-                        name = documentName,
-                        createdAt = createdAt,
-                        issuedAt = issuedAt,
-                        secureArea = credential.secureArea,
-                        format = documentFormat,
-                        documentManagerId = documentManagerId,
-                        isCertified = credential.isCertified,
-                        keyAlias = credential.alias,
-                        validFrom = credential.validFrom.toJavaInstant(),
-                        validUntil = credential.validUntil.toJavaInstant(),
-                        nameSpacedData = nameSpacedData,
-                        issuerProvidedData = credential.issuerProvidedData
-                    )
-                }
-                is SdJwtVcFormat -> {
-                    SdJwtVcIssuedDocument(
-                        id = name,
-                        name = documentName,
-                        createdAt = createdAt,
-                        issuedAt = issuedAt,
-                        secureArea = credential.secureArea,
-                        format = documentFormat,
-                        documentManagerId = documentManagerId,
-                        isCertified = credential.isCertified,
-                        keyAlias = credential.alias,
-                        validFrom = credential.validFrom.toJavaInstant(),
-                        validUntil = credential.validUntil.toJavaInstant(),
-                        issuerProvidedData = credential.issuerProvidedData,
-                        claims = credential.issuerProvidedData.getClaims()
-                    )
-                }
-                else -> throw IllegalArgumentException("Unsupported format type: ${documentFormat::class}")
+        DocumentState.ISSUED -> IssuedDocument(
+            id = name,
+            name = documentName,
+            format = documentFormat,
+            createdAt = createdAt,
+            issuedAt = issuedAt,
+            secureArea = credential.secureArea,
+            documentManagerId = documentManagerId,
+            isCertified = credential.isCertified,
+            keyAlias = credential.alias,
+            validFrom = credential.validFrom.toJavaInstant(),
+            validUntil = credential.validUntil.toJavaInstant(),
+            issuerProvidedData = credential.issuerProvidedData,
+            claims = when (documentFormat) {
+                is MsoMdocFormat -> MsoMdocClaims(
+                    nameSpacedData = nameSpacedData
+                )
+
+                is SdJwtVcFormat -> SdJwtVcClaims(
+                    SdJwt.unverifiedIssuanceFrom(
+                        String(
+                            credential.issuerProvidedData,
+                            Charsets.US_ASCII
+                        )
+                    ).getOrThrow()
+                )
             }
-        }
+        )
 
         DocumentState.DEFERRED -> DeferredDocument(
             id = name,
@@ -232,24 +220,4 @@ internal inline fun <reified D : Document> IdentityDocument.toDocument(): D {
             relatedData = deferredRelatedData
         )
     } as D
-}
-
-private fun ByteArray.getClaims(): List<Claim> {
-
-    val sdJwtVc = SdJwt.unverifiedIssuanceFrom(String(this, Charsets.US_ASCII)).getOrElse {
-        throw IllegalArgumentException("Invalid SD-JWT VC")
-    }
-    val (_, claims) = sdJwtVc.jwt
-    val nonSelectivelyDisclosable = claims.filter {
-        !it.value.toString().contains("_sd") &&
-                !it.key.contains("_sd")
-    }.map { it.key to it.value }
-
-    val selectivelyDisclosable = sdJwtVc.disclosures.filter {
-        !it.claim().second.toString().contains("_sd")
-    }.map { it.claim().first to it.claim().second }
-
-    return (nonSelectivelyDisclosable + selectivelyDisclosable).map {
-        Claim(it.first, it.second, selectivelyDisclosable.contains(it))
-    }
 }

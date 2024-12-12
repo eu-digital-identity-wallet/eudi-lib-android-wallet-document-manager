@@ -16,6 +16,8 @@
 
 package eu.europa.ec.eudi.wallet.document.sample
 
+import com.android.identity.securearea.software.SoftwareSecureArea
+import com.android.identity.storage.EphemeralStorageEngine
 import eu.europa.ec.eudi.wallet.document.DocumentManager
 import eu.europa.ec.eudi.wallet.document.DocumentManagerImpl
 import io.mockk.mockk
@@ -75,10 +77,12 @@ class SampleDocumentManagerBuilderTest {
     fun `verify that companion object build method returns SampleDocumentManagerImpl instance`() {
 
         // When
+        val storageEngine = EphemeralStorageEngine()
+        val secureArea = SoftwareSecureArea(storageEngine)
         val documentManager = SampleDocumentManager.build {
             setIdentifier("document_manager")
-            addSecureArea(eu.europa.ec.eudi.wallet.document.secureAreaFixture)
-            setStorageEngine(eu.europa.ec.eudi.wallet.document.storageEngineFixture)
+            addSecureArea(secureArea)
+            setStorageEngine(storageEngine)
         }
 
         // Then

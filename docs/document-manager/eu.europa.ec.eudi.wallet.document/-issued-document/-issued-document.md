@@ -14,5 +14,5 @@ createdAt: [Instant](https://developer.android.com/reference/kotlin/java/time/In
 validFrom: [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html),
 validUntil: [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html),
 issuedAt: [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html),
-nameSpacedData: NameSpacedData,
-issuerProvidedData: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html))
+issuerProvidedData: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html),
+claims: [DocumentClaims](../../eu.europa.ec.eudi.wallet.document.format/-document-claims/index.md))

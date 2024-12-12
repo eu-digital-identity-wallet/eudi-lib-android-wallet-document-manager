@@ -32,11 +32,10 @@ import com.android.identity.storage.EphemeralStorageEngine
 import com.android.identity.storage.StorageEngine
 import com.android.identity.util.Constants
 import com.upokecenter.cbor.CBORObject
+import eu.europa.ec.eudi.wallet.document.format.MsoMdocClaims
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
-import eu.europa.ec.eudi.wallet.document.format.UnsupportedDocumentFormat
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.spyk
 import org.junit.Assert
 import org.junit.Assert.assertThrows
 import kotlin.test.*
@@ -107,21 +106,11 @@ class DocumentManagerImplTest {
         assertTrue(issuedDocument.isCertified)
         assertTrue(issuedDocument.issuerProvidedData.isNotEmpty())
 
-        assertEquals(1, (issuedDocument as MsoMdocIssuedDocument).nameSpaces.keys.size)
-        assertEquals(33, (issuedDocument as MsoMdocIssuedDocument).nameSpaces.entries.first().value.size)
-    }
+        val claims = issuedDocument.claims
+        assertIs<MsoMdocClaims>(claims)
 
-    @Test
-    fun `should return failure result when unsupported format is used to create document`() {
-        val createDocumentResult = documentManager.createDocument(
-            format = UnsupportedDocumentFormat,
-            createSettings = CreateDocumentSettings(
-                secureAreaIdentifier = secureArea.identifier,
-                createKeySettings = SoftwareCreateKeySettings.Builder().build()
-            )
-        )
-        assertTrue(createDocumentResult.isFailure)
-        assertIs<IllegalArgumentException>(createDocumentResult.exceptionOrNull())
+        assertEquals(1, claims.nameSpaces.keys.size)
+        assertEquals(33, claims.nameSpaces.entries.first().value.size)
     }
 
     @Test
@@ -216,25 +205,6 @@ class DocumentManagerImplTest {
         assertIs<IllegalArgumentException>(deferredResult.exceptionOrNull())
     }
 
-    @Test
-    fun `should return failure when storing issued document of unsupported format`() {
-
-        val createDocumentResult = documentManager.createDocument(
-            format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-            createSettings = CreateDocumentSettings(
-                secureAreaIdentifier = secureArea.identifier,
-                createKeySettings = SoftwareCreateKeySettings.Builder().build()
-            )
-        )
-        assertTrue(createDocumentResult.isSuccess)
-        val document = spyk(createDocumentResult.getOrThrow()) {
-            every { format } returns UnsupportedDocumentFormat
-        }
-
-        val storeDocumentResult = documentManager.storeIssuedDocument(document, byteArrayOf(0x01))
-        assertTrue(storeDocumentResult.isFailure)
-        assertIs<IllegalArgumentException>(storeDocumentResult.exceptionOrNull())
-    }
 
     @OptIn(ExperimentalStdlibApi::class)
     @Test
@@ -258,7 +228,9 @@ class DocumentManagerImplTest {
         assertTrue(storeResult.isSuccess)
         val issuedDocument = storeResult.getOrThrow()
         val docType = (issuedDocument.format as MsoMdocFormat).docType
-        val dataElements = (issuedDocument as MsoMdocIssuedDocument).nameSpaces.flatMap { (nameSpace, elementIdentifiers) ->
+        val claims = issuedDocument.claims
+        assertIs<MsoMdocClaims>(claims)
+        val dataElements = claims.nameSpaces.flatMap { (nameSpace, elementIdentifiers) ->
             elementIdentifiers.map { elementIdentifier ->
                 DocumentRequest.DataElement(nameSpace, elementIdentifier, false)
             }
@@ -267,7 +239,7 @@ class DocumentManagerImplTest {
         val transcript = CBORObject.FromObject(ByteArray(0)).EncodeToBytes()
         val staticAuthData = StaticAuthDataParser(issuedDocument.issuerProvidedData).parse()
         val mergedIssuerNameSpaces =
-            MdocUtil.mergeIssuerNamesSpaces(request, issuedDocument.nameSpacedData, staticAuthData)
+            MdocUtil.mergeIssuerNamesSpaces(request, claims.nameSpacedData, staticAuthData)
         val data = DocumentGenerator(docType, staticAuthData.issuerAuth, transcript)
             .setIssuerNamespaces(mergedIssuerNameSpaces)
             .setDeviceNamespacesSignature(
@@ -401,30 +373,30 @@ class DocumentManagerImplTest {
         val documentManager1 = DocumentManagerImpl(
             identifier = "document_manager_1",
             secureAreaRepository = SecureAreaRepository().apply {
-                addImplementation(secureAreaFixture)
+                addImplementation(secureArea)
             },
-            storageEngine = storageEngineFixture
+            storageEngine = storageEngine
         )
 
         val documentManager2 = DocumentManagerImpl(
             identifier = "document_manager_2",
             secureAreaRepository = SecureAreaRepository().apply {
-                addImplementation(secureAreaFixture)
+                addImplementation(secureArea)
             },
-            storageEngine = storageEngineFixture
+            storageEngine = storageEngine
         )
 
         documentManager1.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
             createSettings = CreateDocumentSettings(
-                secureAreaIdentifier = secureAreaFixture.identifier,
+                secureAreaIdentifier = secureArea.identifier,
                 createKeySettings = SoftwareCreateKeySettings.Builder().build()
             )
         )
         documentManager2.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
             createSettings = CreateDocumentSettings(
-                secureAreaIdentifier = secureAreaFixture.identifier,
+                secureAreaIdentifier = secureArea.identifier,
                 createKeySettings = SoftwareCreateKeySettings.Builder().build()
             )
         )
