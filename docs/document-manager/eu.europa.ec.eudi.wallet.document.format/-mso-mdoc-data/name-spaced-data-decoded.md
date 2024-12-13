@@ -1,4 +1,4 @@
-//[document-manager](../../../index.md)/[eu.europa.ec.eudi.wallet.document.format](../index.md)/[MsoMdocClaims](index.md)/[nameSpacedDataDecoded](name-spaced-data-decoded.md)
+//[document-manager](../../../index.md)/[eu.europa.ec.eudi.wallet.document.format](../index.md)/[MsoMdocData](index.md)/[nameSpacedDataDecoded](name-spaced-data-decoded.md)
 
 # nameSpacedDataDecoded
 

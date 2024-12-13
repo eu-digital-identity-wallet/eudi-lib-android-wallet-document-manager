@@ -116,7 +116,13 @@ dependencies {
     implementation(libs.cose)
 
     // sd-jwt-vc
-    implementation(libs.eudi.sd.jwt.vc.kt)
+    implementation(libs.eudi.sd.jwt.vc.kt) {
+        exclude(group = "io.ktor")
+    }
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.client.serialization)
+    implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.nimbus.jose.jwt)
 
     implementation(libs.bouncy.castle.prov)

@@ -33,3 +33,6 @@ internal val EcPublicKey.toCoseBytes: ByteArray
 
 internal val ByteArray.toEcPublicKey: EcPublicKey
     get() = EcPublicKey.fromDataItem(Cbor.decode(this))
+
+internal val ByteArray.sdJwtVcString: String
+    get() = String(this, charset = Charsets.US_ASCII)

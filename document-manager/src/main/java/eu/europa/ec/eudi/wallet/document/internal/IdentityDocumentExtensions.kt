@@ -26,9 +26,9 @@ import eu.europa.ec.eudi.wallet.document.Document
 import eu.europa.ec.eudi.wallet.document.IssuedDocument
 import eu.europa.ec.eudi.wallet.document.UnsignedDocument
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
-import eu.europa.ec.eudi.wallet.document.format.MsoMdocClaims
+import eu.europa.ec.eudi.wallet.document.format.MsoMdocData
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
-import eu.europa.ec.eudi.wallet.document.format.SdJwtVcClaims
+import eu.europa.ec.eudi.wallet.document.format.SdJwtVcData
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
 import kotlinx.datetime.toJavaInstant
 import java.time.Instant
@@ -182,7 +182,6 @@ internal inline fun <reified D : Document> IdentityDocument.toDocument(): D {
         DocumentState.ISSUED -> IssuedDocument(
             id = name,
             name = documentName,
-            format = documentFormat,
             createdAt = createdAt,
             issuedAt = issuedAt,
             secureArea = credential.secureArea,
@@ -192,18 +191,16 @@ internal inline fun <reified D : Document> IdentityDocument.toDocument(): D {
             validFrom = credential.validFrom.toJavaInstant(),
             validUntil = credential.validUntil.toJavaInstant(),
             issuerProvidedData = credential.issuerProvidedData,
-            claims = when (documentFormat) {
-                is MsoMdocFormat -> MsoMdocClaims(
+            data = when (documentFormat) {
+                is MsoMdocFormat -> MsoMdocData(
+                    format = documentFormat,
                     nameSpacedData = nameSpacedData
                 )
 
-                is SdJwtVcFormat -> SdJwtVcClaims(
-                    SdJwt.unverifiedIssuanceFrom(
-                        String(
-                            credential.issuerProvidedData,
-                            Charsets.US_ASCII
-                        )
-                    ).getOrThrow()
+                is SdJwtVcFormat -> SdJwtVcData(
+                    format = documentFormat,
+                    sdJwtVc = SdJwt.unverifiedIssuanceFrom(credential.issuerProvidedData.sdJwtVcString)
+                        .getOrThrow()
                 )
             }
         )

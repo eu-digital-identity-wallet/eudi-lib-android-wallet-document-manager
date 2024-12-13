@@ -17,19 +17,19 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import eu.europa.ec.eudi.wallet.document.format.MsoMdocClaims
+import eu.europa.ec.eudi.wallet.document.format.MsoMdocData
 import org.json.JSONObject
 
 /**
  * Extension function to convert [IssuedDocument]'s nameSpacedData to [JSONObject]
- * Applicable only when [IssuedDocument.claims] is [MsoMdocClaims]
+ * Applicable only when [IssuedDocument.data] is [MsoMdocData]
  *
  * @return [JSONObject]
  */
 @get:JvmName("nameSpacedDataAsJSONObject")
 val IssuedDocument.nameSpacedDataJSONObject: JSONObject
-    get() = when (claims) {
-        is MsoMdocClaims -> JSONObject(claims.nameSpacedDataDecoded)
+    get() = when (data) {
+        is MsoMdocData -> JSONObject(data.nameSpacedDataDecoded)
         else -> JSONObject()
     }
 

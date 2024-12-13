@@ -26,7 +26,7 @@ import eu.europa.ec.eudi.sdjwt.SdJwt
 import eu.europa.ec.eudi.sdjwt.unverifiedIssuanceFrom
 import eu.europa.ec.eudi.sdjwt.vc.SdJwtVcVerifier
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcClaim
-import eu.europa.ec.eudi.wallet.document.format.SdJwtVcClaims
+import eu.europa.ec.eudi.wallet.document.format.SdJwtVcData
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
 import eu.europa.ec.eudi.wallet.document.internal.parse
 import io.mockk.InternalPlatformDsl.toStr
@@ -165,8 +165,8 @@ class SdJwtVcTest {
 
         assertTrue(issuedDocument.isCertified)
         assertTrue(issuedDocument.issuerProvidedData.isNotEmpty())
-        val claims = issuedDocument.claims
-        assertIs<SdJwtVcClaims>(claims)
+        val claims = issuedDocument.data
+        assertIs<SdJwtVcData>(claims)
         assertEquals(28, claims.claims.size)
 
         val documents = documentManager.getDocuments()
