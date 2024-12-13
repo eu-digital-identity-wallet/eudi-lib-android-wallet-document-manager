@@ -5,7 +5,6 @@
 [androidJvm]\
 constructor(id: [DocumentId](../-document-id/index.md),
 name: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html),
-format: [DocumentFormat](../../eu.europa.ec.eudi.wallet.document.format/-document-format/index.md),
 documentManagerId: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html),
 isCertified: [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html),
 keyAlias: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html),
@@ -15,4 +14,4 @@ validFrom: [Instant](https://developer.android.com/reference/kotlin/java/time/In
 validUntil: [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html),
 issuedAt: [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html),
 issuerProvidedData: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html),
-claims: [DocumentClaims](../../eu.europa.ec.eudi.wallet.document.format/-document-claims/index.md))
+data: [DocumentData](../../eu.europa.ec.eudi.wallet.document.format/-document-data/index.md))

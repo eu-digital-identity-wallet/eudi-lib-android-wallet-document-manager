@@ -20,6 +20,7 @@ import com.android.identity.crypto.javaPublicKey
 import com.android.identity.document.Document
 import com.android.identity.securearea.CreateKeySettings
 import com.android.identity.securearea.SecureArea
+import com.android.identity.util.Logger
 import com.nimbusds.jose.jwk.JWK
 import com.nimbusds.jose.jwk.KeyConverter
 import eu.europa.ec.eudi.sdjwt.SdJwt
@@ -35,6 +36,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
+import kotlin.time.Duration.Companion.days
 
 @JvmSynthetic
 internal fun SdJwtVcFormat.createCredential(
@@ -68,12 +70,13 @@ internal fun SdJwtVcFormat.storeIssuedDocument(
                 // TODO Check the certificate path
                 return@SdJwtVcVerifier true
             }
-        ).verifyIssuance(String(data, Charsets.US_ASCII)).getOrElse {
-            throw IllegalArgumentException("Invalid SD-JWT VC with error: ${it.message}")
+        ).verifyIssuance(data.sdJwtVcString).onFailure {
+            Logger.w("SdJwtVcVerifier", "Invalid SD-JWT VC with error: ${it.message}", it)
+//            throw IllegalArgumentException("Invalid SD-JWT VC with error: ${it.message}", it)
         }
 
-        val sdJwt = SdJwt.unverifiedIssuanceFrom(String(data, Charsets.US_ASCII)).getOrElse {
-            throw IllegalArgumentException("Invalid SD-JWT VC")
+        val sdJwt = SdJwt.unverifiedIssuanceFrom(data.sdJwtVcString).getOrElse {
+            throw IllegalArgumentException("Invalid SD-JWT VC", it)
         }
 
         val (_, claims) = sdJwt.jwt
@@ -89,12 +92,13 @@ internal fun SdJwtVcFormat.storeIssuedDocument(
         }
 
         // TODO what to do with validFrom and validUntil if they are not present in the SD-JWT VC
-        //  in nbf and exp claims that are optional
+        //  in nbf (or iat if no nbf) and exp claims that are optional
+
         val nbf = claims["nbf"]?.jsonPrimitive?.longOrNull?.let { Instant.fromEpochSeconds(it) }
+        val iat = claims["iat"]?.jsonPrimitive?.longOrNull?.let { Instant.fromEpochSeconds(it) }
         val exp = claims["exp"]?.jsonPrimitive?.longOrNull?.let { Instant.fromEpochSeconds(it) }
-        val validFrom = nbf ?: Clock.System.now()
-        val validUntil = exp ?: Instant.fromEpochMilliseconds(
-            validFrom.toEpochMilliseconds() + 1 * 86400 * 1000L)
+        val validFrom = nbf ?: iat ?: Clock.System.now()
+        val validUntil = exp ?: validFrom.plus(30.days)
 
         identityDocument.pendingCredentials.forEach { credential ->
             credential.certify(data, validFrom, validUntil)

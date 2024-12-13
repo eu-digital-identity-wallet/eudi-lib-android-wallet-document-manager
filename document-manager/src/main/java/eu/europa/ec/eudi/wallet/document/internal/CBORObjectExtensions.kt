@@ -58,7 +58,11 @@ private fun CBORObject.parse(): Any? = when {
     }
 
     else -> when (type) {
-        CBORType.ByteString -> Base64.getEncoder().encodeToString(GetByteString())
+        CBORType.ByteString -> when {
+            HasMostOuterTag(24) -> GetByteString().toObject()
+            else -> Base64.getUrlEncoder().encodeToString(GetByteString())
+        }
+
         CBORType.TextString -> AsString()
         CBORType.Array -> values.map { it.parse() }.toList()
         CBORType.Map -> keys.associate { it.parse() to this[it].parse() }

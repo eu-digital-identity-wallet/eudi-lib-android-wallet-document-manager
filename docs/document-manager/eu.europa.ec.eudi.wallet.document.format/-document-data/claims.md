@@ -1,4 +1,4 @@
-//[document-manager](../../../index.md)/[eu.europa.ec.eudi.wallet.document.format](../index.md)/[DocumentClaims](index.md)/[claims](claims.md)
+//[document-manager](../../../index.md)/[eu.europa.ec.eudi.wallet.document.format](../index.md)/[DocumentData](index.md)/[claims](claims.md)
 
 # claims
 

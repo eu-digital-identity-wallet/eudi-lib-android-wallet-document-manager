@@ -32,7 +32,7 @@ import com.android.identity.storage.EphemeralStorageEngine
 import com.android.identity.storage.StorageEngine
 import com.android.identity.util.Constants
 import com.upokecenter.cbor.CBORObject
-import eu.europa.ec.eudi.wallet.document.format.MsoMdocClaims
+import eu.europa.ec.eudi.wallet.document.format.MsoMdocData
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import io.mockk.every
 import io.mockk.mockk
@@ -106,8 +106,8 @@ class DocumentManagerImplTest {
         assertTrue(issuedDocument.isCertified)
         assertTrue(issuedDocument.issuerProvidedData.isNotEmpty())
 
-        val claims = issuedDocument.claims
-        assertIs<MsoMdocClaims>(claims)
+        val claims = issuedDocument.data
+        assertIs<MsoMdocData>(claims)
 
         assertEquals(1, claims.nameSpaces.keys.size)
         assertEquals(33, claims.nameSpaces.entries.first().value.size)
@@ -228,8 +228,8 @@ class DocumentManagerImplTest {
         assertTrue(storeResult.isSuccess)
         val issuedDocument = storeResult.getOrThrow()
         val docType = (issuedDocument.format as MsoMdocFormat).docType
-        val claims = issuedDocument.claims
-        assertIs<MsoMdocClaims>(claims)
+        val claims = issuedDocument.data
+        assertIs<MsoMdocData>(claims)
         val dataElements = claims.nameSpaces.flatMap { (nameSpace, elementIdentifiers) ->
             elementIdentifiers.map { elementIdentifier ->
                 DocumentRequest.DataElement(nameSpace, elementIdentifier, false)

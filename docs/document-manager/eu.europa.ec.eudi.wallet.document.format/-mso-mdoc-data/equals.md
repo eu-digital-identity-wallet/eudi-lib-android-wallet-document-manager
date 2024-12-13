@@ -1,4 +1,4 @@
-//[document-manager](../../../index.md)/[eu.europa.ec.eudi.wallet.document.format](../index.md)/[MsoMdocClaims](index.md)/[equals](equals.md)
+//[document-manager](../../../index.md)/[eu.europa.ec.eudi.wallet.document.format](../index.md)/[MsoMdocData](index.md)/[equals](equals.md)
 
 # equals
 

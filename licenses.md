@@ -2,7 +2,7 @@
 # EUDI wallet library for managing documents
 ## Dependency License Report
 
-_2024-12-12 13:20:50 EET_
+_2024-12-13 18:42:20 EET_
 ## Apache License, Version 2.0
 
 **1** **Group:** `com.android.identity` **Name:** `identity-mdoc` **Version:** `202408.1`
@@ -29,12 +29,12 @@ _2024-12-12 13:20:50 EET_
     **: [https://github.com/Kotlin/kotlinx-datetime](https://github.com/Kotlin/kotlinx-datetime)
 > - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-**6** **Group:** `org.jetbrains.kotlinx` **Name:** `kotlinx-io-bytestring` **Version:** `0.5.4`
+**6** **Group:** `org.jetbrains.kotlinx` **Name:** `kotlinx-io-bytestring` **Version:** `0.4.0`
 > - **POM Project URL
     **: [https://github.com/Kotlin/kotlinx-io](https://github.com/Kotlin/kotlinx-io)
 > - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-**7** **Group:** `org.jetbrains.kotlinx` **Name:** `kotlinx-io-core` **Version:** `0.5.4`
+**7** **Group:** `org.jetbrains.kotlinx` **Name:** `kotlinx-io-core` **Version:** `0.4.0`
 > - **POM Project URL
     **: [https://github.com/Kotlin/kotlinx-io](https://github.com/Kotlin/kotlinx-io)
 > - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)

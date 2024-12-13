@@ -1,24 +1,25 @@
-//[document-manager](../../../index.md)/[eu.europa.ec.eudi.wallet.document.format](../index.md)/[MsoMdocClaims](index.md)
+//[document-manager](../../../index.md)/[eu.europa.ec.eudi.wallet.document.format](../index.md)/[MsoMdocData](index.md)
 
-# MsoMdocClaims
+# MsoMdocData
 
 [androidJvm]\
-data class [MsoMdocClaims](index.md)(val nameSpacedData:
-NameSpacedData) : [DocumentClaims](../-document-claims/index.md)
+data class [MsoMdocData](index.md)(val format: [MsoMdocFormat](../-mso-mdoc-format/index.md), val
+nameSpacedData: NameSpacedData) : [DocumentData](../-document-data/index.md)
 
 Represents the claims of a document in the MsoMdoc format.
 
 ## Constructors
 
-|                                      |                                                             |
-|--------------------------------------|-------------------------------------------------------------|
-| [MsoMdocClaims](-mso-mdoc-claims.md) | [androidJvm]<br>constructor(nameSpacedData: NameSpacedData) |
+|                                  |                                                                                                                    |
+|----------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| [MsoMdocData](-mso-mdoc-data.md) | [androidJvm]<br>constructor(format: [MsoMdocFormat](../-mso-mdoc-format/index.md), nameSpacedData: NameSpacedData) |
 
 ## Properties
 
 | Name                                                  | Summary                                                                                                                                                                                                                                                                                              |
 |-------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [claims](claims.md)                                   | [androidJvm]<br>open override val [claims](claims.md): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)&lt;[MsoMdocClaim](../-mso-mdoc-claim/index.md)&gt;<br>The list of claims.                                                                            |
+| [format](format.md)                                   | [androidJvm]<br>open override val [format](format.md): [MsoMdocFormat](../-mso-mdoc-format/index.md)<br>The MsoMdoc format containing the docType                                                                                                                                                    |
 | [nameSpacedData](name-spaced-data.md)                 | [androidJvm]<br>val [nameSpacedData](name-spaced-data.md): NameSpacedData<br>The name-spaced data.                                                                                                                                                                                                   |
 | [nameSpacedDataDecoded](name-spaced-data-decoded.md)  | [androidJvm]<br>val [nameSpacedDataDecoded](name-spaced-data-decoded.md): [NameSpacedValues](../../eu.europa.ec.eudi.wallet.document/-name-spaced-values/index.md)&lt;[Any](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html)?&gt;<br>The name-spaced data decoded.               |
 | [nameSpacedDataInBytes](name-spaced-data-in-bytes.md) | [androidJvm]<br>val [nameSpacedDataInBytes](name-spaced-data-in-bytes.md): [NameSpacedValues](../../eu.europa.ec.eudi.wallet.document/-name-spaced-values/index.md)&lt;[ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html)&gt;<br>The name-spaced data in bytes. |

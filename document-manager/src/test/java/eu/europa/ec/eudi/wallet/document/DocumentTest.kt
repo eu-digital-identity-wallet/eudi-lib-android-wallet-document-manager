@@ -26,7 +26,7 @@ import com.android.identity.securearea.software.SoftwareCreateKeySettings
 import com.android.identity.securearea.software.SoftwareKeyUnlockData
 import com.android.identity.securearea.software.SoftwareSecureArea
 import com.android.identity.storage.EphemeralStorageEngine
-import eu.europa.ec.eudi.wallet.document.format.MsoMdocClaims
+import eu.europa.ec.eudi.wallet.document.format.MsoMdocData
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.internal.toCoseBytes
 import kotlinx.datetime.Clock
@@ -103,8 +103,8 @@ class DocumentTest {
 
         assertEquals(unsignedDocument.createdAt, issuedDocument.createdAt)
         assertNotEquals(issuedDocument.createdAt, issuedDocument.issuedAt)
-        val claims = issuedDocument.claims
-        assertIs<MsoMdocClaims>(claims)
+        val claims = issuedDocument.data
+        assertIs<MsoMdocData>(claims)
         assertTrue(claims.nameSpaces.isNotEmpty())
         assertTrue(issuedDocument.validFrom.isBefore(issuedDocument.validUntil))
         assertTrue(issuedDocument.isValidAt(Clock.System.now().toJavaInstant()))

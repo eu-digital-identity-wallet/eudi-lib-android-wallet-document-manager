@@ -26,6 +26,7 @@ import com.android.identity.util.UUID
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
+import eu.europa.ec.eudi.wallet.document.internal.SdJwtVcCredential
 import eu.europa.ec.eudi.wallet.document.internal.clearDeferredRelatedData
 import eu.europa.ec.eudi.wallet.document.internal.createCredential
 import eu.europa.ec.eudi.wallet.document.internal.createdAt
@@ -76,6 +77,9 @@ class DocumentManagerImpl(
             .apply {
                 addCredentialImplementation(MdocCredential::class) { document, dataItem ->
                     MdocCredential(document, dataItem)
+                }
+                addCredentialImplementation(SdJwtVcCredential::class) { document, dataItem ->
+                    SdJwtVcCredential(document, dataItem)
                 }
             })
     }
@@ -213,6 +217,7 @@ class DocumentManagerImpl(
                     checkDevicePublicKey,
                     ktorHttpClientFactory
                 )
+
                 else -> throw IllegalArgumentException("Format ${format::class.simpleName} not supported")
             }
             with(identityDocument) {

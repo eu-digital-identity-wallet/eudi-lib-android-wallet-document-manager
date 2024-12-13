@@ -28,9 +28,11 @@ import kotlinx.serialization.json.JsonElement
 
 /**
  * Represents the claims of a document.
+ * @property format The format of the document.
  * @property claims The list of claims.
  */
-sealed interface DocumentClaims {
+sealed interface DocumentData {
+    val format: DocumentFormat
     val claims: List<DocumentClaim>
 }
 
@@ -48,6 +50,7 @@ sealed class DocumentClaim(
 
 /**
  * Represents the claims of a document in the MsoMdoc format.
+ * @property format The MsoMdoc format containing the docType
  * @property nameSpacedData The name-spaced data.
  * @property claims The list of claims.
  * @property nameSpacedDataInBytes The name-spaced data in bytes.
@@ -55,7 +58,10 @@ sealed class DocumentClaim(
  * @property nameSpaces The name-spaces.
  *
  */
-data class MsoMdocClaims(val nameSpacedData: NameSpacedData) : DocumentClaims {
+data class MsoMdocData(
+    override val format: MsoMdocFormat,
+    val nameSpacedData: NameSpacedData
+) : DocumentData {
 
     override val claims: List<MsoMdocClaim>
         get() = nameSpacedData.nameSpaceNames.flatMap { nameSpace ->
@@ -86,7 +92,7 @@ data class MsoMdocClaims(val nameSpacedData: NameSpacedData) : DocumentClaims {
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is MsoMdocClaims) return false
+        if (other !is MsoMdocData) return false
 
         if (!Cbor.encode(nameSpacedData.toDataItem())
                 .contentEquals(Cbor.encode(other.nameSpacedData.toDataItem()))
@@ -117,13 +123,15 @@ data class MsoMdocClaim(
 
 /**
  * Represents the claims of a document in the SdJwtVc format.
+ * @property format The SdJwtVc format containing the vct
  * @property sdJwtVc The SdJwtVc.
  * @property claims The list of claims.
  *
  */
-data class SdJwtVcClaims(
+data class SdJwtVcData(
+    override val format: SdJwtVcFormat,
     val sdJwtVc: SdJwt.Issuance<Pair<String, Map<String, JsonElement>>>
-) : DocumentClaims {
+) : DocumentData {
     override val claims: List<SdJwtVcClaim> by lazy {
         val (_, claims) = sdJwtVc.jwt
         val nonSelectivelyDisclosable = claims.filter {

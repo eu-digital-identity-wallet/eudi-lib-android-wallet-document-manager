@@ -10,8 +10,8 @@ val [IssuedDocument](-issued-document/index.md).[nameSpacedDataJSONObject](name-
 
 Extension function to convert [IssuedDocument](-issued-document/index.md)'s nameSpacedData
 to [JSONObject](https://developer.android.com/reference/kotlin/org/json/JSONObject.html) Applicable
-only when [IssuedDocument.claims](-issued-document/claims.md)
-is [MsoMdocClaims](../eu.europa.ec.eudi.wallet.document.format/-mso-mdoc-claims/index.md)
+only when [IssuedDocument.data](-issued-document/data.md)
+is [MsoMdocData](../eu.europa.ec.eudi.wallet.document.format/-mso-mdoc-data/index.md)
 
 #### Return
 
