@@ -6,18 +6,24 @@
 @Serializable
 
 data class [DocumentMetaData](index.md)(val
+documentConfigurationIdentifier: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html),
+val
 display: [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)
 &lt;[DocumentMetaData.Display](-display/index.md)&gt;, val
 claims: [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)
-&lt;[DocumentMetaData.Claim](-claim/index.md)&gt;?)
+&lt;[DocumentMetaData.Claim](-claim/index.md)&gt;?, val
+credentialIssuerIdentifier: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html),
+val
+issuerDisplay: [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)
+&lt;[DocumentMetaData.Display](-display/index.md)&gt;?)
 
 Document metadata domain object for storage.
 
 ## Constructors
 
-|                                            |                                                                                                                                                                                                                                                                                                                                         |
-|--------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [DocumentMetaData](-document-meta-data.md) | [androidJvm]<br>constructor(display: [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)&lt;[DocumentMetaData.Display](-display/index.md)&gt;, claims: [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)&lt;[DocumentMetaData.Claim](-claim/index.md)&gt;?) |
+|                                            |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+|--------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [DocumentMetaData](-document-meta-data.md) | [androidJvm]<br>constructor(documentConfigurationIdentifier: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html), display: [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)&lt;[DocumentMetaData.Display](-display/index.md)&gt;, claims: [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)&lt;[DocumentMetaData.Claim](-claim/index.md)&gt;?, credentialIssuerIdentifier: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html), issuerDisplay: [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)&lt;[DocumentMetaData.Display](-display/index.md)&gt;?) |
 
 ## Types
 
@@ -29,10 +35,13 @@ Document metadata domain object for storage.
 
 ## Properties
 
-| Name                  | Summary                                                                                                                                                                                  |
-|-----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [claims](claims.md)   | [androidJvm]<br>val [claims](claims.md): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)&lt;[DocumentMetaData.Claim](-claim/index.md)&gt;?      |
-| [display](display.md) | [androidJvm]<br>val [display](display.md): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)&lt;[DocumentMetaData.Display](-display/index.md)&gt; |
+| Name                                                                    | Summary                                                                                                                                                                                                |
+|-------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [claims](claims.md)                                                     | [androidJvm]<br>val [claims](claims.md): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)&lt;[DocumentMetaData.Claim](-claim/index.md)&gt;?                    |
+| [credentialIssuerIdentifier](credential-issuer-identifier.md)           | [androidJvm]<br>val [credentialIssuerIdentifier](credential-issuer-identifier.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)                                    |
+| [display](display.md)                                                   | [androidJvm]<br>val [display](display.md): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)&lt;[DocumentMetaData.Display](-display/index.md)&gt;               |
+| [documentConfigurationIdentifier](document-configuration-identifier.md) | [androidJvm]<br>val [documentConfigurationIdentifier](document-configuration-identifier.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)                          |
+| [issuerDisplay](issuer-display.md)                                      | [androidJvm]<br>val [issuerDisplay](issuer-display.md): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)&lt;[DocumentMetaData.Display](-display/index.md)&gt;? |
 
 ## Functions
 

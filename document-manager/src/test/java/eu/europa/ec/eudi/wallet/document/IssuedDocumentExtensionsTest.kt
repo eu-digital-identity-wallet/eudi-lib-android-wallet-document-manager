@@ -56,9 +56,12 @@ class TestIssuedDocumentExtensions {
             issuedAt = Clock.System.now().toJavaInstant(),
             validFrom = Clock.System.now().toJavaInstant(),
             validUntil = Clock.System.now().plus(10.days).toJavaInstant(),
-            data = MsoMdocData(format = mockk(), nameSpacedData = nameSpacedData),
+            data = MsoMdocData(
+                format = mockk(),
+                nameSpacedData = nameSpacedData,
+                metadata = mockk(relaxed = true)
+            ),
             issuerProvidedData = byteArrayOf(),
-            metadata = mockk(),
         )
 
         val json = issuedDocument.nameSpacedDataJSONObject

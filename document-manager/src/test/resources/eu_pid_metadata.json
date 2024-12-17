@@ -1,0 +1,466 @@
+{
+  "claims": [
+    {
+      "name": {
+        "name": "administrative_number",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Administrative Number"
+        }
+      ],
+      "mandatory": false
+    },
+    {
+      "name": {
+        "name": "age_birth_year",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Age Year of Birth"
+        }
+      ],
+      "mandatory": false,
+      "value_type": "uint"
+    },
+    {
+      "name": {
+        "name": "age_in_years",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Age in Years"
+        }
+      ],
+      "mandatory": false,
+      "value_type": "uint"
+    },
+    {
+      "name": {
+        "name": "age_over_18",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Age Over 18"
+        }
+      ],
+      "mandatory": true,
+      "source": "issuer"
+    },
+    {
+      "name": {
+        "name": "birth_city",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Birth City"
+        }
+      ],
+      "mandatory": false,
+      "source": "user",
+      "value_type": "string"
+    },
+    {
+      "name": {
+        "name": "birth_country",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Birth Country"
+        }
+      ],
+      "mandatory": false,
+      "source": "user",
+      "value_type": "string"
+    },
+    {
+      "name": {
+        "name": "birth_date",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Birth Date"
+        }
+      ],
+      "mandatory": true,
+      "source": "user",
+      "value_type": "full-date"
+    },
+    {
+      "name": {
+        "name": "birth_place",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Birth Place"
+        }
+      ],
+      "mandatory": false,
+      "source": "user",
+      "value_type": "string"
+    },
+    {
+      "name": {
+        "name": "birth_state",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Birth State/Province"
+        }
+      ],
+      "mandatory": false,
+      "source": "user",
+      "value_type": "string"
+    },
+    {
+      "name": {
+        "name": "document_number",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Document Number"
+        }
+      ],
+      "mandatory": false
+    },
+    {
+      "name": {
+        "name": "expiry_date",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Expiry Date"
+        }
+      ],
+      "mandatory": true,
+      "source": "issuer"
+    },
+    {
+      "name": {
+        "name": "family_name",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Family Name(s)"
+        }
+      ],
+      "mandatory": true,
+      "source": "user",
+      "value_type": "string"
+    },
+    {
+      "name": {
+        "name": "family_name_birth",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Birth Family Name(s)"
+        }
+      ],
+      "mandatory": false,
+      "source": "user",
+      "value_type": "string"
+    },
+    {
+      "name": {
+        "name": "gender",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Gender"
+        }
+      ],
+      "mandatory": false,
+      "source": "user"
+    },
+    {
+      "name": {
+        "name": "given_name",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Given Name(s)"
+        }
+      ],
+      "mandatory": true,
+      "source": "user",
+      "value_type": "string"
+    },
+    {
+      "name": {
+        "name": "given_name_birth",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Birth Given Name(s)"
+        }
+      ],
+      "mandatory": false,
+      "source": "user",
+      "value_type": "string"
+    },
+    {
+      "name": {
+        "name": "issuance_date",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Issuance Date"
+        }
+      ],
+      "mandatory": true,
+      "source": "issuer"
+    },
+    {
+      "name": {
+        "name": "issuing_authority",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Issuance Authority"
+        }
+      ],
+      "mandatory": true,
+      "source": "issuer"
+    },
+    {
+      "name": {
+        "name": "issuing_country",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Issuing Country"
+        }
+      ],
+      "mandatory": true,
+      "source": "issuer"
+    },
+    {
+      "name": {
+        "name": "issuing_jurisdiction",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Issuing Jurisdiction"
+        }
+      ],
+      "mandatory": false
+    },
+    {
+      "name": {
+        "name": "nationality",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Nationality"
+        }
+      ],
+      "mandatory": false,
+      "source": "user",
+      "value_type": "string"
+    },
+    {
+      "name": {
+        "name": "portrait_capture_date",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Portrait Capture Date"
+        }
+      ],
+      "mandatory": false,
+      "source": "user"
+    },
+    {
+      "name": {
+        "name": "resident_address",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Resident Address"
+        }
+      ],
+      "mandatory": false,
+      "source": "user",
+      "value_type": "string"
+    },
+    {
+      "name": {
+        "name": "resident_city",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Resident City"
+        }
+      ],
+      "mandatory": false,
+      "source": "user",
+      "value_type": "string"
+    },
+    {
+      "name": {
+        "name": "resident_country",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Resident Country"
+        }
+      ],
+      "mandatory": false,
+      "source": "user",
+      "value_type": "string"
+    },
+    {
+      "name": {
+        "name": "resident_house_number",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Resident House Number"
+        }
+      ],
+      "mandatory": false,
+      "source": "user",
+      "value_type": "string"
+    },
+    {
+      "name": {
+        "name": "resident_postal_code",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Resident Postal Code"
+        }
+      ],
+      "mandatory": false,
+      "source": "user",
+      "value_type": "string"
+    },
+    {
+      "name": {
+        "name": "resident_state",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Resident State"
+        }
+      ],
+      "mandatory": false,
+      "source": "user",
+      "value_type": "string"
+    },
+    {
+      "name": {
+        "name": "resident_street",
+        "nameSpace": "eu.europa.ec.eudi.pid.1",
+        "type": "eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc"
+      },
+      "display": [
+        {
+          "locale": "en",
+          "name": "Resident Street"
+        }
+      ],
+      "mandatory": false,
+      "source": "user",
+      "value_type": "string"
+    }
+  ],
+  "display": [
+    {
+      "locale": "en",
+      "logo": {
+        "alt_text": "A square figure of a PID",
+        "url": "https://examplestate.com/public/pid.png"
+      },
+      "name": "PID"
+    }
+  ],
+  "documentConfigurationIdentifier": "eu.europa.ec.eudi.pid_mdoc",
+  "credentialIssuerIdentifier": "https://issuer.eudiw.dev",
+  "issuerDisplay": null
+}
