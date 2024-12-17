@@ -15,8 +15,9 @@ Represents a claim of a document.
 
 ## Properties
 
-| Name                        | Summary                                                                                                                                                                |
-|-----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [identifier](identifier.md) | [androidJvm]<br>open val [identifier](identifier.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)<br>The identifier of the claim. |
-| [rawValue](raw-value.md)    | [androidJvm]<br>open val [rawValue](raw-value.md): [Any](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html)?<br>The raw value of the claim.          |
-| [value](value.md)           | [androidJvm]<br>open val [value](value.md): [Any](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html)?<br>The value of the claim.                     |
+| Name                        | Summary                                                                                                                                                                                                |
+|-----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [identifier](identifier.md) | [androidJvm]<br>open val [identifier](identifier.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)<br>The identifier of the claim.                                 |
+| [metadata](metadata.md)     | [androidJvm]<br>open val [metadata](metadata.md): [DocumentMetaData.Claim](../../eu.europa.ec.eudi.wallet.document.metadata/-document-meta-data/-claim/index.md)? = null<br>The metadata of the claim. |
+| [rawValue](raw-value.md)    | [androidJvm]<br>open val [rawValue](raw-value.md): [Any](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html)?<br>The raw value of the claim.                                          |
+| [value](value.md)           | [androidJvm]<br>open val [value](value.md): [Any](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html)?<br>The value of the claim.                                                     |

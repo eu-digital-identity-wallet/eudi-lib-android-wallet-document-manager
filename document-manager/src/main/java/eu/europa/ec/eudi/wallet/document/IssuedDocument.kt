@@ -45,7 +45,6 @@ data class IssuedDocument(
     override val keyAlias: String,
     override val secureArea: SecureArea,
     override val createdAt: Instant,
-    override val metadata: DocumentMetaData?,
     val validFrom: Instant,
     val validUntil: Instant,
     val issuedAt: Instant,
@@ -55,6 +54,9 @@ data class IssuedDocument(
 
     override val format: DocumentFormat
         get() = data.format
+
+    override val metadata: DocumentMetaData?
+        get() = data.metadata
 
     /**
      * Check if the document is valid at a given time, based on the validFrom and validUntil fields

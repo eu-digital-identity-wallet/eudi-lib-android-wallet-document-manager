@@ -24,16 +24,19 @@ import eu.europa.ec.eudi.wallet.document.NameSpacedValues
 import eu.europa.ec.eudi.wallet.document.NameSpaces
 import eu.europa.ec.eudi.wallet.document.internal.parse
 import eu.europa.ec.eudi.wallet.document.internal.toObject
+import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData
 import kotlinx.serialization.json.JsonElement
 
 /**
  * Represents the claims of a document.
  * @property format The format of the document.
  * @property claims The list of claims.
+ * @property metadata The metadata of the document.
  */
 sealed interface DocumentData {
     val format: DocumentFormat
     val claims: List<DocumentClaim>
+    val metadata: DocumentMetaData?
 }
 
 /**
@@ -41,11 +44,13 @@ sealed interface DocumentData {
  * @property identifier The identifier of the claim.
  * @property value The value of the claim.
  * @property rawValue The raw value of the claim.
+ * @property metadata The metadata of the claim.
  */
 sealed class DocumentClaim(
     open val identifier: String,
     open val value: Any?,
-    open val rawValue: Any?
+    open val rawValue: Any?,
+    open val metadata: DocumentMetaData.Claim? = null
 )
 
 /**
@@ -53,6 +58,7 @@ sealed class DocumentClaim(
  * @property format The MsoMdoc format containing the docType
  * @property nameSpacedData The name-spaced data.
  * @property claims The list of claims.
+ * @property metadata The metadata of the document.
  * @property nameSpacedDataInBytes The name-spaced data in bytes.
  * @property nameSpacedDataDecoded The name-spaced data decoded.
  * @property nameSpaces The name-spaces.
@@ -60,17 +66,23 @@ sealed class DocumentClaim(
  */
 data class MsoMdocData(
     override val format: MsoMdocFormat,
+    override val metadata: DocumentMetaData?,
     val nameSpacedData: NameSpacedData
 ) : DocumentData {
 
     override val claims: List<MsoMdocClaim>
         get() = nameSpacedData.nameSpaceNames.flatMap { nameSpace ->
             nameSpacedData.getDataElementNames(nameSpace).map { identifier ->
+                val metadataClaimName = DocumentMetaData.Claim.Name.MsoMdoc(
+                    nameSpace = nameSpace,
+                    name = identifier
+                )
                 MsoMdocClaim(
                     nameSpace = nameSpace,
                     identifier = identifier,
                     value = nameSpacedData.getDataElement(nameSpace, identifier).toObject(),
-                    rawValue = nameSpacedData.getDataElement(nameSpace, identifier)
+                    rawValue = nameSpacedData.getDataElement(nameSpace, identifier),
+                    metadata = metadata?.claims?.find { it.name == metadataClaimName }
                 )
             }
         }
@@ -113,23 +125,27 @@ data class MsoMdocData(
  * @property identifier The identifier of the claim.
  * @property value The value of the claim.
  * @property rawValue The raw value of the claim in bytes.
+ * @property metadata The metadata of the claim.
  */
 data class MsoMdocClaim(
     val nameSpace: NameSpace,
     override val identifier: String,
     override val value: Any?,
     override val rawValue: ByteArray,
-) : DocumentClaim(identifier, value, rawValue)
+    override val metadata: DocumentMetaData.Claim?,
+) : DocumentClaim(identifier, value, rawValue, metadata)
 
 /**
  * Represents the claims of a document in the SdJwtVc format.
  * @property format The SdJwtVc format containing the vct
  * @property sdJwtVc The SdJwtVc.
  * @property claims The list of claims.
+ * @property metadata The metadata of the document.
  *
  */
 data class SdJwtVcData(
     override val format: SdJwtVcFormat,
+    override val metadata: DocumentMetaData?,
     val sdJwtVc: SdJwt.Issuance<Pair<String, Map<String, JsonElement>>>
 ) : DocumentData {
     override val claims: List<SdJwtVcClaim> by lazy {
@@ -144,11 +160,15 @@ data class SdJwtVcData(
         }.map { it.claim().first to it.claim().second }
 
         (nonSelectivelyDisclosable + selectivelyDisclosable).map {
+            val metadataClaimName = DocumentMetaData.Claim.Name.SdJwtVc(
+                name = it.first,
+            )
             SdJwtVcClaim(
                 identifier = it.first,
                 value = it.second.parse(),
                 rawValue = it.second.toString(),
-                selectivelyDisclosable = selectivelyDisclosable.contains(it)
+                selectivelyDisclosable = selectivelyDisclosable.contains(it),
+                metadata = metadata?.claims?.find { it.name == metadataClaimName }
             )
         }
     }
@@ -160,11 +180,12 @@ data class SdJwtVcData(
  * @property value The value of the claim.
  * @property rawValue The raw value of the claim.
  * @property selectivelyDisclosable Whether the claim is selectively disclosable.
- *
+ * @property metadata The metadata of the claim.
  */
 data class SdJwtVcClaim(
     override val identifier: String,
     override val value: Any?,
     override val rawValue: String,
+    override val metadata: DocumentMetaData.Claim?,
     val selectivelyDisclosable: Boolean
-) : DocumentClaim(identifier, value, rawValue)
+) : DocumentClaim(identifier, value, rawValue, metadata)

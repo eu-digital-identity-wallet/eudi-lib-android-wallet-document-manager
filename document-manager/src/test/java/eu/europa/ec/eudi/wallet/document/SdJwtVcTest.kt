@@ -80,10 +80,11 @@ class SdJwtVcTest {
 
         val parsedClaims = (nonSelectivelyDisclosable + selectivelyDisclosable).map {
             SdJwtVcClaim(
-                it.first.toStr(),
-                it.second.parse(),
-                it.second.toString(),
-                selectivelyDisclosable.contains(it)
+                identifier = it.first.toStr(),
+                value = it.second.parse(),
+                rawValue = it.second.toString(),
+                selectivelyDisclosable = selectivelyDisclosable.contains(it),
+                metadata = null
             )
         }
 

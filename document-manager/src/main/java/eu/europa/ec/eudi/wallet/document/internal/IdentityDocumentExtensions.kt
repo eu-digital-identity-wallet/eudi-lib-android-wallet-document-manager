@@ -226,17 +226,18 @@ internal inline fun <reified D : Document> IdentityDocument.toDocument(): D {
             validFrom = credential.validFrom.toJavaInstant(),
             validUntil = credential.validUntil.toJavaInstant(),
             issuerProvidedData = credential.issuerProvidedData,
-            metadata = metadata,
             data = when (documentFormat) {
                 is MsoMdocFormat -> MsoMdocData(
                     format = documentFormat,
-                    nameSpacedData = nameSpacedData
+                    nameSpacedData = nameSpacedData,
+                    metadata = metadata,
                 )
 
                 is SdJwtVcFormat -> SdJwtVcData(
                     format = documentFormat,
                     sdJwtVc = SdJwt.unverifiedIssuanceFrom(credential.issuerProvidedData.sdJwtVcString)
-                        .getOrThrow()
+                        .getOrThrow(),
+                    metadata = metadata,
                 )
             }
         )
