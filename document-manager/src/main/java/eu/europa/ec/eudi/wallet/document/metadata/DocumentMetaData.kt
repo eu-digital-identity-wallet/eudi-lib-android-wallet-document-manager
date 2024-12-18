@@ -35,6 +35,11 @@ import java.util.Locale
 
 /**
  * Document metadata domain object for storage.
+ * @property documentConfigurationIdentifier the document configuration identifier
+ * @property display the display properties of the document
+ * @property claims metadata for the claims of the document
+ * @property credentialIssuerIdentifier the credential issuer identifier
+ * @property issuerDisplay the display properties of the issuer that issued the document
  */
 @Serializable
 data class DocumentMetaData(
