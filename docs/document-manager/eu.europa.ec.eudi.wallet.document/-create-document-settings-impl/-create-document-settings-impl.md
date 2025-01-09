@@ -3,6 +3,4 @@
 # CreateDocumentSettingsImpl
 
 [androidJvm]\
-constructor(
-secureAreaIdentifier: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html),
-createKeySettings: CreateKeySettings)
+constructor(secureAreaIdentifier: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html), createKeySettings: CreateKeySettings)

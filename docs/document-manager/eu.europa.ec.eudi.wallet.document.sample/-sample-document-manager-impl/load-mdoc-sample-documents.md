@@ -3,14 +3,7 @@
 # loadMdocSampleDocuments
 
 [androidJvm]\
-open override fun [loadMdocSampleDocuments](load-mdoc-sample-documents.md)(
-sampleData: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html),
-createSettings: [CreateDocumentSettings](../../eu.europa.ec.eudi.wallet.document/-create-document-settings/index.md),
-documentNamesMap: [Map](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-map/index.html)
-&lt;[DocType](../../eu.europa.ec.eudi.wallet.document/-doc-type/index.md), [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)
-&gt;?): [Outcome](../../eu.europa.ec.eudi.wallet.document/-outcome/index.md)
-&lt;[List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)
-&lt;[DocumentId](../../eu.europa.ec.eudi.wallet.document/-document-id/index.md)&gt;&gt;
+open override fun [loadMdocSampleDocuments](load-mdoc-sample-documents.md)(sampleData: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html), createSettings: [CreateDocumentSettings](../../eu.europa.ec.eudi.wallet.document/-create-document-settings/index.md), documentNamesMap: [Map](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-map/index.html)&lt;[DocType](../../eu.europa.ec.eudi.wallet.document/-doc-type/index.md), [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)&gt;?): [Outcome](../../eu.europa.ec.eudi.wallet.document/-outcome/index.md)&lt;[List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)&lt;[DocumentId](../../eu.europa.ec.eudi.wallet.document/-document-id/index.md)&gt;&gt;
 
 Loads the sample documents that are in mdoc format into the document manager.
 
@@ -49,8 +42,8 @@ IssuerAuth = COSE_Sign1 ; The payload is MobileSecurityObjectBytes
 
 androidJvm
 
-|                  |                                                            |
-|------------------|------------------------------------------------------------|
-| sampleData       | the sample data in mdoc format to be loaded in cbor format |
-| createSettings   | the settings for creating new documents for the sample     |
-| documentNamesMap | the names of the documents per docType                     |
+| | |
+|---|---|
+| sampleData | the sample data in mdoc format to be loaded in cbor format |
+| createSettings | the settings for creating new documents for the sample |
+| documentNamesMap | the names of the documents per docType |

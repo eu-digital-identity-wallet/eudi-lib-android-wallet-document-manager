@@ -3,5 +3,4 @@
 # addSerializedData
 
 [androidJvm]\
-open override fun [addSerializedData](add-serialized-data.md)(builder:
-MapBuilder&lt;CborBuilder&gt;)
+open override fun [addSerializedData](add-serialized-data.md)(builder: MapBuilder&lt;CborBuilder&gt;)

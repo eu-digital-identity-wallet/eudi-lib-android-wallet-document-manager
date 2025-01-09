@@ -24,7 +24,6 @@ import com.android.identity.util.Logger
 import com.nimbusds.jose.jwk.JWK
 import com.nimbusds.jose.jwk.KeyConverter
 import eu.europa.ec.eudi.sdjwt.SdJwt
-import eu.europa.ec.eudi.sdjwt.unverifiedIssuanceFrom
 import eu.europa.ec.eudi.sdjwt.vc.SdJwtVcVerifier
 import eu.europa.ec.eudi.wallet.document.UnsignedDocument
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
@@ -64,12 +63,12 @@ internal fun SdJwtVcFormat.storeIssuedDocument(
     ktorHttpClientFactory: (() -> HttpClient)? = null
 ) {
     runBlocking {
-        SdJwtVcVerifier(
-            { ktorHttpClientFactory?.invoke() ?: HttpClient() },
-            { certificateChain ->
+        SdJwtVcVerifier.usingX5cOrIssuerMetadata(
+            httpClientFactory = { ktorHttpClientFactory?.invoke() ?: HttpClient() },
+            x509CertificateTrust = { certificateChain ->
                 // TODO Check the certificate path
-                return@SdJwtVcVerifier true
-            }
+                true
+            },
         ).verifyIssuance(data.sdJwtVcString).onFailure {
             Logger.w("SdJwtVcVerifier", "Invalid SD-JWT VC with error: ${it.message}", it)
 //            throw IllegalArgumentException("Invalid SD-JWT VC with error: ${it.message}", it)

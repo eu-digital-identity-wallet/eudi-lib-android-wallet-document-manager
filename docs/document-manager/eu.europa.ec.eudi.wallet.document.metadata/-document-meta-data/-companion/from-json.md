@@ -3,8 +3,7 @@
 # fromJson
 
 [androidJvm]\
-fun [fromJson](from-json.md)(
-json: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)): [DocumentMetaData](../index.md)
+fun [fromJson](from-json.md)(json: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)): [DocumentMetaData](../index.md)
 
 Create a [DocumentMetaData](../index.md) object from a JSON string.
 
@@ -16,13 +15,13 @@ the [DocumentMetaData](../index.md) object
 
 androidJvm
 
-|      |                                              |
-|------|----------------------------------------------|
+| | |
+|---|---|
 | json | the JSON string representation of the object |
 
 #### Throws
 
-|                                                                                                                        |                                                                                                   |
-|------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
+| | |
+|---|---|
 | [IllegalArgumentException](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-illegal-argument-exception/index.html) | if the decoded input cannot be represented as a valid instance of [DocumentMetaData](../index.md) |
-| SerializationException                                                                                                 | if the given JSON string is not a valid JSON input                                                |
+| SerializationException | if the given JSON string is not a valid JSON input |

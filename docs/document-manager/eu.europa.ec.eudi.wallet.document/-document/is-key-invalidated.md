@@ -3,5 +3,4 @@
 # isKeyInvalidated
 
 [androidJvm]\
-open
-val [isKeyInvalidated](is-key-invalidated.md): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)
+open val [isKeyInvalidated](is-key-invalidated.md): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)

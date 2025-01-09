@@ -3,8 +3,7 @@
 # getDocumentById
 
 [androidJvm]\
-abstract fun [getDocumentById](get-document-by-id.md)(
-documentId: [DocumentId](../-document-id/index.md)): [Document](../-document/index.md)?
+abstract fun [getDocumentById](get-document-by-id.md)(documentId: [DocumentId](../-document-id/index.md)): [Document](../-document/index.md)?
 
 Retrieve a document by its identifier.
 
@@ -16,6 +15,6 @@ the document or null if not found
 
 androidJvm
 
-|            |                                |
-|------------|--------------------------------|
+| | |
+|---|---|
 | documentId | the identifier of the document |

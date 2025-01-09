@@ -13,6 +13,6 @@ the document manager
 
 #### Throws
 
-|                                                                                                                        |                                                 |
-|------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------|
+| | |
+|---|---|
 | [IllegalArgumentException](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-illegal-argument-exception/index.html) | if the storage engine or secure area is not set |

@@ -3,8 +3,7 @@
 # setStorageEngine
 
 [androidJvm]\
-fun [setStorageEngine](set-storage-engine.md)(storageEngine:
-StorageEngine): [DocumentManager.Builder](index.md)
+fun [setStorageEngine](set-storage-engine.md)(storageEngine: StorageEngine): [DocumentManager.Builder](index.md)
 
 Set the storage engine to use for storing/retrieving documents.
 
@@ -16,6 +15,6 @@ this builder
 
 androidJvm
 
-|               |                    |
-|---------------|--------------------|
+| | |
+|---|---|
 | storageEngine | the storage engine |

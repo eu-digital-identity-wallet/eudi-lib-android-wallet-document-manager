@@ -3,20 +3,18 @@
 # MsoMdocFormat
 
 [androidJvm]\
-data class [MsoMdocFormat](index.md)(val
-docType: [DocType](../../eu.europa.ec.eudi.wallet.document/-doc-type/index.md)) : [DocumentFormat](../-document-format/index.md)
+data class [MsoMdocFormat](index.md)(val docType: [DocType](../../eu.europa.ec.eudi.wallet.document/-doc-type/index.md)) : [DocumentFormat](../-document-format/index.md)
 
-Represents a MsoMdoc Format for
-a [eu.europa.ec.eudi.wallet.document.Document](../../eu.europa.ec.eudi.wallet.document/-document/index.md)
+Represents a MsoMdoc Format for a [eu.europa.ec.eudi.wallet.document.Document](../../eu.europa.ec.eudi.wallet.document/-document/index.md)
 
 ## Constructors
 
-|                                      |                                                                                                             |
-|--------------------------------------|-------------------------------------------------------------------------------------------------------------|
+| | |
+|---|---|
 | [MsoMdocFormat](-mso-mdoc-format.md) | [androidJvm]<br>constructor(docType: [DocType](../../eu.europa.ec.eudi.wallet.document/-doc-type/index.md)) |
 
 ## Properties
 
-| Name                   | Summary                                                                                                                                |
-|------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
+| Name | Summary |
+|---|---|
 | [docType](doc-type.md) | [androidJvm]<br>val [docType](doc-type.md): [DocType](../../eu.europa.ec.eudi.wallet.document/-doc-type/index.md)<br>the document type |

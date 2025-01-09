@@ -3,6 +3,4 @@
 # MsoMdocData
 
 [androidJvm]\
-constructor(format: [MsoMdocFormat](../-mso-mdoc-format/index.md),
-metadata: [DocumentMetaData](../../eu.europa.ec.eudi.wallet.document.metadata/-document-meta-data/index.md)?,
-nameSpacedData: NameSpacedData)
+constructor(format: [MsoMdocFormat](../-mso-mdoc-format/index.md), metadata: [DocumentMetaData](../../eu.europa.ec.eudi.wallet.document.metadata/-document-meta-data/index.md)?, nameSpacedData: NameSpacedData)

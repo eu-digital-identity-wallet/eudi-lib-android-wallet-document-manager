@@ -5,8 +5,7 @@
 [androidJvm]\
 fun [getOrNull](get-or-null.md)(): [T](index.md)?
 
-Returns the encapsulated value if this instance represents a successful outcome or `null` if it is
-failure.
+Returns the encapsulated value if this instance represents a successful outcome or `null` if it is failure.
 
 #### Return
 

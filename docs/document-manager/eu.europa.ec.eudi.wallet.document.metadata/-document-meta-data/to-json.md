@@ -13,6 +13,6 @@ the JSON string representation of the object
 
 #### Throws
 
-|                        |                                  |
-|------------------------|----------------------------------|
+| | |
+|---|---|
 | SerializationException | if cannot be serialized to JSON. |

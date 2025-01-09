@@ -3,5 +3,4 @@
 # isCertified
 
 [androidJvm]\
-abstract
-val [isCertified](is-certified.md): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)
+abstract val [isCertified](is-certified.md): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)

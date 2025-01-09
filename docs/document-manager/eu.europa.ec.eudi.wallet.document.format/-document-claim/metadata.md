@@ -3,6 +3,4 @@
 # metadata
 
 [androidJvm]\
-open
-val [metadata](metadata.md): [DocumentMetaData.Claim](../../eu.europa.ec.eudi.wallet.document.metadata/-document-meta-data/-claim/index.md)? =
-null
+open val [metadata](metadata.md): [DocumentMetaData.Claim](../../eu.europa.ec.eudi.wallet.document.metadata/-document-meta-data/-claim/index.md)? = null

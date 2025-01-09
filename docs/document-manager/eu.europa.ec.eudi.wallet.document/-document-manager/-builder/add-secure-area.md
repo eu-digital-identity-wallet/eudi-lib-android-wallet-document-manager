@@ -15,6 +15,6 @@ this builder
 
 androidJvm
 
-|            |                 |
-|------------|-----------------|
+| | |
+|---|---|
 | secureArea | the secure area |

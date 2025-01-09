@@ -3,5 +3,4 @@
 # backgroundColor
 
 [androidJvm]\
-val [backgroundColor](background-color.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)? =
-null
+val [backgroundColor](background-color.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)? = null
