@@ -3,5 +3,4 @@
 # format
 
 [androidJvm]\
-open override
-val [format](format.md): [DocumentFormat](../../eu.europa.ec.eudi.wallet.document.format/-document-format/index.md)
+open override val [format](format.md): [DocumentFormat](../../eu.europa.ec.eudi.wallet.document.format/-document-format/index.md)

@@ -6,8 +6,7 @@
 
 @[JvmStatic](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.jvm/-jvm-static/index.html)
 
-fun &lt;[T](success.md)&gt; [success](success.md)(value: [T](success.md)): [Outcome](../index.md)
-&lt;[T](success.md)&gt;
+fun &lt;[T](success.md)&gt; [success](success.md)(value: [T](success.md)): [Outcome](../index.md)&lt;[T](success.md)&gt;
 
 Returns an instance that encapsulates the given [value](success.md) as successful value.
 
@@ -19,6 +18,6 @@ an instance that encapsulates the given [value](success.md) as successful value
 
 androidJvm
 
-|       |                          |
-|-------|--------------------------|
+| | |
+|---|---|
 | value | the value to encapsulate |

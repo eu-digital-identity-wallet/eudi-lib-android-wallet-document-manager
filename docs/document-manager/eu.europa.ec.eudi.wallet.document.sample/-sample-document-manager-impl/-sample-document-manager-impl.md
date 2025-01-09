@@ -3,13 +3,12 @@
 # SampleDocumentManagerImpl
 
 [androidJvm]\
-constructor(
-delegate: [DocumentManager](../../eu.europa.ec.eudi.wallet.document/-document-manager/index.md))
+constructor(delegate: [DocumentManager](../../eu.europa.ec.eudi.wallet.document/-document-manager/index.md))
 
 #### Parameters
 
 androidJvm
 
-|          |                                                                                                                                                     |
-|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| | |
+|---|---|
 | delegate | [DocumentManager](../../eu.europa.ec.eudi.wallet.document/-document-manager/index.md) implementation to delegate the document management operations |

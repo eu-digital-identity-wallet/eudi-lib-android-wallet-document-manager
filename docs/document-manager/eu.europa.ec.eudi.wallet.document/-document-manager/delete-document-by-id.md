@@ -3,21 +3,18 @@
 # deleteDocumentById
 
 [androidJvm]\
-abstract fun [deleteDocumentById](delete-document-by-id.md)(
-documentId: [DocumentId](../-document-id/index.md)): [Outcome](../-outcome/index.md)
-&lt;[ProofOfDeletion](../-proof-of-deletion/index.md)?&gt;
+abstract fun [deleteDocumentById](delete-document-by-id.md)(documentId: [DocumentId](../-document-id/index.md)): [Outcome](../-outcome/index.md)&lt;[ProofOfDeletion](../-proof-of-deletion/index.md)?&gt;
 
 Delete a document by its identifier.
 
 #### Return
 
-the result of the deletion. If successful, it will return a proof of deletion. If not, it will
-return an error.
+the result of the deletion. If successful, it will return a proof of deletion. If not, it will return an error.
 
 #### Parameters
 
 androidJvm
 
-|            |                                |
-|------------|--------------------------------|
+| | |
+|---|---|
 | documentId | the identifier of the document |

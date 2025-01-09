@@ -5,5 +5,4 @@
 [androidJvm]\
 val [isSuccess](is-success.md): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)
 
-Returns `true` if instance represents a successful outcome. In this
-case [eu.europa.ec.eudi.wallet.document.Outcome.isFailure](is-failure.md) return `false` .
+Returns `true` if instance represents a successful outcome. In this case [eu.europa.ec.eudi.wallet.document.Outcome.isFailure](is-failure.md) return `false` .

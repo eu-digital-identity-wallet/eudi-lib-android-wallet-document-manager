@@ -8,7 +8,7 @@ Represents a Document Format
 
 #### Inheritors
 
-|                                                |
-|------------------------------------------------|
-| [MsoMdocFormat](../-mso-mdoc-format/index.md)  |
+| |
+|---|
+| [MsoMdocFormat](../-mso-mdoc-format/index.md) |
 | [SdJwtVcFormat](../-sd-jwt-vc-format/index.md) |

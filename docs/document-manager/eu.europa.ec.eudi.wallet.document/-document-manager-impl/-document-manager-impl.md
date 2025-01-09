@@ -3,17 +3,14 @@
 # DocumentManagerImpl
 
 [androidJvm]\
-constructor(
-identifier: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html),
-storageEngine: StorageEngine, secureAreaRepository: SecureAreaRepository, ktorHttpClientFactory: ()
--&gt; HttpClient? = null)
+constructor(identifier: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html), storageEngine: StorageEngine, secureAreaRepository: SecureAreaRepository, ktorHttpClientFactory: () -&gt; HttpClient? = null)
 
 #### Parameters
 
 androidJvm
 
-|                      |                                        |
-|----------------------|----------------------------------------|
-| identifier           | the identifier of the document manager |
-| storageEngine        | the storage engine                     |
-| secureAreaRepository | the secure area                        |
+| | |
+|---|---|
+| identifier | the identifier of the document manager |
+| storageEngine | the storage engine |
+| secureAreaRepository | the secure area |

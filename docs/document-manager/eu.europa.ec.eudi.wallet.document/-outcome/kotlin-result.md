@@ -3,5 +3,4 @@
 # kotlinResult
 
 [androidJvm]\
-val [kotlinResult](kotlin-result.md): [Result](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-result/index.html)
-&lt;[T](index.md)&gt;
+val [kotlinResult](kotlin-result.md): [Result](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-result/index.html)&lt;[T](index.md)&gt;

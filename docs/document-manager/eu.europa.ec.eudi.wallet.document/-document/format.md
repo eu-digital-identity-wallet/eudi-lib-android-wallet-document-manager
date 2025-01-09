@@ -3,5 +3,4 @@
 # format
 
 [androidJvm]\
-abstract
-val [format](format.md): [DocumentFormat](../../eu.europa.ec.eudi.wallet.document.format/-document-format/index.md)
+abstract val [format](format.md): [DocumentFormat](../../eu.europa.ec.eudi.wallet.document.format/-document-format/index.md)

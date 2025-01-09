@@ -3,11 +3,9 @@
 # setSecureAreaRepository
 
 [androidJvm]\
-fun [setSecureAreaRepository](set-secure-area-repository.md)(secureAreaRepository:
-SecureAreaRepository): [DocumentManager.Builder](index.md)
+fun [setSecureAreaRepository](set-secure-area-repository.md)(secureAreaRepository: SecureAreaRepository): [DocumentManager.Builder](index.md)
 
-Sets the [secureAreaRepository](set-secure-area-repository.md) that will be used for documents' keys
-management
+Sets the [secureAreaRepository](set-secure-area-repository.md) that will be used for documents' keys management
 
 #### Return
 
@@ -17,6 +15,6 @@ this builder
 
 androidJvm
 
-|                      |                            |
-|----------------------|----------------------------|
+| | |
+|---|---|
 | secureAreaRepository | the secure area repository |

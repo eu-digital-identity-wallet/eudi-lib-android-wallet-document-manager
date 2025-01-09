@@ -3,8 +3,7 @@
 # setIdentifier
 
 [androidJvm]\
-fun [setIdentifier](set-identifier.md)(
-identifier: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)): [DocumentManager.Builder](index.md)
+fun [setIdentifier](set-identifier.md)(identifier: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)): [DocumentManager.Builder](index.md)
 
 Set the identifier of the document manager.
 
@@ -16,6 +15,6 @@ this builder
 
 androidJvm
 
-|            |                |
-|------------|----------------|
+| | |
+|---|---|
 | identifier | the identifier |

@@ -20,7 +20,6 @@ import com.android.identity.credential.SecureAreaBoundCredential
 import com.android.identity.document.NameSpacedData
 import com.android.identity.mdoc.credential.MdocCredential
 import eu.europa.ec.eudi.sdjwt.SdJwt
-import eu.europa.ec.eudi.sdjwt.unverifiedIssuanceFrom
 import eu.europa.ec.eudi.wallet.document.DeferredDocument
 import eu.europa.ec.eudi.wallet.document.Document
 import eu.europa.ec.eudi.wallet.document.IssuedDocument
