@@ -19,7 +19,6 @@ package eu.europa.ec.eudi.wallet.document.metadata
 import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Display
 import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc
 import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.SdJwtVc
-import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Display.Logo
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -47,7 +46,7 @@ data class DocumentMetaData(
     val display: List<Display>,
     val claims: List<Claim>?,
     val credentialIssuerIdentifier: String,
-    val issuerDisplay: List<Display>?
+    val issuerDisplay: List<IssuerDisplay>?
 ) {
 
     /**
@@ -111,21 +110,28 @@ data class DocumentMetaData(
         val description: String? = null,
         val backgroundColor: String? = null,
         val textColor: String? = null,
-    ) {
+    )
 
-        /**
-         * Logo information.
-         * @property uri the URI of the logo
-         * @property alternativeText the alternative text of the logo
-         * @see URI
-         */
-        @Serializable
-        data class Logo(
-            @Serializable(with = URISerializer::class)
-            val uri: URI? = null,
-            val alternativeText: String? = null,
-        )
-    }
+    @Serializable
+    data class IssuerDisplay(
+        val name: String,
+        @Serializable(with = LocaleSerializer::class)
+        val locale: Locale? = null,
+        val logo: Logo? = null
+    )
+
+    /**
+     * Logo information.
+     * @property uri the URI of the logo
+     * @property alternativeText the alternative text of the logo
+     * @see URI
+     */
+    @Serializable
+    data class Logo(
+        @Serializable(with = URISerializer::class)
+        val uri: URI? = null,
+        val alternativeText: String? = null,
+    )
 
     /**
      * Claim properties.

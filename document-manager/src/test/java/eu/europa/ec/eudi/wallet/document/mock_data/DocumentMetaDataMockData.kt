@@ -28,7 +28,7 @@ object DocumentMetaDataMockData {
             DocumentMetaData.Display(
                 name = "Example Display",
                 locale = Locale.ENGLISH,
-                logo = DocumentMetaData.Display.Logo(
+                logo = DocumentMetaData.Logo(
                     uri = URI.create("https://example.com/logo.png"),
                     alternativeText = "Example Logo"
                 ),
@@ -72,13 +72,12 @@ object DocumentMetaDataMockData {
             )
         )
 
-        val issuerDisplay: List<DocumentMetaData.Display> = listOf(
-            DocumentMetaData.Display(
+        val issuerDisplay: List<DocumentMetaData.IssuerDisplay> = listOf(
+            DocumentMetaData.IssuerDisplay(
                 name = "Greek Goverment",
                 locale = Locale.ENGLISH
             )
         )
-
 
         // Create and return DocumentMetaData
         return DocumentMetaData(
