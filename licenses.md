@@ -1,7 +1,8 @@
 
 # EUDI wallet library for managing documents
 ## Dependency License Report
-_2025-01-09 10:02:23 EET_
+
+_2025-01-15 13:53:22 EET_
 ## Apache License, Version 2.0
 
 **1** **Group:** `com.android.identity` **Name:** `identity` **Version:** `202408.1` 

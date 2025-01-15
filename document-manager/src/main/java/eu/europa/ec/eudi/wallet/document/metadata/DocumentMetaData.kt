@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 European Commission
+ * Copyright (c) 2024-2025 European Commission
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,6 +112,12 @@ data class DocumentMetaData(
         val textColor: String? = null,
     )
 
+    /**
+     * Display properties of the issuer that issued the document.
+     * @property name the name of the issuer
+     * @property locale the locale of the current display
+     * @property logo the logo of the issuer
+     */
     @Serializable
     data class IssuerDisplay(
         val name: String,
