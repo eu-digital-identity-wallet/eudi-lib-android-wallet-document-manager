@@ -3,4 +3,4 @@
 # logo
 
 [androidJvm]\
-val [logo](logo.md): [DocumentMetaData.Display.Logo](-logo/index.md)? = null
+val [logo](logo.md): [DocumentMetaData.Logo](../-logo/index.md)? = null
