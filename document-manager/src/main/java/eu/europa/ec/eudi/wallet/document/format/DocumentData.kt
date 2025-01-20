@@ -146,7 +146,7 @@ data class MsoMdocClaim(
 data class SdJwtVcData(
     override val format: SdJwtVcFormat,
     override val metadata: DocumentMetaData?,
-    val sdJwtVc: SdJwt.Issuance<Pair<String, Map<String, JsonElement>>>
+    val sdJwtVc: SdJwt<Pair<String, Map<String, JsonElement>>>
 ) : DocumentData {
     override val claims: List<SdJwtVcClaim> by lazy {
         val (_, claims) = sdJwtVc.jwt

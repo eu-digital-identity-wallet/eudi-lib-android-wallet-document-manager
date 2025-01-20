@@ -22,8 +22,7 @@ import com.android.identity.securearea.software.SoftwareCreateKeySettings
 import com.android.identity.securearea.software.SoftwareSecureArea
 import com.android.identity.storage.EphemeralStorageEngine
 import com.android.identity.storage.StorageEngine
-import eu.europa.ec.eudi.sdjwt.SdJwt
-import eu.europa.ec.eudi.sdjwt.vc.SdJwtVcVerifier
+import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcClaim
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcData
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
@@ -48,12 +47,11 @@ class SdJwtVcTest {
             val sdJwtVcString = getResourceAsText("sample_sd_jwt_vc.txt")
                 .replace("\n", "")
                 .replace("\r", "")
-
-            val verifier = SdJwtVcVerifier.usingX5cOrIssuerMetadata(
+            val verifier = DefaultSdJwtOps.SdJwtVcVerifier.usingX5cOrIssuerMetadata(
                 httpClientFactory = { mockk(relaxed = true) },
                 x509CertificateTrust = { _ -> true },
             )
-            val result = verifier.verifyIssuance(sdJwtVcString)
+            val result = verifier.verify(sdJwtVcString)
             assertTrue(result.isSuccess)
         }
     }
@@ -65,7 +63,7 @@ class SdJwtVcTest {
             .replace("\n", "")
             .replace("\r", "")
 
-        val sdJwtVc = SdJwt.unverifiedIssuanceFrom(sdJwtVcString).getOrNull()
+        val sdJwtVc = DefaultSdJwtOps.unverifiedIssuanceFrom(sdJwtVcString).getOrNull()
         assertTrue(sdJwtVc != null)
 
         val (_, claims) = sdJwtVc.jwt

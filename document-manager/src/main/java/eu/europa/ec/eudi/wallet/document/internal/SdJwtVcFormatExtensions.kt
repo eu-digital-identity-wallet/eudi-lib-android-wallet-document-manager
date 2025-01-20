@@ -23,8 +23,7 @@ import com.android.identity.securearea.SecureArea
 import com.android.identity.util.Logger
 import com.nimbusds.jose.jwk.JWK
 import com.nimbusds.jose.jwk.KeyConverter
-import eu.europa.ec.eudi.sdjwt.SdJwt
-import eu.europa.ec.eudi.sdjwt.vc.SdJwtVcVerifier
+import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
 import eu.europa.ec.eudi.wallet.document.UnsignedDocument
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
 import io.ktor.client.HttpClient
@@ -63,18 +62,18 @@ internal fun SdJwtVcFormat.storeIssuedDocument(
     ktorHttpClientFactory: (() -> HttpClient)? = null
 ) {
     runBlocking {
-        SdJwtVcVerifier.usingX5cOrIssuerMetadata(
+        DefaultSdJwtOps.SdJwtVcVerifier.usingX5cOrIssuerMetadata(
             httpClientFactory = { ktorHttpClientFactory?.invoke() ?: HttpClient() },
             x509CertificateTrust = { certificateChain ->
                 // TODO Check the certificate path
                 true
             },
-        ).verifyIssuance(data.sdJwtVcString).onFailure {
+        ).verify(data.sdJwtVcString).onFailure {
             Logger.w("SdJwtVcVerifier", "Invalid SD-JWT VC with error: ${it.message}", it)
 //            throw IllegalArgumentException("Invalid SD-JWT VC with error: ${it.message}", it)
         }
 
-        val sdJwt = SdJwt.unverifiedIssuanceFrom(data.sdJwtVcString).getOrElse {
+        val sdJwt = DefaultSdJwtOps.unverifiedIssuanceFrom(data.sdJwtVcString).getOrElse {
             throw IllegalArgumentException("Invalid SD-JWT VC", it)
         }
 
