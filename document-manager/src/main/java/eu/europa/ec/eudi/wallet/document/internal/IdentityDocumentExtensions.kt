@@ -19,7 +19,7 @@ package eu.europa.ec.eudi.wallet.document.internal
 import com.android.identity.credential.SecureAreaBoundCredential
 import com.android.identity.document.NameSpacedData
 import com.android.identity.mdoc.credential.MdocCredential
-import eu.europa.ec.eudi.sdjwt.SdJwt
+import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
 import eu.europa.ec.eudi.wallet.document.DeferredDocument
 import eu.europa.ec.eudi.wallet.document.Document
 import eu.europa.ec.eudi.wallet.document.IssuedDocument
@@ -234,7 +234,7 @@ internal inline fun <reified D : Document> IdentityDocument.toDocument(): D {
 
                 is SdJwtVcFormat -> SdJwtVcData(
                     format = documentFormat,
-                    sdJwtVc = SdJwt.unverifiedIssuanceFrom(credential.issuerProvidedData.sdJwtVcString)
+                    sdJwtVc = DefaultSdJwtOps.unverifiedIssuanceFrom(credential.issuerProvidedData.sdJwtVcString)
                         .getOrThrow(),
                     metadata = metadata,
                 )

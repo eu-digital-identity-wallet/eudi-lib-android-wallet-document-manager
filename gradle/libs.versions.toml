@@ -18,7 +18,7 @@ kotlinx-serialization-json = "1.7.3"
 mavenPublish = "0.27.0"
 mockk = "1.13.5"
 sonarqube = "5.1.0.4882"
-eudi-sd-jwt-vc-kt = "0.9.0"
+eudi-sd-jwt-vc-kt = "0.10.0"
 nimbus = "9.47"
 ktor = "3.0.1"
 
