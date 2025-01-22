@@ -23,11 +23,12 @@ import com.android.identity.securearea.software.SoftwareSecureArea
 import com.android.identity.storage.EphemeralStorageEngine
 import com.android.identity.storage.StorageEngine
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
+import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps.recreateClaimsAndDisclosuresPerClaim
+import eu.europa.ec.eudi.sdjwt.vc.SelectPath.Default.select
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcClaim
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcData
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
 import eu.europa.ec.eudi.wallet.document.internal.parse
-import io.mockk.InternalPlatformDsl.toStr
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import kotlin.test.AfterTest
@@ -66,29 +67,37 @@ class SdJwtVcTest {
         val sdJwtVc = DefaultSdJwtOps.unverifiedIssuanceFrom(sdJwtVcString).getOrNull()
         assertTrue(sdJwtVc != null)
 
-        val (_, claims) = sdJwtVc.jwt
-        val nonSelectivelyDisclosable = claims.filter {
-            !it.value.toStr().contains("_sd") &&
-                    !it.key.toStr().contains("_sd")
-        }.map { it.key to it.value }
-
-        val selectivelyDisclosable = sdJwtVc.disclosures.filter {
-            !it.claim().second.toStr().contains("_sd")
-        }.map { it.claim().first to it.claim().second }
-
-        val parsedClaims = (nonSelectivelyDisclosable + selectivelyDisclosable).map {
-            SdJwtVcClaim(
-                identifier = it.first.toStr(),
-                value = it.second.parse(),
-                rawValue = it.second.toString(),
-                selectivelyDisclosable = selectivelyDisclosable.contains(it),
-                metadata = null
-            )
+        val (claims, disclosuresPerClaim) = sdJwtVc.recreateClaimsAndDisclosuresPerClaim()
+        val claimValueList = disclosuresPerClaim.map {
+            println("Path: ${it.key}, Value: ${claims.select(it.key).getOrNull()}, SelectivelyDisclosable: ${it.value.isNotEmpty()}")
+            Triple(it.key, claims.select(it.key).getOrNull(), it.value.isNotEmpty())
         }
 
-        assertEquals(5, nonSelectivelyDisclosable.size)
-        assertEquals(23, selectivelyDisclosable.size)
-        assertEquals(28, parsedClaims.size)
+        val sdJwtVcClaims = mutableListOf<SdJwtVcClaim>()
+        for ((path, value, selectivelyDisclosable) in claimValueList) {
+            var current = sdJwtVcClaims
+            for (key in path.value) {
+                val existingNode = current.find { it.identifier == key.toString() }
+                if (existingNode != null) {
+                    current = existingNode.children
+                } else {
+                    val newClaim = SdJwtVcClaim(
+                        identifier = key.toString(),
+                        value = value?.parse(),
+                        rawValue = value?.toString() ?: "",
+                        selectivelyDisclosable = selectivelyDisclosable,
+                        metadata = null
+                    )
+                    current.add(newClaim)
+                    current = newClaim.children
+                }
+            }
+        }
+
+        printSdJwtVcClaims(sdJwtVcClaims)
+
+        assertEquals(sdJwtVcClaims.size,  claims.size)
+        assertEquals(getSdJwtClaims(sdJwtVcClaims).size, disclosuresPerClaim.size)
     }
 
     lateinit var documentManager: DocumentManagerImpl
@@ -166,10 +175,30 @@ class SdJwtVcTest {
         assertTrue(issuedDocument.issuerProvidedData.isNotEmpty())
         val claims = issuedDocument.data
         assertIs<SdJwtVcData>(claims)
-        assertEquals(28, claims.claims.size)
+        assertEquals(22, claims.claims.size)
 
         val documents = documentManager.getDocuments()
         assertEquals(1, documents.size)
         assertIs<SdJwtVcFormat>(documents.first().format)
+    }
+
+    private fun printSdJwtVcClaims(sdJwtVcClaims: List<SdJwtVcClaim>, indent: String = "") {
+        for (sdJwtVcClaim in sdJwtVcClaims) {
+            println("$indent- Identifier: ${sdJwtVcClaim.identifier}")
+            if (sdJwtVcClaim.value != null) println("$indent  Value: ${sdJwtVcClaim.value}")
+            if (sdJwtVcClaim.rawValue.isNotEmpty()) println("$indent  Raw Value: ${sdJwtVcClaim.rawValue}")
+            println("$indent  Selectively Disclosable: ${sdJwtVcClaim.selectivelyDisclosable}")
+            if (sdJwtVcClaim.metadata != null) println("$indent  Metadata: ${sdJwtVcClaim.metadata}")
+            if (sdJwtVcClaim.children.isNotEmpty()) {
+                println("$indent  Children:")
+                printSdJwtVcClaims(sdJwtVcClaim.children, "$indent    ")
+            }
+        }
+    }
+
+    private fun getSdJwtClaims(claims: List<SdJwtVcClaim>): List<SdJwtVcClaim> {
+        return claims.flatMap { claim ->
+            listOf(claim) + getSdJwtClaims(claim.children)
+        }
     }
 }
