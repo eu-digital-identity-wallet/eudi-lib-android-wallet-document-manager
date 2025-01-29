@@ -3,7 +3,7 @@
 # SdJwtVcClaim
 
 [androidJvm]\
-data class [SdJwtVcClaim](index.md)(val identifier: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html), val value: [Any](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html)?, val rawValue: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html), val metadata: [DocumentMetaData.Claim](../../eu.europa.ec.eudi.wallet.document.metadata/-document-meta-data/-claim/index.md)?, val selectivelyDisclosable: [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)) : [DocumentClaim](../-document-claim/index.md)
+data class [SdJwtVcClaim](index.md)(val identifier: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html), val value: [Any](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-any/index.html)?, val rawValue: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html), val metadata: [DocumentMetaData.Claim](../../eu.europa.ec.eudi.wallet.document.metadata/-document-meta-data/-claim/index.md)?, val selectivelyDisclosable: [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-boolean/index.html), val children: [MutableList](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin.collections/-mutable-list/index.html)&lt;[SdJwtVcClaim](index.md)&gt; = mutableListOf()) : [DocumentClaim](../-document-claim/index.md)
 
 Represents a claim of a document in the SdJwtVc format.
 
@@ -11,14 +11,15 @@ Represents a claim of a document in the SdJwtVc format.
 
 | | |
 |---|---|
-| [SdJwtVcClaim](-sd-jwt-vc-claim.md) | [androidJvm]<br>constructor(identifier: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html), value: [Any](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html)?, rawValue: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html), metadata: [DocumentMetaData.Claim](../../eu.europa.ec.eudi.wallet.document.metadata/-document-meta-data/-claim/index.md)?, selectivelyDisclosable: [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)) |
+| [SdJwtVcClaim](-sd-jwt-vc-claim.md) | [androidJvm]<br>constructor(identifier: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html), value: [Any](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-any/index.html)?, rawValue: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html), metadata: [DocumentMetaData.Claim](../../eu.europa.ec.eudi.wallet.document.metadata/-document-meta-data/-claim/index.md)?, selectivelyDisclosable: [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-boolean/index.html), children: [MutableList](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin.collections/-mutable-list/index.html)&lt;[SdJwtVcClaim](index.md)&gt; = mutableListOf()) |
 
 ## Properties
 
 | Name | Summary |
 |---|---|
-| [identifier](identifier.md) | [androidJvm]<br>open override val [identifier](identifier.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)<br>The identifier of the claim. |
+| [children](children.md) | [androidJvm]<br>val [children](children.md): [MutableList](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin.collections/-mutable-list/index.html)&lt;[SdJwtVcClaim](index.md)&gt;<br>The children of the claim. |
+| [identifier](identifier.md) | [androidJvm]<br>open override val [identifier](identifier.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)<br>The identifier of the claim. |
 | [metadata](metadata.md) | [androidJvm]<br>open override val [metadata](metadata.md): [DocumentMetaData.Claim](../../eu.europa.ec.eudi.wallet.document.metadata/-document-meta-data/-claim/index.md)?<br>The metadata of the claim. |
-| [rawValue](raw-value.md) | [androidJvm]<br>open override val [rawValue](raw-value.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)<br>The raw value of the claim. |
-| [selectivelyDisclosable](selectively-disclosable.md) | [androidJvm]<br>val [selectivelyDisclosable](selectively-disclosable.md): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)<br>Whether the claim is selectively disclosable. |
-| [value](value.md) | [androidJvm]<br>open override val [value](value.md): [Any](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html)?<br>The value of the claim. |
+| [rawValue](raw-value.md) | [androidJvm]<br>open override val [rawValue](raw-value.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)<br>The raw value of the claim. |
+| [selectivelyDisclosable](selectively-disclosable.md) | [androidJvm]<br>val [selectivelyDisclosable](selectively-disclosable.md): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-boolean/index.html)<br>Whether the claim is selectively disclosable. |
+| [value](value.md) | [androidJvm]<br>open override val [value](value.md): [Any](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-any/index.html)?<br>The value of the claim. |

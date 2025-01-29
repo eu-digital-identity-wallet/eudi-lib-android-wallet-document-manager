@@ -3,7 +3,7 @@
 # DocumentManagerImpl
 
 [androidJvm]\
-constructor(identifier: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html), storageEngine: StorageEngine, secureAreaRepository: SecureAreaRepository, ktorHttpClientFactory: () -&gt; HttpClient? = null)
+constructor(identifier: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html), storageEngine: StorageEngine, secureAreaRepository: SecureAreaRepository, ktorHttpClientFactory: () -&gt; HttpClient? = null)
 
 #### Parameters
 

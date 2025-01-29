@@ -6,4 +6,4 @@
 
 @SerialName(value = &quot;value_type&quot;)
 
-val [valueType](value-type.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)? = null
+val [valueType](value-type.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)? = null

@@ -15,4 +15,4 @@ the document manager
 
 | | |
 |---|---|
-| [IllegalArgumentException](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-illegal-argument-exception/index.html) | if the storage engine or secure area is not set |
+| [IllegalArgumentException](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-illegal-argument-exception/index.html) | if the storage engine or secure area is not set |

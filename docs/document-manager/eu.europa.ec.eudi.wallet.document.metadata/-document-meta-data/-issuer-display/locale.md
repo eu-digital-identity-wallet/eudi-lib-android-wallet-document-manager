@@ -6,5 +6,4 @@
 
 @Serializable(with = LocaleSerializer::class)
 
-val [locale](locale.md): [Locale](https://developer.android.com/reference/kotlin/java/util/Locale.html)? =
-null
+val [locale](locale.md): [Locale](https://developer.android.com/reference/kotlin/java/util/Locale.html)? = null

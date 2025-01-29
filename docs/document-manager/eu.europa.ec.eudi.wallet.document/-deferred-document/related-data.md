@@ -3,4 +3,4 @@
 # relatedData
 
 [androidJvm]\
-val [relatedData](related-data.md): [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html)
+val [relatedData](related-data.md): [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html)

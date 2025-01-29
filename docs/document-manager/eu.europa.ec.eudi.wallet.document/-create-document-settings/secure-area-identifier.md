@@ -3,4 +3,4 @@
 # secureAreaIdentifier
 
 [androidJvm]\
-abstract val [secureAreaIdentifier](secure-area-identifier.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)
+abstract val [secureAreaIdentifier](secure-area-identifier.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)

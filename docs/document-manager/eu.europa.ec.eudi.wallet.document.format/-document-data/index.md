@@ -17,6 +17,6 @@ Represents the claims of a document.
 
 | Name | Summary |
 |---|---|
-| [claims](claims.md) | [androidJvm]<br>abstract val [claims](claims.md): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)&lt;[DocumentClaim](../-document-claim/index.md)&gt;<br>The list of claims. |
+| [claims](claims.md) | [androidJvm]<br>abstract val [claims](claims.md): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin.collections/-list/index.html)&lt;[DocumentClaim](../-document-claim/index.md)&gt;<br>The list of claims. |
 | [format](format.md) | [androidJvm]<br>abstract val [format](format.md): [DocumentFormat](../-document-format/index.md)<br>The format of the document. |
 | [metadata](metadata.md) | [androidJvm]<br>abstract val [metadata](metadata.md): [DocumentMetaData](../../eu.europa.ec.eudi.wallet.document.metadata/-document-meta-data/index.md)?<br>The metadata of the document. |

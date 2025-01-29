@@ -3,4 +3,4 @@
 # DocumentId
 
 [androidJvm]\
-typealias [DocumentId](index.md) = [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)
+typealias [DocumentId](index.md) = [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)

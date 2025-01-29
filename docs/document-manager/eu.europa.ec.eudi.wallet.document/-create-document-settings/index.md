@@ -29,4 +29,4 @@ Interface that defines the required settings when creating a document with [Docu
 | Name | Summary |
 |---|---|
 | [createKeySettings](create-key-settings.md) | [androidJvm]<br>abstract val [createKeySettings](create-key-settings.md): CreateKeySettings |
-| [secureAreaIdentifier](secure-area-identifier.md) | [androidJvm]<br>abstract val [secureAreaIdentifier](secure-area-identifier.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html) |
+| [secureAreaIdentifier](secure-area-identifier.md) | [androidJvm]<br>abstract val [secureAreaIdentifier](secure-area-identifier.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html) |

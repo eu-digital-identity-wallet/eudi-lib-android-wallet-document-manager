@@ -3,7 +3,7 @@
 # SdJwtVcCredential
 
 [androidJvm]\
-constructor(document: Document, asReplacementFor: Credential?, domain: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html), secureArea: SecureArea, createKeySettings: CreateKeySettings, vct: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html))
+constructor(document: Document, asReplacementFor: Credential?, domain: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html), secureArea: SecureArea, createKeySettings: CreateKeySettings, vct: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html))
 
 Constructs a new [SdJwtVcCredential](index.md).
 

@@ -3,4 +3,4 @@
 # SdJwtVcData
 
 [androidJvm]\
-constructor(format: [SdJwtVcFormat](../-sd-jwt-vc-format/index.md), metadata: [DocumentMetaData](../../eu.europa.ec.eudi.wallet.document.metadata/-document-meta-data/index.md)?, sdJwtVc: SdJwt.Issuance&lt;[Pair](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-pair/index.html)&lt;[String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html), [Map](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-map/index.html)&lt;[String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html), JsonElement&gt;&gt;&gt;)
+constructor(format: [SdJwtVcFormat](../-sd-jwt-vc-format/index.md), metadata: [DocumentMetaData](../../eu.europa.ec.eudi.wallet.document.metadata/-document-meta-data/index.md)?, sdJwtVc: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html))
