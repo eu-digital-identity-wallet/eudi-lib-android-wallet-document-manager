@@ -3,4 +3,4 @@
 # MsoMdoc
 
 [androidJvm]\
-constructor(name: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html), nameSpace: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html))
+constructor(name: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html), nameSpace: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html))

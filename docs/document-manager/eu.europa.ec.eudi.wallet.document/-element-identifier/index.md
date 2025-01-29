@@ -3,4 +3,4 @@
 # ElementIdentifier
 
 [androidJvm]\
-typealias [ElementIdentifier](index.md) = [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)
+typealias [ElementIdentifier](index.md) = [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)

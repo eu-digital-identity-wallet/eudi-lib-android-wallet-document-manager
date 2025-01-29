@@ -26,11 +26,11 @@ Claim name.
 
 | Name | Summary |
 |---|---|
-| [MsoMdoc](-mso-mdoc/index.md) | [androidJvm]<br>@Serializable<br>data class [MsoMdoc](-mso-mdoc/index.md)(val name: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html), val nameSpace: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)) : [DocumentMetaData.Claim.Name](index.md)<br>MsoMdoc claim name. |
-| [SdJwtVc](-sd-jwt-vc/index.md) | [androidJvm]<br>@Serializable<br>data class [SdJwtVc](-sd-jwt-vc/index.md)(val name: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)) : [DocumentMetaData.Claim.Name](index.md)<br>SdJwtVc claim name. |
+| [MsoMdoc](-mso-mdoc/index.md) | [androidJvm]<br>@Serializable<br>data class [MsoMdoc](-mso-mdoc/index.md)(val name: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html), val nameSpace: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)) : [DocumentMetaData.Claim.Name](index.md)<br>MsoMdoc claim name. |
+| [SdJwtVc](-sd-jwt-vc/index.md) | [androidJvm]<br>@Serializable<br>data class [SdJwtVc](-sd-jwt-vc/index.md)(val name: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)) : [DocumentMetaData.Claim.Name](index.md)<br>SdJwtVc claim name. |
 
 ## Properties
 
 | Name | Summary |
 |---|---|
-| [name](name.md) | [androidJvm]<br>abstract val [name](name.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)<br>the name of the claim |
+| [name](name.md) | [androidJvm]<br>abstract val [name](name.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)<br>the name of the claim |

@@ -3,7 +3,7 @@
 # toJson
 
 [androidJvm]\
-fun [toJson](to-json.md)(): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)
+fun [toJson](to-json.md)(): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)
 
 Convert the object to a JSON string.
 

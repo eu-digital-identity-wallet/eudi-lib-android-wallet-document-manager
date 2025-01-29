@@ -3,7 +3,7 @@
 # sign
 
 [androidJvm]\
-open fun [sign](sign.md)(dataToSign: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html), algorithm: Algorithm = Algorithm.ES256, keyUnlockData: KeyUnlockData? = null): [Outcome](../-outcome/index.md)&lt;EcSignature&gt;
+open fun [sign](sign.md)(dataToSign: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html), algorithm: Algorithm = Algorithm.ES256, keyUnlockData: KeyUnlockData? = null): [Outcome](../-outcome/index.md)&lt;EcSignature&gt;
 
 Sign the data with the document key
 
