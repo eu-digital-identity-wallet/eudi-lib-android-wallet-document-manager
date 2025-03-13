@@ -17,8 +17,6 @@
 package eu.europa.ec.eudi.wallet.document.metadata
 
 import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Display
-import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.MsoMdoc
-import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Name.SdJwtVc
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -98,6 +96,7 @@ data class DocumentMetaData(
      * @property description the description of the document
      * @property backgroundColor the background color of the document
      * @property textColor the text color of the document
+     * @property backgroundImageUri the URI of the background image
      * @see Logo
      * @see Locale
      */
@@ -110,6 +109,9 @@ data class DocumentMetaData(
         val description: String? = null,
         val backgroundColor: String? = null,
         val textColor: String? = null,
+        @Serializable(URISerializer::class)
+        @SerialName("backgroundImageUri")
+        val backgroundImageUri: URI? = null,
     )
 
     /**
@@ -141,49 +143,17 @@ data class DocumentMetaData(
 
     /**
      * Claim properties.
+     * @property path namespace,element identifier in case of mso_mdoc, and claim path in case sd-jwt-vc
      * @property mandatory whether the claim is mandatory
-     * @property valueType the value type of the claim
      * @property display the display properties of the claim
      * @see Display
      */
     @Serializable
     data class Claim(
-        @SerialName("name") val name: Name,
+        @SerialName("path") val path: List<String>? = null,
         @SerialName("mandatory") val mandatory: Boolean? = false,
-        @SerialName("value_type") val valueType: String? = null,
         @SerialName("display") val display: List<Display> = emptyList(),
     ) {
-
-        /**
-         * Claim name.
-         * @property name the name of the claim
-         * @see MsoMdoc
-         * @see SdJwtVc
-         */
-        @Serializable
-        sealed interface Name {
-            val name: String
-
-            /**
-             * MsoMdoc claim name.
-             * @property name the name of the claim
-             * @property nameSpace the namespace of the claim
-             */
-            @Serializable
-            data class MsoMdoc(
-                override val name: String,
-                val nameSpace: String
-            ) : Name
-
-            /**
-             * SdJwtVc claim name.
-             * @property name the name of the claim
-             */
-            @Serializable
-            data class SdJwtVc(
-                override val name: String
-            ) : Name
-        }
 
         /**
          * Display properties of a Claim.

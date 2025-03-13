@@ -103,9 +103,9 @@ class IssuedDocumentTest {
             .first { it.nameSpace == "eu.europa.ec.eudi.pid.1" && it.identifier == "given_name" }
 
         assertTrue(
-            givenName.metadata?.name == DocumentMetaData.Claim.Name.MsoMdoc(
-                nameSpace = givenName.nameSpace,
-                name = givenName.identifier
+            givenName.metadata?.path == listOf(
+                givenName.nameSpace,
+                givenName.identifier,
             )
         )
     }

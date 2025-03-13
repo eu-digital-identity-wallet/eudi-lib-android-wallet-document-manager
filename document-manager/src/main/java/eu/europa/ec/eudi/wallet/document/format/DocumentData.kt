@@ -74,16 +74,13 @@ data class MsoMdocData(
     override val claims: List<MsoMdocClaim>
         get() = nameSpacedData.nameSpaceNames.flatMap { nameSpace ->
             nameSpacedData.getDataElementNames(nameSpace).map { identifier ->
-                val metadataClaimName = DocumentMetaData.Claim.Name.MsoMdoc(
-                    nameSpace = nameSpace,
-                    name = identifier
-                )
+                val metadataClaimName = listOf(nameSpace, identifier)
                 MsoMdocClaim(
                     nameSpace = nameSpace,
                     identifier = identifier,
                     value = nameSpacedData.getDataElement(nameSpace, identifier).toObject(),
                     rawValue = nameSpacedData.getDataElement(nameSpace, identifier),
-                    metadata = metadata?.claims?.find { it.name == metadataClaimName }
+                    metadata = metadata?.claims?.find { it.path == metadataClaimName }
                 )
             }
         }
