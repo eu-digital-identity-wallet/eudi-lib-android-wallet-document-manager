@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 European Commission
+ * Copyright (c) 2024-2025 European Commission
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import com.android.identity.storage.StorageEngine
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps.recreateClaimsAndDisclosuresPerClaim
 import eu.europa.ec.eudi.sdjwt.vc.SelectPath.Default.select
-import eu.europa.ec.eudi.wallet.document.format.SdJwtVcClaim
+import eu.europa.ec.eudi.wallet.document.format.MutableSdJwtClaim
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcData
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
 import eu.europa.ec.eudi.wallet.document.internal.parse
@@ -42,7 +42,8 @@ import kotlin.test.assertTrue
 
 class SdJwtVcTest {
 
-    @Test @Ignore ("This test is failing because of invalid sd jwt vc, need to fix the test")
+    @Test
+    @Ignore("This test is failing because of invalid sd jwt vc, need to fix the test")
     fun `validate sd-jwt vc`() {
         runBlocking {
             val sdJwtVcString = getResourceAsText("sample_sd_jwt_vc.txt")
@@ -58,6 +59,7 @@ class SdJwtVcTest {
     }
 
     @Test
+    @Ignore("This is test for parsing the sd-jwt vc. See eu.europa.ec.eudi.wallet.document.format.SdJwtVcDataTest for the actual test")
     fun `parse sd-jwt vc`() {
 
         val sdJwtVcString = getResourceAsText("sample_sd_jwt_vc.txt")
@@ -68,12 +70,18 @@ class SdJwtVcTest {
         assertTrue(sdJwtVc != null)
 
         val (claims, disclosuresPerClaim) = sdJwtVc.recreateClaimsAndDisclosuresPerClaim()
-        val claimValueList = disclosuresPerClaim.map {
-            println("Path: ${it.key}, Value: ${claims.select(it.key).getOrNull()}, SelectivelyDisclosable: ${it.value.isNotEmpty()}")
-            Triple(it.key, claims.select(it.key).getOrNull(), it.value.isNotEmpty())
-        }
+        val excluded = arrayOf("iss")
 
-        val sdJwtVcClaims = mutableListOf<SdJwtVcClaim>()
+        val claimValueList = disclosuresPerClaim.map {
+            println(
+                "Path: ${it.key}, Value: ${
+                    claims.select(it.key).getOrNull()
+                }, SelectivelyDisclosable: ${it.value.isNotEmpty()}"
+            )
+            Triple(it.key, claims.select(it.key).getOrNull(), it.value.isNotEmpty())
+        }.filterNot { it.first.head().toString() in excluded }
+
+        val sdJwtVcClaims = mutableListOf<MutableSdJwtClaim>()
         for ((path, value, selectivelyDisclosable) in claimValueList) {
             var current = sdJwtVcClaims
             for (key in path.value) {
@@ -81,7 +89,7 @@ class SdJwtVcTest {
                 if (existingNode != null) {
                     current = existingNode.children
                 } else {
-                    val newClaim = SdJwtVcClaim(
+                    val newClaim = MutableSdJwtClaim(
                         identifier = key.toString(),
                         value = value?.parse(),
                         rawValue = value?.toString() ?: "",
@@ -96,8 +104,11 @@ class SdJwtVcTest {
 
         printSdJwtVcClaims(sdJwtVcClaims)
 
-        assertEquals(sdJwtVcClaims.size,  claims.size)
-        assertEquals(getSdJwtClaims(sdJwtVcClaims).size, disclosuresPerClaim.size)
+        assertEquals(claims.filterNot { it.key in excluded }.size, sdJwtVcClaims.size)
+        assertEquals(
+            claimValueList.size,
+            getSdJwtClaims(sdJwtVcClaims).size
+        )
     }
 
     lateinit var documentManager: DocumentManagerImpl
@@ -175,14 +186,14 @@ class SdJwtVcTest {
         assertTrue(issuedDocument.issuerProvidedData.isNotEmpty())
         val claims = issuedDocument.data
         assertIs<SdJwtVcData>(claims)
-        assertEquals(22, claims.claims.size)
+        assertEquals(19, claims.claims.size)
 
         val documents = documentManager.getDocuments()
         assertEquals(1, documents.size)
         assertIs<SdJwtVcFormat>(documents.first().format)
     }
 
-    private fun printSdJwtVcClaims(sdJwtVcClaims: List<SdJwtVcClaim>, indent: String = "") {
+    private fun printSdJwtVcClaims(sdJwtVcClaims: List<MutableSdJwtClaim>, indent: String = "") {
         for (sdJwtVcClaim in sdJwtVcClaims) {
             println("$indent- Identifier: ${sdJwtVcClaim.identifier}")
             if (sdJwtVcClaim.value != null) println("$indent  Value: ${sdJwtVcClaim.value}")
@@ -196,7 +207,7 @@ class SdJwtVcTest {
         }
     }
 
-    private fun getSdJwtClaims(claims: List<SdJwtVcClaim>): List<SdJwtVcClaim> {
+    private fun getSdJwtClaims(claims: List<MutableSdJwtClaim>): List<MutableSdJwtClaim> {
         return claims.flatMap { claim ->
             listOf(claim) + getSdJwtClaims(claim.children)
         }
