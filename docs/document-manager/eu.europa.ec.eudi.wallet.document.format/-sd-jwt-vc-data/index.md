@@ -13,6 +13,12 @@ Represents the claims of a document in the SdJwtVc format.
 |---|---|
 | [SdJwtVcData](-sd-jwt-vc-data.md) | [androidJvm]<br>constructor(format: [SdJwtVcFormat](../-sd-jwt-vc-format/index.md), metadata: [DocumentMetaData](../../eu.europa.ec.eudi.wallet.document.metadata/-document-meta-data/index.md)?, sdJwtVc: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)) |
 
+## Types
+
+| Name                             | Summary                                                 |
+|----------------------------------|---------------------------------------------------------|
+| [Companion](-companion/index.md) | [androidJvm]<br>object [Companion](-companion/index.md) |
+
 ## Properties
 
 | Name | Summary |
