@@ -3,4 +3,5 @@
 # children
 
 [androidJvm]\
-val [children](children.md): [MutableList](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin.collections/-mutable-list/index.html)&lt;[SdJwtVcClaim](index.md)&gt;
+val [children](children.md): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin.collections/-list/index.html)
+&lt;[SdJwtVcClaim](index.md)&gt;
