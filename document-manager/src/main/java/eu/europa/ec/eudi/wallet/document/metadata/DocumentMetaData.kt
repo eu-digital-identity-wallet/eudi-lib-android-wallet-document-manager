@@ -16,7 +16,7 @@
 
 package eu.europa.ec.eudi.wallet.document.metadata
 
-import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Claim.Display
+import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData.Companion.fromJson
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -74,7 +74,8 @@ data class DocumentMetaData(
          * @throws IllegalArgumentException if the decoded input cannot be represented as a valid instance of [DocumentMetaData]
          * @throws SerializationException if the given JSON string is not a valid JSON input
          */
-        fun fromJson(json: String): DocumentMetaData = Json.decodeFromString(serializer(), json)
+        fun fromJson(json: String): Result<DocumentMetaData> =
+            runCatching { Json.decodeFromString(serializer(), json) }
 
         /**
          * Create a [DocumentMetaData] object from a byte array of json string.
@@ -84,7 +85,7 @@ data class DocumentMetaData(
          * @throws IllegalArgumentException if the decoded input cannot be represented as a valid instance of [DocumentMetaData]
          * @throws SerializationException if the given bytearray of JSON string is not a valid JSON input
          */
-        internal fun fromByteArray(jsonByteArray: ByteArray): DocumentMetaData =
+        internal fun fromByteArray(jsonByteArray: ByteArray): Result<DocumentMetaData> =
             fromJson(jsonByteArray.decodeToString())
     }
 
@@ -150,7 +151,7 @@ data class DocumentMetaData(
      */
     @Serializable
     data class Claim(
-        @SerialName("path") val path: List<String>? = null,
+        @SerialName("path") val path: List<String>,
         @SerialName("mandatory") val mandatory: Boolean? = false,
         @SerialName("display") val display: List<Display> = emptyList(),
     ) {

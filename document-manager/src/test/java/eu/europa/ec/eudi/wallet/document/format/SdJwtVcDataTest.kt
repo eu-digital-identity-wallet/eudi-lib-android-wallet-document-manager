@@ -20,6 +20,7 @@ import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps.recreateClaimsAndDisclosuresPerClaim
 import eu.europa.ec.eudi.sdjwt.SdJwt
 import eu.europa.ec.eudi.wallet.document.getResourceAsText
+import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData
 import kotlinx.serialization.json.JsonObject
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -32,6 +33,11 @@ class SdJwtVcDataTest {
         get() = getResourceAsText("sample_sd_jwt_vc.txt")
             .replace("\n", "")
             .replace("\r", "")
+
+    private val metadata: DocumentMetaData
+        get() = getResourceAsText("sample_sd_jwt_vc_metadata.json")
+            .let { DocumentMetaData.fromJson(it) }
+            .getOrThrow()
 
 
     private lateinit var sdJwtVc: SdJwt<Pair<String, JsonObject>>
@@ -48,7 +54,7 @@ class SdJwtVcDataTest {
 
         val sdJwtVcData = SdJwtVcData(
             format = SdJwtVcFormat(vct = "some vct"),
-            metadata = null,
+            metadata = metadata,
             sdJwtVc = sdJwtVcString,
         )
         val sdJwtVcClaims = sdJwtVcData.claims

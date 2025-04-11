@@ -199,15 +199,12 @@ data class SdJwtVcData(
                         current = existingNode.children
                     } else {
                         // if the path element is not present, create a new claim and add it to the current list of claims
-                        val metadataClaimName = DocumentMetaData.Claim.Name.SdJwtVc(
-                            name = key.toString()
-                        )
                         val newClaim = MutableSdJwtClaim(
                             identifier = key.toString(),
                             value = value?.parse(),
                             rawValue = value?.toString() ?: "",
                             selectivelyDisclosable = selectivelyDisclosable,
-                            metadata = metadata?.claims?.find { it.name == metadataClaimName }
+                            metadata = metadata?.claims?.find { m -> m.path == path.value.map { it.toString() } }
                         )
                         // add the new claim to the current list of claims
                         current.add(newClaim)
@@ -265,7 +262,7 @@ internal class MutableSdJwtClaim(
         return SdJwtVcClaim(
             identifier = identifier,
             value = value,
-            rawValue = rawValue.toString(),
+            rawValue = rawValue,
             metadata = metadata,
             selectivelyDisclosable = selectivelyDisclosable,
             children = children.map { it.toSdJwtVcClaim() }

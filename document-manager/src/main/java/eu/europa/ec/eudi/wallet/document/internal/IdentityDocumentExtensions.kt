@@ -79,7 +79,7 @@ internal var IdentityDocument.metadata: DocumentMetaData?
             applicationData.getData("metadata")
         } catch (_: Throwable) {
             null
-        }?.let { DocumentMetaData.fromByteArray(it) }
+        }?.let { DocumentMetaData.fromByteArray(it).getOrNull() }
     }
     @JvmSynthetic
     @Throws(IllegalArgumentException::class, SerializationException::class)
