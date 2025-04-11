@@ -53,7 +53,8 @@ class IssuedDocumentTest {
             secureAreaRepository = secureAreaRepository,
         )
 
-        val metadata = DocumentMetaData.fromJson(getResourceAsText("eu_pid_metadata.json"))
+        val metadata =
+            DocumentMetaData.fromJson(getResourceAsText("eu_pid_metadata_mso_mdoc.json")).getOrNull()
         // set checkDevicePublicKey to false to avoid checking the MSO key
         // since we are using fixed issuer data
         documentManager.checkDevicePublicKey = false
