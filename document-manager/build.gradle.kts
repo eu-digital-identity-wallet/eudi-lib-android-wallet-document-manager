@@ -100,15 +100,12 @@ android {
 }
 
 dependencies {
-
-
-    // Google identity
-    api(libs.google.identity) {
+    // Multipaz library
+    api(libs.multipaz) {
         exclude(group = "org.bouncycastle")
+        exclude(group = "io.ktor")
     }
-    implementation(libs.google.identity.mdoc) {
-        exclude(group = "org.bouncycastle")
-    }
+
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.io.core)
     implementation(libs.kotlinx.io.bytestring)

@@ -16,15 +16,15 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import com.android.identity.crypto.Algorithm
-import com.android.identity.crypto.EcSignature
-import com.android.identity.securearea.KeyInfo
-import com.android.identity.securearea.KeyUnlockData
-import com.android.identity.securearea.SecureArea
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 import eu.europa.ec.eudi.wallet.document.internal.toCoseBytes
 import eu.europa.ec.eudi.wallet.document.internal.toEcPublicKey
-import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData
+import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetaData
+import kotlinx.coroutines.runBlocking
+import org.multipaz.crypto.EcSignature
+import org.multipaz.securearea.KeyInfo
+import org.multipaz.securearea.KeyUnlockData
+import org.multipaz.securearea.SecureArea
 import java.time.Instant
 
 /**
@@ -40,7 +40,7 @@ import java.time.Instant
  * @property keyInfo the key info
  * @property publicKeyCoseBytes the public key cose bytes
  * @property isKeyInvalidated whether the key is invalidated
- * @property metadata the document metadata
+ * @property issuerMetaData the issuer metadata
  */
 sealed interface Document {
     val id: DocumentId
@@ -53,15 +53,15 @@ sealed interface Document {
     val isCertified: Boolean
 
     val keyInfo: KeyInfo
-        get() = secureArea.getKeyInfo(keyAlias)
+        get() = runBlocking { secureArea.getKeyInfo(keyAlias) }
 
     val publicKeyCoseBytes: ByteArray
         get() = keyInfo.publicKey.toCoseBytes
 
     val isKeyInvalidated: Boolean
-        get() = secureArea.getKeyInvalidated(keyAlias)
+        get() = runBlocking { secureArea.getKeyInvalidated(keyAlias) }
 
-    val metadata: DocumentMetaData?
+    val issuerMetaData: IssuerMetaData?
 
     /**
      * Sign the data with the document key
@@ -70,25 +70,24 @@ sealed interface Document {
      * before signing the data. Otherwise, the method will return [Outcome] with the [EcSignature].
      *
      * @param dataToSign the data to sign
-     * @param algorithm the algorithm to use for signing
      * @param keyUnlockData the key unlock data needed to unlock the key
      * @return the sign result containing the signature or the failure
      */
     fun sign(
         dataToSign: ByteArray,
-        algorithm: Algorithm = Algorithm.ES256,
         keyUnlockData: KeyUnlockData? = null
     ): Outcome<EcSignature> {
-        return try {
-            val signature = secureArea.sign(
-                keyAlias,
-                algorithm,
-                dataToSign,
-                keyUnlockData
-            )
-            Outcome.success(signature)
-        } catch (e: Throwable) {
-            Outcome.failure(e)
+        return runBlocking {
+            try {
+                val signature = secureArea.sign(
+                    keyAlias,
+                    dataToSign,
+                    keyUnlockData
+                )
+                Outcome.success(signature)
+            } catch (e: Throwable) {
+                Outcome.failure(e)
+            }
         }
     }
 
@@ -106,15 +105,17 @@ sealed interface Document {
         otherPublicKey: ByteArray,
         keyUnlockData: KeyUnlockData? = null
     ): Outcome<SharedSecret> {
-        return try {
-            val sharedSecret = secureArea.keyAgreement(
-                keyAlias,
-                otherPublicKey.toEcPublicKey,
-                keyUnlockData
-            )
-            Outcome.success(sharedSecret)
-        } catch (e: Throwable) {
-            Outcome.failure(e)
+        return runBlocking {
+            try {
+                val sharedSecret = secureArea.keyAgreement(
+                    keyAlias,
+                    otherPublicKey.toEcPublicKey,
+                    keyUnlockData
+                )
+                Outcome.success(sharedSecret)
+            } catch (e: Throwable) {
+                Outcome.failure(e)
+            }
         }
     }
 }

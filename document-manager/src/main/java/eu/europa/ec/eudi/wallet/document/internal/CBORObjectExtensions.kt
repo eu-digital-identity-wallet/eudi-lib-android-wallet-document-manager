@@ -16,12 +16,11 @@
 
 package eu.europa.ec.eudi.wallet.document.internal
 
-import com.android.identity.document.NameSpacedData
 import com.upokecenter.cbor.CBORObject
 import com.upokecenter.cbor.CBORType
 import eu.europa.ec.eudi.wallet.document.NameSpace
+import org.multipaz.document.NameSpacedData
 import java.util.Base64
-
 
 @JvmSynthetic
 internal fun ByteArray.getEmbeddedCBORObject(): CBORObject {

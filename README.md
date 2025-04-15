@@ -68,9 +68,9 @@ dependencies {
     // EUDI Wallet Documents Manager library
     implementation("eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager:0.10.0")
 
-    // Optional: Use the identity-android library if you want to use the implementations for StorageEngine and SecureArea
+    // Optional: Use the multipaz-android library if you want to use the implementations for Storage and SecureArea
     // for Android devices, provided by the OpenWallet Foundation
-    implementation("com.android.identity:identity-android:202408.1")
+  implementation("org.multipaz:multipaz-android:0.90")
 }
 ```
 
@@ -89,29 +89,32 @@ For source code documentation, see in [docs](docs/index.md) directory.
 ### Instantiating the DocumentManager
 
 To create an instance of the DocumentManager class, use the DocumentManager.Builder class.
-Builder requires a StorageEngine and SecureArea instance to be set before building the
+Builder requires a Storage and SecureArea instance to be set before building the
 DocumentManager.
 
-The following code snippet shows an example on how to create EphemeralStorageEngine and
+The following code snippet shows an example on how to create EphemeralStorage and
 SoftwareSecureArea instances, provided by the Identity Credential library, and use them later to
 create a DocumentManager instance.
 
-Any implementations of StorageEngine and SecureArea can be used.
+Any implementations of Storage and SecureArea can be used.
 
 ```kotlin
-val storageEngine = EphemeralStorageEngine()
-val secureArea = SoftwareSecureArea(storageEngine)
+val storage = EphemeralStorage()
+val secureArea = SoftwareSecureArea.create(storage)
+val secureAreaRepository = SecureAreaRepository.build {
+  add(secureArea)
+}
 ```
 
-To use the DocumentManager with the Identity Credential library for android, you must add the
-`com.android.identity:identity-android:202408.1` dependency to your project, and use the provided
-implementations for StorageEngine and SecureArea for Android devices.
+To use the DocumentManager with the Multipaz library for android, you must add the
+`org.multipaz:multipaz-android:0.90` dependency to your project, and use the provided
+implementations for Storage and SecureArea for Android devices.
 
 ```kotlin
 val builder = DocumentManager.Builder()
     .setIdentifier("eudi_wallet_document_manager")
-    .setStorageEngine(storageEngine)
-    .addSecureArea(secureArea)
+    .setStorage(storage)
+    .setSecureAreaRepository(secureAreaRepository)
 
 val documentManager = builder.build()
 ```
@@ -135,12 +138,13 @@ classDiagram
     Document <|.. DeferredDocument
     UnsignedDocument <|-- DeferredDocument
     Document <|.. IssuedDocument
+  Document -- IssuerMetaData
     class Document {
         <<interface>>
         + id DocumentId
         + name String
         + format DocumentFormat
-      + documentManagerId: String
+      + documentManagerId String
         + keyAlias String
         + secureArea SecureArea
         + createdAt Instant
@@ -148,6 +152,7 @@ classDiagram
         + keyInfo KeyInfo
         + publicKeyCoseBytes ByteArray
         + isKeyInvalidated Boolean
+      + issuerMetaData IssuerMetaData?
         + sign(dataToSign ByteArray, algorithm Algorithm, keyUnlockData KeyUnlockData?) SignResult
         + keyAgreement(otherPublicKey ByteArray, keyUnlockData KeyUnlockData?) SharedSecretResult
     }
@@ -162,8 +167,16 @@ classDiagram
     + nameSpacedDataInBytes NameSpacedValues~ByteArray~
     + nameSpacedDataDecoded NameSpacedValues~Any?~
     + nameSpaces NameSpaces
-    + issuerProvidedData: ByteArray
-    + isValidAt(time: Instant) Boolean
+    + issuerProvidedData ByteArray
+    + isValidAt(time Instant) Boolean
+  }
+
+  class IssuerMetaData {
+    + documentConfigurationIdentifier String
+    + display List~Display~
+    + claims List~Claim~ ?
+    + credentialIssuerIdentifier String
+    + issuerDisplay List~IssuerDisplay~ ?
     }
 ```
 
@@ -226,14 +239,14 @@ try {
         secureAreaIdentifier = secureArea.identifier,
         createKeySettings = SoftwareCreateKeySettings.Builder().build()
     )
-    
-    // Hypothetical document metadata received from issuer or config
-    val documentMetaData = getDocumentMetadataFromIssuer("eu.europa.ec.eudi.pid.1")
+
+  // Get or create metadata for the document
+  val issuerMetaData = getIssuerMetadata("eu.europa.ec.eudi.pid.1")
     
     val createDocumentResult = documentManager.createDocument(
         format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
         createSettings = createSettings,
-        documentMetaData = documentMetaData  // Optional parameter with display information, claims, etc.
+      issuerMetaData = issuerMetaData  // Adds display information and claim details
     )
     val unsignedDocument = createDocumentResult.getOrThrow()
     val publicKeyBytes = unsignedDocument.publicKeyCoseBytes
@@ -276,10 +289,11 @@ fun sendToIssuer(publicKeyCoseBytes: ByteArray, signatureCoseBytes: ByteArray): 
     TODO("Send publicKey and proof of possession signature to issuer and retrieve document's data")
 }
 
-// Helper function to get document metadata (implementation details omitted)
-fun getDocumentMetadataFromIssuer(docType: String): DocumentMetaData? {
+// Helper function to get issuer metadata (implementation details omitted)
+fun getIssuerMetadata(docType: String): IssuerMetaData? {
     // In a real implementation, this would retrieve metadata from an issuer or configuration
-    return null  // Return null if metadata is unavailable
+  val json = fetchMetadataJson(docType)
+  return IssuerMetaData.fromJson(json).getOrNull()
 }
 ```
 
@@ -371,11 +385,13 @@ IssuerSignedItem = {
 
 ### Document metadata
 
-The library provides support for document metadata through the `DocumentMetaData` class. This metadata includes display information, claim details, and issuer information that can enhance the user experience when presenting documents.
+The library provides robust support for document metadata through the `IssuerMetaData` class. This
+metadata includes display information, claim details, and issuer information that enhances the user
+experience when working with and presenting documents.
 
-#### DocumentMetaData structure
+#### IssuerMetaData structure
 
-The `DocumentMetaData` class contains:
+The `IssuerMetaData` class contains:
 
 - `documentConfigurationIdentifier`: Unique identifier for the document configuration
 - `display`: List of display properties (name, logo, colors, etc.) for different locales
@@ -383,13 +399,22 @@ The `DocumentMetaData` class contains:
 - `credentialIssuerIdentifier`: Identifier for the credential issuer
 - `issuerDisplay`: Optional display properties for the issuer
 
-#### Working with DocumentMetaData
+Each `Display` object can include:
 
-You can access document metadata through the `metadata` property on any Document object:
+- `name`: The display name of the document (required)
+- `locale`: Language/locale information
+- `logo`: Visual representation of the document
+- `description`: Explanatory text about the document
+- `backgroundColor`, `textColor`: Visual styling properties
+- `backgroundImageUri`: URI to a background image
+
+#### Working with IssuerMetaData
+
+You can access document metadata through the `issuerMetaData` property on any Document object:
 
 ```kotlin
 val document = documentManager.getDocumentById("some_document_id")
-val metadata = document?.metadata
+val metadata = document?.issuerMetaData
 
 // Check if the document has display information in the user's preferred locale
 val userLocale = Locale.getDefault()
@@ -398,26 +423,42 @@ val localizedDisplay = metadata?.display?.find { it.locale == userLocale }
 // Access claim metadata
 metadata?.claims?.forEach { claim ->
     // Process each claim with its display information
-    val claimName = claim.display.firstOrNull()?.name ?: "Unknown"
+  val claimPath = claim.path // Contains namespace and identifier information
+  val claimDisplays = claim.display // Contains localized names for the claim
     val isMandatory = claim.mandatory ?: false
     // Use this information in your UI
 }
+
+// Access issuer display information
+val issuerName = metadata?.issuerDisplay?.firstOrNull()?.name
+val issuerLogo = metadata?.issuerDisplay?.firstOrNull()?.logo?.uri
 ```
 
-#### Creating and parsing DocumentMetaData
+#### Creating and parsing IssuerMetaData
 
-You can create `DocumentMetaData` from JSON or convert it to JSON:
+You can create `IssuerMetaData` from JSON or convert it to JSON:
 
 ```kotlin
 // Parse from JSON
 val jsonMetadata = """{"documentConfigurationIdentifier":"eu.europa.ec.eudi.pid.1", ...}"""
-val metadata = DocumentMetaData.fromJson(jsonMetadata).getOrThrow()
+val metadata = IssuerMetaData.fromJson(jsonMetadata).getOrThrow()
 
 // Convert to JSON
 val jsonString = metadata.toJson()
+
+// Handle potential parsing errors safely
+IssuerMetaData.fromJson(jsonString).fold(
+  onSuccess = { validMetadata ->
+    // Use the metadata
+  },
+  onFailure = { error ->
+    // Handle parsing error
+  }
+)
 ```
 
-This metadata can be used to enhance the document presentation in your wallet UI, providing localized display names, visual elements, and structured information about the document's claims.
+This metadata system allows for rich document visualization and user-friendly presentations by
+providing localized names, descriptions, colors, and logos for documents and their claims.
 
 ### Other features
 
@@ -439,7 +480,7 @@ See [licenses.md](licenses.md) for details.
 
 ### License details
 
-Copyright (c) 2023 - 2024 European Commission
+Copyright (c) 2023 - 2025 European Commission
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

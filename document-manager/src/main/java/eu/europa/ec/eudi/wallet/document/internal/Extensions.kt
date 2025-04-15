@@ -16,8 +16,8 @@
 
 package eu.europa.ec.eudi.wallet.document.internal
 
-import com.android.identity.cbor.Cbor
-import com.android.identity.crypto.EcPublicKey
+import org.multipaz.cbor.Cbor
+import org.multipaz.crypto.EcPublicKey
 import java.security.SecureRandom
 
 internal val Int.randomBytes: ByteArray

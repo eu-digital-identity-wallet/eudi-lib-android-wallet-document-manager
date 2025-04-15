@@ -1,21 +1,40 @@
 package eu.europa.ec.eudi.wallet.document.internal
 
-import com.android.identity.cbor.CborBuilder
-import com.android.identity.cbor.DataItem
-import com.android.identity.cbor.MapBuilder
-import com.android.identity.credential.Credential
-import com.android.identity.credential.SecureAreaBoundCredential
-import com.android.identity.document.Document
-import com.android.identity.securearea.CreateKeySettings
-import com.android.identity.securearea.SecureArea
+import org.multipaz.cbor.CborBuilder
+import org.multipaz.cbor.DataItem
+import org.multipaz.cbor.MapBuilder
+import org.multipaz.claim.VcClaim
+import org.multipaz.credential.SecureAreaBoundCredential
+import org.multipaz.document.Document
+import org.multipaz.documenttype.DocumentTypeRepository
+import org.multipaz.securearea.CreateKeySettings
+import org.multipaz.securearea.SecureArea
 
 /**
  * A SD-JWT VC credential, according to [draft-ietf-oauth-sd-jwt-vc-03]
  * (https://datatracker.ietf.org/doc/draft-ietf-oauth-sd-jwt-vc/).
  */
-class SdJwtVcCredential : SecureAreaBoundCredential {
+class SdJwtVcCredential : SecureAreaBoundCredential, org.multipaz.sdjwt.credential.SdJwtVcCredential {
     companion object {
-        private const val TAG = "SdJwtVcCredential"
+
+        suspend fun create(
+            document: Document,
+            asReplacementForIdentifier: String?,
+            domain: String,
+            secureArea: SecureArea,
+            vct: String,
+            createKeySettings: CreateKeySettings
+        ): SdJwtVcCredential {
+            return SdJwtVcCredential(
+                document,
+                asReplacementForIdentifier,
+                domain,
+                secureArea,
+                vct
+            ).apply {
+                generateKey(createKeySettings)
+            }
+        }
     }
 
     /**
@@ -23,43 +42,39 @@ class SdJwtVcCredential : SecureAreaBoundCredential {
      * [draft-ietf-oauth-sd-jwt-vc-03]
      * (https://datatracker.ietf.org/doc/draft-ietf-oauth-sd-jwt-vc/)
      */
-    val vct: String
+    override lateinit var vct: String
+        private set
 
     /**
      * Constructs a new [SdJwtVcCredential].
      *
      * @param document the document to add the credential to.
-     * @param asReplacementFor the credential this credential will replace, if not null
+     * @param asReplacementForIdentifier the credential this credential will replace, if not null
      * @param domain the domain of the credential
      * @param secureArea the secure area for the authentication key associated with this credential.
-     * @param createKeySettings the settings used to create new credentials.
      * @param vct the Verifiable Credential Type.
      */
     constructor(
         document: Document,
-        asReplacementFor: Credential?,
+        asReplacementForIdentifier: String?,
         domain: String,
         secureArea: SecureArea,
-        createKeySettings: CreateKeySettings,
         vct: String,
-    ) : super(document, asReplacementFor, domain, secureArea, createKeySettings) {
+    ) : super(document, asReplacementForIdentifier, domain, secureArea) {
         this.vct = vct
-        // Only the leaf constructor should add the credential to the document.
-        if (this::class == SdJwtVcCredential::class) {
-            addToDocument()
-        }
     }
 
     /**
      * Constructs a Credential from serialized data.
      *
      * @param document the [Document] that the credential belongs to.
-     * @param dataItem the serialized data.
      */
     constructor(
         document: Document,
-        dataItem: DataItem,
-    ) : super(document, dataItem) {
+    ) : super(document)
+
+    override suspend fun deserialize(dataItem: DataItem) {
+        super.deserialize(dataItem)
         vct = dataItem["vct"].asTstr
     }
 
@@ -68,4 +83,7 @@ class SdJwtVcCredential : SecureAreaBoundCredential {
         builder.put("vct", vct)
     }
 
+    override fun getClaims(documentTypeRepository: DocumentTypeRepository?): List<VcClaim> {
+        return getClaimsImpl(documentTypeRepository)
+    }
 }

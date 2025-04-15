@@ -16,9 +16,9 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import com.android.identity.securearea.SecureArea
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
-import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData
+import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetaData
+import org.multipaz.securearea.SecureArea
 import java.time.Instant
 
 /**
@@ -32,6 +32,7 @@ import java.time.Instant
  * @property keyAlias the key alias
  * @property secureArea the secure area
  * @property createdAt the creation date
+ * @property issuerMetaData the issuer metadata
  * @property relatedData the related data
  */
 class DeferredDocument(
@@ -43,7 +44,7 @@ class DeferredDocument(
     keyAlias: String,
     secureArea: SecureArea,
     createdAt: Instant,
-    documentMetaData: DocumentMetaData?,
+    issuerMetaData: IssuerMetaData?,
     val relatedData: ByteArray,
 ) : UnsignedDocument(
     id = id,
@@ -54,5 +55,5 @@ class DeferredDocument(
     keyAlias = keyAlias,
     secureArea = secureArea,
     createdAt = createdAt,
-    metadata = documentMetaData
+    issuerMetaData = issuerMetaData
 )

@@ -77,6 +77,6 @@ class SampleDocumentManagerImpl(
     }
 
     private companion object {
-        private const val DIGEST_ALG = "SHA-256"
+        private const val DIGEST_ALG = "sha-256"
     }
 }

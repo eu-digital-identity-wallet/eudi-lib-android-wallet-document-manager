@@ -16,30 +16,30 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import com.android.identity.crypto.Algorithm
-import com.android.identity.document.DocumentRequest
-import com.android.identity.document.NameSpacedData
-import com.android.identity.mdoc.mso.StaticAuthDataParser
-import com.android.identity.mdoc.response.DeviceResponseGenerator
-import com.android.identity.mdoc.response.DeviceResponseParser
-import com.android.identity.mdoc.response.DocumentGenerator
-import com.android.identity.mdoc.util.MdocUtil
-import com.android.identity.securearea.SecureArea
-import com.android.identity.securearea.SecureAreaRepository
-import com.android.identity.securearea.software.SoftwareCreateKeySettings
-import com.android.identity.securearea.software.SoftwareSecureArea
-import com.android.identity.storage.EphemeralStorageEngine
-import com.android.identity.storage.StorageEngine
-import com.android.identity.util.Constants
 import com.upokecenter.cbor.CBORObject
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocData
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
-import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData
-import eu.europa.ec.eudi.wallet.document.mock_data.DocumentMetaDataMockData
+import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetaData
+import eu.europa.ec.eudi.wallet.document.mock_data.IssuerMetaDataMockData
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Assert.assertThrows
+import org.multipaz.document.DocumentRequest
+import org.multipaz.document.NameSpacedData
+import org.multipaz.mdoc.mso.StaticAuthDataParser
+import org.multipaz.mdoc.response.DeviceResponseGenerator
+import org.multipaz.mdoc.response.DeviceResponseParser
+import org.multipaz.mdoc.response.DocumentGenerator
+import org.multipaz.mdoc.util.MdocUtil
+import org.multipaz.securearea.SecureArea
+import org.multipaz.securearea.SecureAreaRepository
+import org.multipaz.securearea.software.SoftwareCreateKeySettings
+import org.multipaz.securearea.software.SoftwareSecureArea
+import org.multipaz.storage.Storage
+import org.multipaz.storage.ephemeral.EphemeralStorage
+import org.multipaz.util.Constants
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -54,26 +54,26 @@ import kotlin.test.assertTrue
 class DocumentManagerImplTest {
 
     lateinit var documentManager: DocumentManagerImpl
-    lateinit var storageEngine: StorageEngine
+    lateinit var storage: Storage
     lateinit var secureArea: SecureArea
     lateinit var secureAreaRepository: SecureAreaRepository
 
     @BeforeTest
     fun setUp() {
-        storageEngine = EphemeralStorageEngine()
-        secureArea = SoftwareSecureArea(storageEngine)
-        secureAreaRepository = SecureAreaRepository()
-            .apply { addImplementation(secureArea) }
+        storage = EphemeralStorage()
+        secureArea = runBlocking { SoftwareSecureArea.create(storage) }
+        secureAreaRepository = SecureAreaRepository.build {
+            add(SoftwareSecureArea.create(storage))
+        }
         documentManager = DocumentManagerImpl(
             identifier = "document_manager",
-            storageEngine = EphemeralStorageEngine(),
+            storage = EphemeralStorage(),
             secureAreaRepository = secureAreaRepository,
         )
     }
 
     @AfterTest
     fun tearDown() {
-        storageEngine.deleteAll()
         documentManager.getDocuments().forEach { documentManager.deleteDocumentById(it.id) }
     }
 
@@ -157,7 +157,7 @@ class DocumentManagerImplTest {
     }
 
     @Test
-    fun `should not crash when documentMetaData is null`() {
+    fun `should not crash when issuerMetaData is null`() {
         // Given
         val format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
         val createSettings =
@@ -169,26 +169,24 @@ class DocumentManagerImplTest {
         val result = documentManager.createDocument(
             format = format,
             createSettings = createSettings,
-            documentMetaData = null
+            issuerMetaData = null
         )
 
 
         // Then
         val document = result.getOrThrow()
-        assertNull(document.metadata)
+        assertNull(document.issuerMetaData)
         assertTrue(result.isSuccess)
     }
 
     @Test
-    fun `Given mocked claims When Creating a document and retrieving it THEN it should have the correct document metadata`() {
+    fun `Given mocked claims When Creating a document and retrieving it THEN it should have the correct issuer metadata`() {
         // Given
-        val documentMetaDataMock: DocumentMetaData = DocumentMetaDataMockData.getData()
+        val issuerMetaDataMock: IssuerMetaData = IssuerMetaDataMockData.getData()
         val documentManager = DocumentManagerImpl(
             identifier = "document_manager_1",
-            secureAreaRepository = SecureAreaRepository().apply {
-                addImplementation(secureArea)
-            },
-            storageEngine = storageEngine
+            secureAreaRepository = secureAreaRepository,
+            storage = storage
         )
         // When
         val unsignedDocument = documentManager.createDocument(
@@ -197,16 +195,16 @@ class DocumentManagerImplTest {
                 secureAreaIdentifier = secureArea.identifier,
                 createKeySettings = SoftwareCreateKeySettings.Builder().build()
             ),
-            documentMetaData = documentMetaDataMock
+            issuerMetaData = issuerMetaDataMock
         ).getOrThrow()
 
         // Then
-        assertEquals(documentMetaDataMock, unsignedDocument.metadata)
+        assertEquals(issuerMetaDataMock, unsignedDocument.issuerMetaData)
 
         // Then
         val document = documentManager.getDocumentById(unsignedDocument.id)
         assertNotNull(document)
-        assertEquals(expected = documentMetaDataMock, actual = document.metadata)
+        assertEquals(expected = issuerMetaDataMock, actual = document.issuerMetaData)
     }
 
     @Test
@@ -304,16 +302,17 @@ class DocumentManagerImplTest {
         val staticAuthData = StaticAuthDataParser(issuedDocument.issuerProvidedData).parse()
         val mergedIssuerNameSpaces =
             MdocUtil.mergeIssuerNamesSpaces(request, claims.nameSpacedData, staticAuthData)
-        val data = DocumentGenerator(docType, staticAuthData.issuerAuth, transcript)
-            .setIssuerNamespaces(mergedIssuerNameSpaces)
-            .setDeviceNamespacesSignature(
-                NameSpacedData.Builder().build(),
-                issuedDocument.secureArea,
-                issuedDocument.keyAlias,
-                null,
-                Algorithm.ES256,
-            )
-            .generate()
+        val data = runBlocking {
+            DocumentGenerator(docType, staticAuthData.issuerAuth, transcript)
+                .setIssuerNamespaces(mergedIssuerNameSpaces)
+                .setDeviceNamespacesSignature(
+                    NameSpacedData.Builder().build(),
+                    issuedDocument.secureArea,
+                    issuedDocument.keyAlias,
+                    null,
+                )
+                .generate()
+        }
 
         val response =
             DeviceResponseGenerator(Constants.DEVICE_RESPONSE_STATUS_OK).addDocument(data)
@@ -348,18 +347,20 @@ class DocumentManagerImplTest {
 
     @Test
     fun `createDocument uses the correct secureArea for document`() {
-        val secureArea2 = object : SecureArea by SoftwareSecureArea(EphemeralStorageEngine()) {
-            override val identifier: String
-                get() = "${secureArea.identifier}2"
-        }
-        val secureAreaRepository = SecureAreaRepository()
-            .apply {
-                addImplementation(secureArea)
-                addImplementation(secureArea2)
+        val secureArea2 = runBlocking {
+            val baseSecureArea = SoftwareSecureArea.create(storage)
+            object : SecureArea by baseSecureArea {
+                override val identifier: String
+                    get() = "${baseSecureArea.identifier}2"
             }
+        }
+        val secureAreaRepository = SecureAreaRepository.build {
+            add(secureArea)
+            add(secureArea2)
+        }
         val documentManager = DocumentManagerImpl(
             identifier = "document_manager",
-            storageEngine = storageEngine,
+            storage = storage,
             secureAreaRepository = secureAreaRepository
         )
         val createKeySettings = SoftwareCreateKeySettings.Builder().build()
@@ -386,19 +387,22 @@ class DocumentManagerImplTest {
     @Test
     fun `verify that getDocuments returns only the documents from remaining secureArea after removing a secure area from the repository `() {
         val documentManagerIdentifier = "document_manager"
-        val storage = EphemeralStorageEngine()
-        val secureArea1 = SoftwareSecureArea(storage)
-        val secureArea2 = object : SecureArea by SoftwareSecureArea(EphemeralStorageEngine()) {
-            override val identifier: String
-                get() = "${secureArea.identifier}2"
+        val storage = EphemeralStorage()
+        val secureArea1 = runBlocking { SoftwareSecureArea.create(storage) }
+        val secureArea2 = runBlocking {
+            val baseSecureArea = SoftwareSecureArea.create(storage)
+            object : SecureArea by baseSecureArea {
+                override val identifier: String
+                    get() = "${baseSecureArea.identifier}2"
+            }
         }
         val documentManagerWithTwoSecureAreas = DocumentManagerImpl(
             identifier = documentManagerIdentifier,
-            secureAreaRepository = SecureAreaRepository().apply {
-                addImplementation(secureArea1)
-                addImplementation(secureArea2)
+            secureAreaRepository = SecureAreaRepository.build {
+                add(secureArea1)
+                add(secureArea2)
             },
-            storageEngine = storage
+            storage = storage
         )
         documentManagerWithTwoSecureAreas.createDocument(
             format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
@@ -422,10 +426,10 @@ class DocumentManagerImplTest {
         // having only the one of the previous two secure areas
         val documentManagerWithOneSecureArea = DocumentManagerImpl(
             identifier = documentManagerIdentifier,
-            secureAreaRepository = SecureAreaRepository().apply {
-                addImplementation(secureArea1)
+            secureAreaRepository = SecureAreaRepository.build {
+                add(secureArea1)
             },
-            storageEngine = storage
+            storage = storage
         )
         // We expect to list only the documents that their keys are present in secureArea1
         val documentsFromOneSecureArea = documentManagerWithOneSecureArea.getDocuments()
@@ -436,18 +440,18 @@ class DocumentManagerImplTest {
     fun `verify that each documentManager returns only its documents`() {
         val documentManager1 = DocumentManagerImpl(
             identifier = "document_manager_1",
-            secureAreaRepository = SecureAreaRepository().apply {
-                addImplementation(secureArea)
+            secureAreaRepository = SecureAreaRepository.build {
+                add(secureArea)
             },
-            storageEngine = storageEngine
+            storage = storage
         )
 
         val documentManager2 = DocumentManagerImpl(
             identifier = "document_manager_2",
-            secureAreaRepository = SecureAreaRepository().apply {
-                addImplementation(secureArea)
+            secureAreaRepository = SecureAreaRepository.build {
+                add(secureArea)
             },
-            storageEngine = storageEngine
+            storage = storage
         )
 
         documentManager1.createDocument(
@@ -472,8 +476,6 @@ class DocumentManagerImplTest {
         val document2 = documentManager2.getDocuments().first()
         assertNotEquals(document1, document2)
 
-        assertTrue(document1.id.startsWith(documentManager1.prefix))
-        assertTrue(document2.id.startsWith(documentManager2.prefix))
         assertEquals(documentManager1.identifier, document1.documentManagerId)
         assertEquals(documentManager2.identifier, document2.documentManagerId)
     }

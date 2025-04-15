@@ -20,12 +20,11 @@ import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps.recreateClaimsAndDisclosuresPerClaim
 import eu.europa.ec.eudi.sdjwt.SdJwt
 import eu.europa.ec.eudi.wallet.document.getResourceAsText
-import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData
+import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetaData
 import kotlinx.serialization.json.JsonObject
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-
 
 class SdJwtVcDataTest {
 
@@ -34,9 +33,9 @@ class SdJwtVcDataTest {
             .replace("\n", "")
             .replace("\r", "")
 
-    private val metadata: DocumentMetaData
+    private val metadata: IssuerMetaData
         get() = getResourceAsText("sample_sd_jwt_vc_metadata.json")
-            .let { DocumentMetaData.fromJson(it) }
+            .let { IssuerMetaData.fromJson(it) }
             .getOrThrow()
 
 
@@ -54,7 +53,7 @@ class SdJwtVcDataTest {
 
         val sdJwtVcData = SdJwtVcData(
             format = SdJwtVcFormat(vct = "some vct"),
-            metadata = metadata,
+            issuerMetadata = metadata,
             sdJwtVc = sdJwtVcString,
         )
         val sdJwtVcClaims = sdJwtVcData.claims
@@ -79,7 +78,7 @@ class SdJwtVcDataTest {
             if (sdJwtVcClaim.value != null) println("$indent  Value: ${sdJwtVcClaim.value}")
             if (sdJwtVcClaim.rawValue.isNotEmpty()) println("$indent  Raw Value: ${sdJwtVcClaim.rawValue}")
             println("$indent  Selectively Disclosable: ${sdJwtVcClaim.selectivelyDisclosable}")
-            if (sdJwtVcClaim.metadata != null) println("$indent  Metadata: ${sdJwtVcClaim.metadata}")
+            if (sdJwtVcClaim.issuerMetadata != null) println("$indent  Metadata: ${sdJwtVcClaim.issuerMetadata}")
             if (sdJwtVcClaim.children.isNotEmpty()) {
                 println("$indent  Children:")
                 printSdJwtVcClaims(sdJwtVcClaim.children, "$indent    ")

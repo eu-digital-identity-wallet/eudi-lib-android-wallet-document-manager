@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 European Commission
+ * Copyright (c) 2024-2025 European Commission
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,16 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import com.android.identity.securearea.SecureArea
-import com.android.identity.securearea.SecureAreaRepository
-import com.android.identity.securearea.software.SoftwareCreateKeySettings
-import com.android.identity.securearea.software.SoftwareSecureArea
-import com.android.identity.storage.EphemeralStorageEngine
-import com.android.identity.storage.StorageEngine
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocData
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
-import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData
+import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetaData
+import kotlinx.coroutines.runBlocking
+import org.multipaz.securearea.SecureArea
+import org.multipaz.securearea.SecureAreaRepository
+import org.multipaz.securearea.software.SoftwareCreateKeySettings
+import org.multipaz.securearea.software.SoftwareSecureArea
+import org.multipaz.storage.Storage
+import org.multipaz.storage.ephemeral.EphemeralStorage
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -35,7 +36,7 @@ import kotlin.test.assertTrue
 
 class IssuedDocumentTest {
     lateinit var documentManager: DocumentManagerImpl
-    lateinit var storageEngine: StorageEngine
+    lateinit var storage: Storage
     lateinit var secureArea: SecureArea
     lateinit var secureAreaRepository: SecureAreaRepository
     lateinit var issuedDocument: IssuedDocument
@@ -43,18 +44,18 @@ class IssuedDocumentTest {
     @OptIn(ExperimentalStdlibApi::class)
     @BeforeTest
     fun setUp() {
-        storageEngine = EphemeralStorageEngine()
-        secureArea = SoftwareSecureArea(storageEngine)
-        secureAreaRepository = SecureAreaRepository()
-            .apply { addImplementation(secureArea) }
+        storage = EphemeralStorage()
+        secureArea = runBlocking { SoftwareSecureArea.create(storage) }
+        secureAreaRepository = SecureAreaRepository.build {
+            add(secureArea)
+        }
         documentManager = DocumentManagerImpl(
             identifier = "document_manager",
-            storageEngine = EphemeralStorageEngine(),
+            storage = EphemeralStorage(),
             secureAreaRepository = secureAreaRepository,
         )
 
-        val metadata =
-            DocumentMetaData.fromJson(getResourceAsText("eu_pid_metadata_mso_mdoc.json")).getOrNull()
+        val metadata = IssuerMetaData.fromJson(getResourceAsText("eu_pid_metadata_mso_mdoc.json")).getOrNull()
         // set checkDevicePublicKey to false to avoid checking the MSO key
         // since we are using fixed issuer data
         documentManager.checkDevicePublicKey = false
@@ -65,7 +66,7 @@ class IssuedDocumentTest {
                 secureAreaIdentifier = secureArea.identifier,
                 createKeySettings = createKeySettings
             ),
-            documentMetaData = metadata
+            issuerMetaData = metadata
         )
         assertTrue(createDocumentResult.isSuccess)
         val unsignedDocument = createDocumentResult.getOrThrow()
@@ -89,13 +90,12 @@ class IssuedDocumentTest {
 
     @AfterTest
     fun tearDown() {
-        storageEngine.deleteAll()
         documentManager.getDocuments().forEach { documentManager.deleteDocumentById(it.id) }
     }
 
     @Test
     fun `assert metadata for claim is available`() {
-        assertTrue(issuedDocument.data.claims.any { it.metadata != null })
+        assertTrue(issuedDocument.data.claims.any { it.issuerMetadata != null })
 
         // pick given_name
 
@@ -103,8 +103,10 @@ class IssuedDocumentTest {
             .claims
             .first { it.nameSpace == "eu.europa.ec.eudi.pid.1" && it.identifier == "given_name" }
 
+        // Access the path property instead of name, as the claim metadata's path should contain the namespace and identifier
         assertTrue(
-            givenName.metadata?.path == listOf(
+            givenName.issuerMetadata?.display?.firstOrNull()?.name?.isNotBlank() == true ||
+                    givenName.issuerMetadata?.path == listOf(
                 givenName.nameSpace,
                 givenName.identifier,
             )

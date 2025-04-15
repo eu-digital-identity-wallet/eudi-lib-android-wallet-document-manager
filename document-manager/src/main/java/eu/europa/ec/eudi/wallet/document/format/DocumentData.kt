@@ -16,8 +16,6 @@
 
 package eu.europa.ec.eudi.wallet.document.format
 
-import com.android.identity.cbor.Cbor
-import com.android.identity.document.NameSpacedData
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps.recreateClaimsAndDisclosuresPerClaim
 import eu.europa.ec.eudi.sdjwt.vc.SelectPath.Default.select
@@ -26,18 +24,20 @@ import eu.europa.ec.eudi.wallet.document.NameSpacedValues
 import eu.europa.ec.eudi.wallet.document.NameSpaces
 import eu.europa.ec.eudi.wallet.document.internal.parse
 import eu.europa.ec.eudi.wallet.document.internal.toObject
-import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData
+import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetaData
+import org.multipaz.cbor.Cbor
+import org.multipaz.document.NameSpacedData
 
 /**
  * Represents the claims of a document.
  * @property format The format of the document.
  * @property claims The list of claims.
- * @property metadata The metadata of the document.
+ * @property issuerMetadata The metadata of the document provided by the issuer.
  */
 sealed interface DocumentData {
     val format: DocumentFormat
     val claims: List<DocumentClaim>
-    val metadata: DocumentMetaData?
+    val issuerMetadata: IssuerMetaData?
 }
 
 /**
@@ -45,13 +45,13 @@ sealed interface DocumentData {
  * @property identifier The identifier of the claim.
  * @property value The value of the claim.
  * @property rawValue The raw value of the claim.
- * @property metadata The metadata of the claim.
+ * @property issuerMetadata The metadata of the claim provided by the issuer.
  */
 sealed class DocumentClaim(
     open val identifier: String,
     open val value: Any?,
     open val rawValue: Any?,
-    open val metadata: DocumentMetaData.Claim? = null
+    open val issuerMetadata: IssuerMetaData.Claim? = null
 )
 
 /**
@@ -59,7 +59,7 @@ sealed class DocumentClaim(
  * @property format The MsoMdoc format containing the docType
  * @property nameSpacedData The name-spaced data.
  * @property claims The list of claims.
- * @property metadata The metadata of the document.
+ * @property issuerMetadata The metadata of the document provided by the issuer.
  * @property nameSpacedDataInBytes The name-spaced data in bytes.
  * @property nameSpacedDataDecoded The name-spaced data decoded.
  * @property nameSpaces The name-spaces.
@@ -67,7 +67,7 @@ sealed class DocumentClaim(
  */
 data class MsoMdocData(
     override val format: MsoMdocFormat,
-    override val metadata: DocumentMetaData?,
+    override val issuerMetadata: IssuerMetaData?,
     val nameSpacedData: NameSpacedData
 ) : DocumentData {
 
@@ -80,7 +80,7 @@ data class MsoMdocData(
                     identifier = identifier,
                     value = nameSpacedData.getDataElement(nameSpace, identifier).toObject(),
                     rawValue = nameSpacedData.getDataElement(nameSpace, identifier),
-                    metadata = metadata?.claims?.find { it.path == metadataClaimName }
+                    issuerMetadata = issuerMetadata?.claims?.find { it.path == metadataClaimName }
                 )
             }
         }
@@ -123,15 +123,15 @@ data class MsoMdocData(
  * @property identifier The identifier of the claim.
  * @property value The value of the claim.
  * @property rawValue The raw value of the claim in bytes.
- * @property metadata The metadata of the claim.
+ * @property issuerMetadata The metadata of the claim provided by the issuer.
  */
 data class MsoMdocClaim(
     val nameSpace: NameSpace,
     override val identifier: String,
     override val value: Any?,
     override val rawValue: ByteArray,
-    override val metadata: DocumentMetaData.Claim?,
-) : DocumentClaim(identifier, value, rawValue, metadata) {
+    override val issuerMetadata: IssuerMetaData.Claim?,
+) : DocumentClaim(identifier, value, rawValue, issuerMetadata) {
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -143,7 +143,7 @@ data class MsoMdocClaim(
         if (identifier != other.identifier) return false
         if (value != other.value) return false
         if (!rawValue.contentEquals(other.rawValue)) return false
-        if (metadata != other.metadata) return false
+        if (issuerMetadata != other.issuerMetadata) return false
 
         return true
     }
@@ -153,7 +153,7 @@ data class MsoMdocClaim(
         result = 31 * result + identifier.hashCode()
         result = 31 * result + (value?.hashCode() ?: 0)
         result = 31 * result + rawValue.contentHashCode()
-        result = 31 * result + (metadata?.hashCode() ?: 0)
+        result = 31 * result + (issuerMetadata?.hashCode() ?: 0)
         return result
     }
 }
@@ -163,12 +163,12 @@ data class MsoMdocClaim(
  * @property format The SdJwtVc format containing the vct
  * @property sdJwtVc The SdJwtVc.
  * @property claims The list of claims.
- * @property metadata The metadata of the document.
+ * @property issuerMetadata The metadata of the document provided by the issuer.
  *
  */
 data class SdJwtVcData(
     override val format: SdJwtVcFormat,
-    override val metadata: DocumentMetaData?,
+    override val issuerMetadata: IssuerMetaData?,
     val sdJwtVc: String
 ) : DocumentData {
     override val claims: List<SdJwtVcClaim> by lazy {
@@ -204,7 +204,7 @@ data class SdJwtVcData(
                             value = value?.parse(),
                             rawValue = value?.toString() ?: "",
                             selectivelyDisclosable = selectivelyDisclosable,
-                            metadata = metadata?.claims?.find { m -> m.path == path.value.map { it.toString() } }
+                            metadata = issuerMetadata?.claims?.find { m -> m.path == path.value.map { it.toString() } }
                         )
                         // add the new claim to the current list of claims
                         current.add(newClaim)
@@ -235,16 +235,16 @@ data class SdJwtVcData(
  * @property rawValue The raw value of the claim.
  * @property selectivelyDisclosable Whether the claim is selectively disclosable.
  * @property children The children of the claim.
- * @property metadata The metadata of the claim.
+ * @property issuerMetadata The metadata of the claim provided by the issuer.
  */
 data class SdJwtVcClaim(
     override val identifier: String,
     override val value: Any?,
     override val rawValue: String,
-    override val metadata: DocumentMetaData.Claim?,
+    override val issuerMetadata: IssuerMetaData.Claim?,
     val selectivelyDisclosable: Boolean,
     val children: List<SdJwtVcClaim>
-) : DocumentClaim(identifier, value, rawValue, metadata)
+) : DocumentClaim(identifier, value, rawValue, issuerMetadata)
 
 /**
  * Internal class for SdJwtVcClaim that can be mutated.
@@ -254,7 +254,7 @@ internal class MutableSdJwtClaim(
     val identifier: String,
     val value: Any?,
     val rawValue: String,
-    val metadata: DocumentMetaData.Claim?,
+    val metadata: IssuerMetaData.Claim?,
     val selectivelyDisclosable: Boolean,
     val children: MutableList<MutableSdJwtClaim> = mutableListOf()
 ) {
@@ -263,7 +263,7 @@ internal class MutableSdJwtClaim(
             identifier = identifier,
             value = value,
             rawValue = rawValue,
-            metadata = metadata,
+            issuerMetadata = metadata,
             selectivelyDisclosable = selectivelyDisclosable,
             children = children.map { it.toSdJwtVcClaim() }
         )
