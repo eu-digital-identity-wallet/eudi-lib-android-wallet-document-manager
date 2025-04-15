@@ -16,19 +16,19 @@
 
 package eu.europa.ec.eudi.wallet.document.mock_data
 
-import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData
+import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetaData
 import java.net.URI
 import java.util.Locale
 
-object DocumentMetaDataMockData {
+object IssuerMetaDataMockData {
 
-    fun getData(): DocumentMetaData {
+    fun getData(): IssuerMetaData {
         // Initialize displays
         val displays = listOf(
-            DocumentMetaData.Display(
+            IssuerMetaData.Display(
                 name = "Example Display",
                 locale = Locale.ENGLISH,
-                logo = DocumentMetaData.Logo(
+                logo = IssuerMetaData.Logo(
                     uri = URI.create("https://example.com/logo.png"),
                     alternativeText = "Example Logo"
                 ),
@@ -48,22 +48,22 @@ object DocumentMetaDataMockData {
             "SdJwtClaim"
         )
 
-        val claims: List<DocumentMetaData.Claim> = listOf(
-            DocumentMetaData.Claim(
+        val claims: List<IssuerMetaData.Claim> = listOf(
+            IssuerMetaData.Claim(
                 path = msoClaimName,
                 mandatory = true,
                 display = listOf(
-                    DocumentMetaData.Claim.Display(
+                    IssuerMetaData.Claim.Display(
                         name = "Mso Claim Display",
                         locale = Locale.ENGLISH
                     )
                 )
             ),
-            DocumentMetaData.Claim(
+            IssuerMetaData.Claim(
                 path = sdJwtClaimName,
                 mandatory = false,
                 display = listOf(
-                    DocumentMetaData.Claim.Display(
+                    IssuerMetaData.Claim.Display(
                         name = "SdJwt Claim Display",
                         locale = Locale.FRENCH
                     )
@@ -71,15 +71,15 @@ object DocumentMetaDataMockData {
             )
         )
 
-        val issuerDisplay: List<DocumentMetaData.IssuerDisplay> = listOf(
-            DocumentMetaData.IssuerDisplay(
+        val issuerDisplay: List<IssuerMetaData.IssuerDisplay> = listOf(
+            IssuerMetaData.IssuerDisplay(
                 name = "Greek Goverment",
                 locale = Locale.ENGLISH
             )
         )
 
-        // Create and return DocumentMetaData
-        return DocumentMetaData(
+        // Create and return IssuerMetaData
+        return IssuerMetaData(
             display = displays,
             claims = claims,
             issuerDisplay = issuerDisplay,

@@ -16,11 +16,10 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import com.android.identity.securearea.SecureArea
-import com.android.identity.securearea.SecureAreaRepository
-import com.android.identity.storage.StorageEngine
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
-import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData
+import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetaData
+import org.multipaz.securearea.SecureAreaRepository
+import org.multipaz.storage.Storage
 
 /**
  * The DocumentManager interface is the main entry point to interact with documents.
@@ -42,7 +41,7 @@ import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData
 interface DocumentManager {
 
     val identifier: String
-    val storageEngine: StorageEngine
+    val storage: Storage
     val secureAreaRepository: SecureAreaRepository
 
     /**
@@ -77,12 +76,13 @@ interface DocumentManager {
      *
      * @param format the format of the document
      * @param createSettings the settings to create the document with
+     * @param issuerMetaData the issuer Metadata
      * @return the result of the creation. If successful, it will return the document. If not, it will return an error.
      */
     fun createDocument(
         format: DocumentFormat,
         createSettings: CreateDocumentSettings,
-        documentMetaData: DocumentMetaData? = null
+        issuerMetaData: IssuerMetaData? = null
     ): Outcome<UnsignedDocument>
 
     /**
@@ -114,13 +114,13 @@ interface DocumentManager {
     /**
      * Builder class to create a [DocumentManager] instance.
      * @property identifier the identifier of the document manager
-     * @property storageEngine the storage engine to use for storing/retrieving documents
-     * @property secureArea the secure area to use for managing the keys
+     * @property storage the storage to use for storing/retrieving documents
+     * @property secureAreaRepository the secure area repository
      */
     class Builder {
         var identifier: String? = null
-        var storageEngine: StorageEngine? = null
-        var secureAreaRepository = SecureAreaRepository()
+        var storage: Storage? = null
+        var secureAreaRepository: SecureAreaRepository ? = null
 
         /**
          * Set the identifier of the document manager.
@@ -132,12 +132,12 @@ interface DocumentManager {
         }
 
         /**
-         * Set the storage engine to use for storing/retrieving documents.
-         * @param storageEngine the storage engine
+         * Set the storage to use for storing/retrieving documents.
+         * @param storage the storage
          * @return this builder
          */
-        fun setStorageEngine(storageEngine: StorageEngine): Builder = apply {
-            this.storageEngine = storageEngine
+        fun setStorage(storage: Storage): Builder = apply {
+            this.storage = storage
         }
 
         /**
@@ -150,27 +150,18 @@ interface DocumentManager {
         }
 
         /**
-         * Adds a [SecureArea] implementation to [secureAreaRepository]
-         * @param secureArea the secure area
-         * @return this builder
-         */
-        fun addSecureArea(secureArea: SecureArea): Builder = apply {
-            this.secureAreaRepository.addImplementation(secureArea)
-        }
-
-        /**
          * Build a [DocumentManager] instance.
          * @throws IllegalArgumentException if the storage engine or secure area is not set
          * @return the document manager
          */
         fun build(): DocumentManager {
             requireNotNull(identifier) { "Identifier is required" }
-            requireNotNull(storageEngine) { "Storage engine is required" }
-            require(secureAreaRepository.implementations.isNotEmpty()) { "SecureAreaRepository is empty" }
+            requireNotNull(storage) { "Storage is required" }
+            requireNotNull(secureAreaRepository) { "SecureAreaRepository is required" }
             return DocumentManagerImpl(
                 identifier = identifier!!,
-                storageEngine = storageEngine!!,
-                secureAreaRepository = secureAreaRepository
+                storage = storage!!,
+                secureAreaRepository = secureAreaRepository!!
             )
         }
     }

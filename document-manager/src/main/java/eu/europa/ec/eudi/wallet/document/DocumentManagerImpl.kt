@@ -16,48 +16,48 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import com.android.identity.credential.CredentialFactory
-import com.android.identity.document.DocumentStore
-import com.android.identity.mdoc.credential.MdocCredential
-import com.android.identity.securearea.SecureAreaRepository
-import com.android.identity.storage.StorageEngine
-import com.android.identity.util.Logger
-import com.android.identity.util.UUID
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
+import eu.europa.ec.eudi.wallet.document.internal.ApplicationMetaData
 import eu.europa.ec.eudi.wallet.document.internal.SdJwtVcCredential
 import eu.europa.ec.eudi.wallet.document.internal.clearDeferredRelatedData
 import eu.europa.ec.eudi.wallet.document.internal.createCredential
-import eu.europa.ec.eudi.wallet.document.internal.createdAt
 import eu.europa.ec.eudi.wallet.document.internal.deferredRelatedData
+import eu.europa.ec.eudi.wallet.document.internal.documentIdentifier
 import eu.europa.ec.eudi.wallet.document.internal.documentManagerId
 import eu.europa.ec.eudi.wallet.document.internal.documentName
 import eu.europa.ec.eudi.wallet.document.internal.issuedAt
-import eu.europa.ec.eudi.wallet.document.internal.metadata
 import eu.europa.ec.eudi.wallet.document.internal.storeIssuedDocument
 import eu.europa.ec.eudi.wallet.document.internal.toDocument
-import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData
+import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetaData
 import io.ktor.client.HttpClient
+import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
-import kotlinx.datetime.toJavaInstant
 import org.jetbrains.annotations.VisibleForTesting
+import org.multipaz.credential.CredentialLoader
+import org.multipaz.document.DocumentStore
+import org.multipaz.mdoc.credential.MdocCredential
+import org.multipaz.securearea.SecureAreaRepository
+import org.multipaz.storage.Storage
+import org.multipaz.util.Logger
+import org.multipaz.util.UUID
 
 /**
  * Document Manager Implementation
  *
  * @property identifier the identifier
- * @property storageEngine the storage engine
+ * @property storage the storage to use for storing/retrieving documents
  * @property secureAreaRepository the secure area
  *
  * @constructor
  * @param identifier the identifier of the document manager
- * @param storageEngine the storage engine
+ * @param storage the storage
  * @param secureAreaRepository the secure area
  */
 class DocumentManagerImpl(
     override val identifier: String,
-    override val storageEngine: StorageEngine,
+    override val storage: Storage,
     override val secureAreaRepository: SecureAreaRepository,
     val ktorHttpClientFactory: (() -> HttpClient)? = null
     // TODO: list trusted certificates
@@ -74,15 +74,19 @@ class DocumentManagerImpl(
     @get:VisibleForTesting
     @get:JvmSynthetic
     internal val documentStore by lazy {
-        DocumentStore(storageEngine, secureAreaRepository, CredentialFactory()
-            .apply {
-                addCredentialImplementation(MdocCredential::class) { document, dataItem ->
-                    MdocCredential(document, dataItem)
-                }
-                addCredentialImplementation(SdJwtVcCredential::class) { document, dataItem ->
-                    SdJwtVcCredential(document, dataItem)
-                }
-            })
+        DocumentStore(
+            storage = storage,
+            secureAreaRepository = secureAreaRepository,
+            credentialLoader = CredentialLoader().apply {
+                    addCredentialImplementation(MdocCredential::class) { document ->
+                        MdocCredential(document)
+                    }
+                    addCredentialImplementation(SdJwtVcCredential::class) { document ->
+                        SdJwtVcCredential(document)
+                    }
+                },
+            documentMetadataFactory = ApplicationMetaData::create
+        )
     }
 
     /**
@@ -92,14 +96,14 @@ class DocumentManagerImpl(
      * @return the document or null if not found
      */
     override fun getDocumentById(documentId: DocumentId): Document? {
-        return try {
-            if (!documentId.startsWith(prefix)) {
-                return null
+        return runBlocking {
+            try {
+                documentStore.lookupDocument(documentId)
+                    ?.takeIf { doc -> doc.documentManagerId == identifier }?.toDocument()
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Failed to lookup document with id $documentId", e)
+                null
             }
-            documentStore.lookupDocument(documentId)?.toDocument()
-        } catch (e: Throwable) {
-            Logger.e(TAG, "Failed to lookup document with id $documentId", e)
-            null
         }
     }
 
@@ -110,14 +114,16 @@ class DocumentManagerImpl(
      * @return the list of documents
      */
     override fun getDocuments(predicate: ((Document) -> Boolean)?): List<Document> {
-        return try {
-            documentStore.listDocuments()
-                .filter { it.startsWith(prefix) }
-                .mapNotNull { getDocumentById(it) }
-                .filter { predicate?.invoke(it) != false }
-        } catch (e: Throwable) {
-            Logger.e(TAG, "Failed to get documents", e)
-            emptyList()
+        return runBlocking {
+            try {
+                documentStore.listDocuments()
+                    .mapNotNull {
+                        getDocumentById(it)?.takeIf { doc -> doc.documentManagerId == identifier }
+                    }
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Failed to get documents", e)
+                emptyList()
+            }
         }
     }
 
@@ -128,13 +134,15 @@ class DocumentManagerImpl(
      * @return the result of the deletion. If successful, it will return a proof of deletion. If not, it will return an error.
      */
     override fun deleteDocumentById(documentId: DocumentId): Outcome<ProofOfDeletion?> {
-        return documentStore.lookupDocument(documentId)
-            ?.let { identityDocument ->
-                val proofOfDeletion = null
-                documentStore.deleteDocument(identityDocument.name)
-                Outcome.success(proofOfDeletion)
-            }
-            ?: Outcome.failure(IllegalArgumentException("Document with $documentId not found"))
+        return runBlocking {
+            documentStore.lookupDocument(documentId)
+                ?.let { identityDocument ->
+                    val proofOfDeletion = null
+                    documentStore.deleteDocument(identityDocument.identifier)
+                    Outcome.success(proofOfDeletion)
+                }
+                ?: Outcome.failure(IllegalArgumentException("Document with $documentId not found"))
+        }
     }
 
     /**
@@ -145,51 +153,54 @@ class DocumentManagerImpl(
      *
      * @param format the format of the document
      * @param createSettings the [CreateDocumentSettings] to use for the new document
-     * @param documentMetaData the [DocumentMetaData] data regarding document display
+     * @param issuerMetaData the [IssuerMetaData] data regarding document display
      * @return the result of the creation. If successful, it will return the document. If not, it will return an error.
      */
     override fun createDocument(
         format: DocumentFormat,
         createSettings: CreateDocumentSettings,
-        documentMetaData: DocumentMetaData?
+        issuerMetaData: IssuerMetaData?
     ): Outcome<UnsignedDocument> {
         var documentId: String? = null
-        return try {
-            val secureArea =
-                secureAreaRepository.getImplementation(createSettings.secureAreaIdentifier)
-                    ?: throw IllegalArgumentException("SecureArea '${createSettings.secureAreaIdentifier}' not registered")
-            documentId = "${prefix}${UUID.randomUUID()}"
-            val domain = identifier
-            val identityDocument = documentStore.createDocument(documentId).apply {
-                this.documentManagerId = identifier
-                this.documentName = documentId
-                this.createdAt = Clock.System.now().toJavaInstant()
-                this.metadata = documentMetaData
-
-            }
-            when (format) {
-                is MsoMdocFormat -> {
-                    format.createCredential(
-                        domain, identityDocument, secureArea, createSettings.createKeySettings
+        return runBlocking {
+            try {
+                val secureArea =
+                    secureAreaRepository.getImplementation(createSettings.secureAreaIdentifier)
+                        ?: throw IllegalArgumentException("SecureArea '${createSettings.secureAreaIdentifier}' not registered")
+                documentId = "${prefix}${UUID.randomUUID()}"
+                val domain = identifier
+                val identityDocument = documentStore.createDocument { metadata ->
+                    (metadata as ApplicationMetaData).initialize(
+                        documentIdentifier = documentId.toString(),
+                        documentName = documentId.toString(),
+                        documentManagerId = domain,
+                        createdAt = Clock.System.now(),
+                        issuerMetaData = issuerMetaData,
                     )
-                    identityDocument.documentName = format.docType
                 }
+                when (format) {
+                    is MsoMdocFormat -> {
+                        val mdocCredential = format.createCredential(
+                            domain, identityDocument, secureArea, createSettings.createKeySettings
+                        )
+                        identityDocument.documentIdentifier = mdocCredential.document.identifier
+                        identityDocument.documentName = format.docType
+                    }
 
-                is SdJwtVcFormat -> {
-                    format.createCredential(
-                        domain, identityDocument, secureArea, createSettings.createKeySettings
-                    )
-                    identityDocument.documentName = format.vct
+                    is SdJwtVcFormat -> {
+                        val sdJwtVcCredential = format.createCredential(
+                            domain, identityDocument, secureArea, createSettings.createKeySettings
+                        )
+                        identityDocument.documentIdentifier = sdJwtVcCredential.document.identifier
+                        identityDocument.documentName = format.vct
+                    }
                 }
+                Outcome.success(identityDocument.toDocument())
+            } catch (e: Throwable) {
+                documentId?.let { documentStore.deleteDocument(it) }
+                Outcome.failure(e)
             }
-
-            documentStore.addDocument(identityDocument)
-            Outcome.success(identityDocument.toDocument())
-        } catch (e: Throwable) {
-            documentId?.let { documentStore.deleteDocument(it) }
-            Outcome.failure(e)
         }
-
     }
 
     /**
@@ -203,36 +214,39 @@ class DocumentManagerImpl(
         unsignedDocument: UnsignedDocument,
         issuerProvidedData: ByteArray
     ): Outcome<IssuedDocument> {
-        return try {
-            val identityDocument = documentStore.lookupDocument(unsignedDocument.id)
-                ?: throw IllegalArgumentException("Document with ${unsignedDocument.id} not found")
+        return runBlocking {
+            try {
+                val identityDocument = documentStore.lookupDocument(unsignedDocument.id)
+                    ?: throw IllegalArgumentException("Document with ${unsignedDocument.id} not found")
 
-            when (val format = unsignedDocument.format) {
-                is MsoMdocFormat -> format.storeIssuedDocument(
-                    unsignedDocument,
-                    identityDocument,
-                    issuerProvidedData,
-                    checkDevicePublicKey
-                )
+                when (val format = unsignedDocument.format) {
+                    is MsoMdocFormat -> format.storeIssuedDocument(
+                        unsignedDocument,
+                        identityDocument,
+                        issuerProvidedData,
+                        checkDevicePublicKey
+                    )
 
-                is SdJwtVcFormat -> format.storeIssuedDocument(
-                    unsignedDocument,
-                    identityDocument,
-                    issuerProvidedData,
-                    checkDevicePublicKey,
-                    ktorHttpClientFactory
-                )
+                    is SdJwtVcFormat -> format.storeIssuedDocument(
+                        unsignedDocument,
+                        identityDocument,
+                        issuerProvidedData,
+                        checkDevicePublicKey,
+                        ktorHttpClientFactory
+                    )
 
-                else -> throw IllegalArgumentException("Format ${format::class.simpleName} not supported")
+                    else -> throw IllegalArgumentException("Format ${format::class.simpleName} not supported")
+                }
+                with(identityDocument) {
+                    documentIdentifier = unsignedDocument.id
+                    documentName = unsignedDocument.name
+                    issuedAt = Clock.System.now()
+                    clearDeferredRelatedData()
+                }
+                Outcome.success(identityDocument.toDocument())
+            } catch (e: Throwable) {
+                Outcome.failure(e)
             }
-            with(identityDocument) {
-                documentName = unsignedDocument.name
-                issuedAt = Clock.System.now().toJavaInstant()
-                clearDeferredRelatedData()
-            }
-            Outcome.success(identityDocument.toDocument())
-        } catch (e: Throwable) {
-            Outcome.failure(e)
         }
     }
 
@@ -248,17 +262,19 @@ class DocumentManagerImpl(
         unsignedDocument: UnsignedDocument,
         relatedData: ByteArray
     ): Outcome<DeferredDocument> {
-        return try {
-            val identityDocument = documentStore.lookupDocument(unsignedDocument.id)
-                ?: throw IllegalArgumentException("Document with ${unsignedDocument.id} not found")
+        return runBlocking {
+            try {
+                val identityDocument = documentStore.lookupDocument(unsignedDocument.id)
+                    ?: throw IllegalArgumentException("Document with ${unsignedDocument.id} not found")
 
-            with(identityDocument) {
-                documentName = unsignedDocument.name
-                deferredRelatedData = relatedData
+                with(identityDocument) {
+                    documentName = unsignedDocument.name
+                    deferredRelatedData = relatedData
+                }
+                Outcome.success(identityDocument.toDocument())
+            } catch (e: Exception) {
+                Outcome.failure(e)
             }
-            Outcome.success(identityDocument.toDocument())
-        } catch (e: Exception) {
-            Outcome.failure(e)
         }
     }
 

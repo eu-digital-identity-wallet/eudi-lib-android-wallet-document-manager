@@ -19,15 +19,16 @@ package eu.europa.ec.eudi.wallet.document.internal
 import COSE.Message
 import COSE.MessageTag
 import COSE.Sign1Message
-import com.android.identity.mdoc.credential.MdocCredential
-import com.android.identity.mdoc.mso.MobileSecurityObjectParser
-import com.android.identity.mdoc.mso.StaticAuthDataGenerator
-import com.android.identity.securearea.CreateKeySettings
-import com.android.identity.securearea.SecureArea
 import com.upokecenter.cbor.CBORObject
 import eu.europa.ec.eudi.wallet.document.UnsignedDocument
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
-import com.android.identity.document.Document as IdentityDocument
+import kotlinx.coroutines.runBlocking
+import org.multipaz.mdoc.credential.MdocCredential
+import org.multipaz.securearea.CreateKeySettings
+import org.multipaz.securearea.SecureArea
+import org.multipaz.mdoc.mso.MobileSecurityObjectParser
+import org.multipaz.mdoc.mso.StaticAuthDataGenerator
+import org.multipaz.document.Document as IdentityDocument
 
 @JvmSynthetic
 internal fun MsoMdocFormat.createCredential(
@@ -36,14 +37,16 @@ internal fun MsoMdocFormat.createCredential(
     secureArea: SecureArea,
     createKeySettings: CreateKeySettings,
 ): MdocCredential {
-    return MdocCredential(
-        document = identityDocument,
-        asReplacementFor = null,
-        domain = domain,
-        secureArea = secureArea,
-        createKeySettings = createKeySettings,
-        docType = docType
-    )
+    return runBlocking {
+        MdocCredential.create(
+            document = identityDocument,
+            asReplacementForIdentifier = null,
+            domain = domain,
+            secureArea = secureArea,
+            docType = docType,
+            createKeySettings = createKeySettings
+        )
+    }
 }
 
 @JvmSynthetic
@@ -53,25 +56,27 @@ internal fun MsoMdocFormat.storeIssuedDocument(
     data: ByteArray,
     checkDevicePublicKey: Boolean
 ) {
-    val issuerSigned = CBORObject.DecodeFromBytes(data)
-    val issuerAuthBytes = issuerSigned["issuerAuth"].EncodeToBytes()
-    val issuerAuth = Message.DecodeFromBytes(issuerAuthBytes, MessageTag.Sign1) as Sign1Message
-    val msoBytes = issuerAuth.GetContent().getEmbeddedCBORObject().EncodeToBytes()
-    val mso = MobileSecurityObjectParser(msoBytes).parse()
-    if (mso.deviceKey != unsignedDocument.keyInfo.publicKey) {
-        val msg = "Public key in MSO does not match the one in the request"
-        if (checkDevicePublicKey) {
-            throw IllegalArgumentException(msg)
+    runBlocking {
+        val issuerSigned = CBORObject.DecodeFromBytes(data)
+        val issuerAuthBytes = issuerSigned["issuerAuth"].EncodeToBytes()
+        val issuerAuth = Message.DecodeFromBytes(issuerAuthBytes, MessageTag.Sign1) as Sign1Message
+        val msoBytes = issuerAuth.GetContent().getEmbeddedCBORObject().EncodeToBytes()
+        val mso = MobileSecurityObjectParser(msoBytes).parse()
+        if (mso.deviceKey != unsignedDocument.keyInfo.publicKey) {
+            val msg = "Public key in MSO does not match the one in the request"
+            if (checkDevicePublicKey) {
+                throw IllegalArgumentException(msg)
+            }
         }
-    }
 
-    val nameSpaces = issuerSigned["nameSpaces"]
-    val digestIdMapping = nameSpaces.toDigestIdMapping()
-    val staticAuthData = StaticAuthDataGenerator(digestIdMapping, issuerAuthBytes)
-        .generate()
-    identityDocument.pendingCredentials.forEach { credential ->
-        credential.certify(staticAuthData, mso.validFrom, mso.validUntil)
-    }
+        val nameSpaces = issuerSigned["nameSpaces"]
+        val digestIdMapping = nameSpaces.toDigestIdMapping()
+        val staticAuthData = StaticAuthDataGenerator(digestIdMapping, issuerAuthBytes)
+            .generate()
+        identityDocument.getPendingCredentials().forEach { credential ->
+            credential.certify(staticAuthData, mso.validFrom, mso.validUntil)
+        }
 
-    identityDocument.nameSpacedData = nameSpaces.asNameSpacedData()
+        identityDocument.nameSpacedData = nameSpaces.asNameSpacedData()
+    }
 }

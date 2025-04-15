@@ -16,8 +16,8 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import com.android.identity.securearea.CreateKeySettings
 import io.mockk.mockk
+import org.multipaz.securearea.CreateKeySettings
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs

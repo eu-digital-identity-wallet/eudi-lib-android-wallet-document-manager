@@ -16,9 +16,6 @@
 
 package eu.europa.ec.eudi.wallet.document.internal
 
-import com.android.identity.credential.SecureAreaBoundCredential
-import com.android.identity.document.NameSpacedData
-import com.android.identity.mdoc.credential.MdocCredential
 import eu.europa.ec.eudi.wallet.document.DeferredDocument
 import eu.europa.ec.eudi.wallet.document.Document
 import eu.europa.ec.eudi.wallet.document.IssuedDocument
@@ -28,22 +25,44 @@ import eu.europa.ec.eudi.wallet.document.format.MsoMdocData
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcData
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
-import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData
+import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetaData
+import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.SerializationException
-import java.time.Instant
+import org.multipaz.credential.SecureAreaBoundCredential
+import org.multipaz.document.NameSpacedData
+import org.multipaz.mdoc.credential.MdocCredential
 import kotlin.jvm.Throws
-import com.android.identity.document.Document as IdentityDocument
+import org.multipaz.document.Document as IdentityDocument
 
 /**
- * The document name stored in applicationData
+ * The application metadata
+ */
+internal val IdentityDocument.applicationMetaData: ApplicationMetaData
+    @JvmSynthetic
+    get() = metadata as ApplicationMetaData
+
+/**
+ * The document id stored in application metadata
+ */
+internal var IdentityDocument.documentIdentifier: String
+    @JvmSynthetic
+    get() = applicationMetaData.documentIdentifier
+    @JvmSynthetic
+    set(value) {
+        runBlocking { applicationMetaData.setDocumentIdentifier(value) }
+    }
+
+/**
+ * The document name stored in application metadata
  */
 internal var IdentityDocument.documentName: String
     @JvmSynthetic
-    get() = applicationData.getString("name")
+    get() = applicationMetaData.documentName
     @JvmSynthetic
     set(value) {
-        applicationData.setString("name", value)
+        runBlocking { applicationMetaData.setDocumentName(value) }
     }
 
 /**
@@ -52,99 +71,98 @@ internal var IdentityDocument.documentName: String
  */
 internal val IdentityDocument.state: DocumentState
     @JvmSynthetic
-    get() = when {
-        certifiedCredentials.isNotEmpty() -> DocumentState.ISSUED
-        pendingCredentials.isNotEmpty() -> when {
+    get() = runBlocking { when {
+        getCertifiedCredentials().isNotEmpty() -> DocumentState.ISSUED
+        getPendingCredentials().isNotEmpty() -> when {
             deferredRelatedData.isNotEmpty() -> DocumentState.DEFERRED
             else -> DocumentState.UNSIGNED
         }
 
         else -> DocumentState.UNSIGNED
-    }
+    }}
 
 /**
- * The metadata stored in applicationData under the key "metadata"
+ * The issuer metadata stored in application metadata under the key "issuerMetadata"
  */
-internal var IdentityDocument.metadata: DocumentMetaData?
+internal var IdentityDocument.issuerMetaData: IssuerMetaData?
     @JvmSynthetic
     @Throws(IllegalArgumentException::class, SerializationException::class)
     /**
-     * Get the metadata from applicationData under the key "metadata"
+     * Get the metadata from applicationData under the key "issuerMetadata"
      * @return the metadata or null if not found
      * @throws IllegalArgumentException if the metadata is not valid json
      * @throws SerializationException if the metadata fails to deserialize
      */
     get() {
-        return try {
-            applicationData.getData("metadata")
-        } catch (_: Throwable) {
-            null
-        }?.let { DocumentMetaData.fromByteArray(it).getOrNull() }
+        return runBlocking {
+            runCatching { applicationMetaData.issuerMetaData }.getOrNull()
+        }
     }
     @JvmSynthetic
     @Throws(IllegalArgumentException::class, SerializationException::class)
     /**
-     * Set the metadata in applicationData under the key "metadata"
-     * @param value the metadata to be set
-     * @throws IllegalArgumentException if the metadata is not valid json
-     * @throws SerializationException if the metadata fails to serialize
+     * Set the issuer metadata in application metadata under the key "issuerMetadata"
+     * @param value the issuer metadata to be set
+     * @throws IllegalArgumentException if the issuer metadata is not valid json
+     * @throws SerializationException if the issuer metadata fails to serialize
      */
     set(value) {
-        applicationData.setData("metadata", value?.toByteArray())
+        runBlocking {
+            value?.let { applicationMetaData.setIssuerMetaData(it) }
+        }
     }
 
 /**
- * The creation date of the document stored in applicationData
+ * The creation date of the document stored in application metadata
  */
 internal var IdentityDocument.createdAt: Instant
     @JvmSynthetic
-    get() = applicationData.getNumber("createdAt").let { Instant.ofEpochMilli(it) }
+    get() = applicationMetaData.createdAt
     @JvmSynthetic
     set(value) {
-        applicationData.setNumber("createdAt", value.toEpochMilli())
+        runBlocking { applicationMetaData.setCreatedAt(value) }
     }
 
 /**
- * The document manager id stored in applicationData
+ * The document manager id stored in application metadata
  */
 internal var IdentityDocument.documentManagerId: String
     @JvmSynthetic
-    get() = applicationData.getString("documentManagerId")
+    get() = applicationMetaData.documentManagerId
     @JvmSynthetic
     set(value) {
-        applicationData.setString("documentManagerId", value)
+        runBlocking { applicationMetaData.setDocumentManagerId(value) }
     }
 
 /**
- * The issued date of the document stored in applicationData
+ * The issued date of the document stored in application metadata
  */
 internal var IdentityDocument.issuedAt: Instant
     @JvmSynthetic
-    get() = try {
-        applicationData.getNumber("issuedAt").let { Instant.ofEpochMilli(it) }
-    } catch (_: Throwable) {
+    get() = try { applicationMetaData.issuedAt!! }
+     catch (_: Throwable) {
         // handle missing issuedAt field
         // since the issuedAt field was not present in the earlier versions of the app
-        createdAt
+        this.createdAt
     }
     @JvmSynthetic
     set(value) {
-        applicationData.setNumber("issuedAt", value.toEpochMilli())
+        runBlocking { applicationMetaData.setIssuedAt(value) }
     }
 
 /**
- * The name spaced data stored in applicationData under the key "nameSpacedData"
+ * The NameSpacedData stored in application metadata under the key "nameSpacedData"
  */
 internal var IdentityDocument.nameSpacedData: NameSpacedData
     @JvmSynthetic
-    get() = this.applicationData.getNameSpacedData("nameSpacedData")
+    get() =  applicationMetaData.nameSpacedData ?: NameSpacedData.Builder().build()
     @JvmSynthetic
     set(value) {
-        applicationData.setNameSpacedData("nameSpacedData", value)
+        runBlocking { applicationMetaData.setNameSpacedData(value) }
     }
 
 /**
- * Deferred related data stored in applicationData under the key "deferredRelatedData"
+ * Deferred related data stored in application metadata under the key "deferredRelatedData"
  * set by [eu.europa.ec.eudi.wallet.document.DocumentManager.storeDeferredDocument]
  * method
  *
@@ -152,23 +170,25 @@ internal var IdentityDocument.nameSpacedData: NameSpacedData
  */
 internal var IdentityDocument.deferredRelatedData: ByteArray
     @JvmSynthetic
-    get() = try {
-        applicationData.getData("deferredRelatedData")
-    } catch (_: Throwable) {
+    get() =
+    try {
+        applicationMetaData.deferredRelatedData ?: byteArrayOf()
+    }
+    catch (_: Throwable) {
         // handle missing deferredRelatedData field
         byteArrayOf()
     }
     @JvmSynthetic
     set(value) {
-        applicationData.setData("deferredRelatedData", value)
+        runBlocking { applicationMetaData.setDeferredRelatedData(value) }
     }
 
 /**
- * Clear the deferred related data stored in applicationData
+ * Clear the deferred related data stored in application metadata
  */
 @JvmSynthetic
 internal fun IdentityDocument.clearDeferredRelatedData() =
-    applicationData.setData("deferredRelatedData", null)
+    runBlocking { applicationMetaData.clearDeferredRelatedData() }
 
 /**
  * Create a [Document] based on the [IdentityDocument].
@@ -182,11 +202,11 @@ internal inline fun <reified D : Document> IdentityDocument.toDocument(): D {
 
     val credential = when (state) {
         DocumentState.UNSIGNED,
-        DocumentState.DEFERRED -> pendingCredentials
+        DocumentState.DEFERRED -> runBlocking { getPendingCredentials() }
             .filterIsInstance<SecureAreaBoundCredential>()
             .first()
 
-        DocumentState.ISSUED -> certifiedCredentials
+        DocumentState.ISSUED -> runBlocking { getCertifiedCredentials() }
             .filterIsInstance<SecureAreaBoundCredential>()
             .first()
     }
@@ -197,26 +217,24 @@ internal inline fun <reified D : Document> IdentityDocument.toDocument(): D {
         else -> throw IllegalArgumentException("Unsupported format type: ${credential::class}")
     }
 
-
     return when (state) {
-
         DocumentState.UNSIGNED -> UnsignedDocument(
-            id = name,
+            id = identifier,
             name = documentName,
-            createdAt = createdAt,
+            createdAt = createdAt.toJavaInstant(),
             secureArea = credential.secureArea,
             format = documentFormat,
             documentManagerId = documentManagerId,
             isCertified = credential.isCertified,
             keyAlias = credential.alias,
-            metadata = metadata
+            issuerMetaData = issuerMetaData,
         )
 
         DocumentState.ISSUED -> IssuedDocument(
-            id = name,
+            id = identifier,
             name = documentName,
-            createdAt = createdAt,
-            issuedAt = issuedAt,
+            createdAt = createdAt.toJavaInstant(),
+            issuedAt = issuedAt.toJavaInstant(),
             secureArea = credential.secureArea,
             documentManagerId = documentManagerId,
             isCertified = credential.isCertified,
@@ -228,28 +246,28 @@ internal inline fun <reified D : Document> IdentityDocument.toDocument(): D {
                 is MsoMdocFormat -> MsoMdocData(
                     format = documentFormat,
                     nameSpacedData = nameSpacedData,
-                    metadata = metadata,
+                    issuerMetadata = issuerMetaData,
                 )
 
                 is SdJwtVcFormat -> SdJwtVcData(
                     format = documentFormat,
                     sdJwtVc = credential.issuerProvidedData.sdJwtVcString,
-                    metadata = metadata,
+                    issuerMetadata = issuerMetaData,
                 )
             }
         )
 
         DocumentState.DEFERRED -> DeferredDocument(
-            id = name,
+            id = identifier,
             name = documentName,
-            createdAt = createdAt,
+            createdAt = createdAt.toJavaInstant(),
             secureArea = credential.secureArea,
             format = documentFormat,
             documentManagerId = documentManagerId,
             isCertified = credential.isCertified,
             keyAlias = credential.alias,
             relatedData = deferredRelatedData,
-            documentMetaData = metadata
+            issuerMetaData = issuerMetaData
         )
     } as D
 }

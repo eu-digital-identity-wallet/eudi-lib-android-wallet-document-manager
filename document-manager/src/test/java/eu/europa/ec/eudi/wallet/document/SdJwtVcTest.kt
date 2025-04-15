@@ -16,12 +16,6 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import com.android.identity.securearea.SecureArea
-import com.android.identity.securearea.SecureAreaRepository
-import com.android.identity.securearea.software.SoftwareCreateKeySettings
-import com.android.identity.securearea.software.SoftwareSecureArea
-import com.android.identity.storage.EphemeralStorageEngine
-import com.android.identity.storage.StorageEngine
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps.recreateClaimsAndDisclosuresPerClaim
 import eu.europa.ec.eudi.sdjwt.vc.SelectPath.Default.select
@@ -31,6 +25,12 @@ import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
 import eu.europa.ec.eudi.wallet.document.internal.parse
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
+import org.multipaz.securearea.SecureArea
+import org.multipaz.securearea.SecureAreaRepository
+import org.multipaz.securearea.software.SoftwareCreateKeySettings
+import org.multipaz.securearea.software.SoftwareSecureArea
+import org.multipaz.storage.Storage
+import org.multipaz.storage.ephemeral.EphemeralStorage
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Ignore
@@ -112,19 +112,20 @@ class SdJwtVcTest {
     }
 
     lateinit var documentManager: DocumentManagerImpl
-    lateinit var storageEngine: StorageEngine
+    lateinit var storage: Storage
     lateinit var secureArea: SecureArea
     lateinit var secureAreaRepository: SecureAreaRepository
 
     @BeforeTest
     fun setUp() {
-        storageEngine = EphemeralStorageEngine()
-        secureArea = SoftwareSecureArea(storageEngine)
-        secureAreaRepository = SecureAreaRepository()
-            .apply { addImplementation(secureArea) }
+        storage = EphemeralStorage()
+        secureArea = runBlocking { SoftwareSecureArea.create(storage) }
+        secureAreaRepository = SecureAreaRepository.build {
+            add(secureArea)
+        }
         documentManager = DocumentManagerImpl(
             identifier = "document_manager_1",
-            storageEngine = EphemeralStorageEngine(),
+            storage = EphemeralStorage(),
             secureAreaRepository = secureAreaRepository,
             ktorHttpClientFactory = { mockk(relaxed = true) }
         ).apply {
@@ -134,7 +135,6 @@ class SdJwtVcTest {
 
     @AfterTest
     fun tearDown() {
-        storageEngine.deleteAll()
         documentManager.getDocuments().forEach { documentManager.deleteDocumentById(it.id) }
     }
 

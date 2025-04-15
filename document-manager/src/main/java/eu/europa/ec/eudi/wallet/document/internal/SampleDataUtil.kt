@@ -19,13 +19,13 @@ import COSE.AlgorithmID.ECDSA_256
 import COSE.HeaderKeys.Algorithm
 import COSE.OneKey
 import COSE.Sign1Message
-import com.android.identity.crypto.EcPublicKey
-import com.android.identity.mdoc.mso.MobileSecurityObjectGenerator
 import com.upokecenter.cbor.CBORObject
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.util.io.pem.PemReader
+import org.multipaz.crypto.EcPublicKey
+import org.multipaz.mdoc.mso.MobileSecurityObjectGenerator
 import java.security.KeyFactory
 import java.security.MessageDigest
 import java.security.PrivateKey
@@ -91,14 +91,12 @@ internal fun generateMso(
     authKey: EcPublicKey,
     nameSpaces: CBORObject,
 ) =
-    MobileSecurityObjectGenerator(digestAlg, docType, authKey)
+    MobileSecurityObjectGenerator(org.multipaz.crypto.Algorithm.fromHashAlgorithmIdentifier(digestAlg), docType, authKey)
         .apply {
             val now = Clock.System.now()
-            val signed = now
-            val validFrom = now
             val validUntil =
                 Instant.fromEpochMilliseconds(now.toEpochMilliseconds() + 1000L * 60L * 60L * 24L * 365L)
-            setValidityInfo(signed, validFrom, validUntil, null)
+            setValidityInfo(now, now, validUntil, null)
 
             val digestIds = nameSpaces.entries.associate { (nameSpace, issuerSignedItems) ->
                 nameSpace.AsString() to calculateDigests(digestAlg, issuerSignedItems)

@@ -16,7 +16,7 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import com.android.identity.securearea.CreateKeySettings
+import org.multipaz.securearea.CreateKeySettings
 
 /**
  * Implementation of [CreateDocumentSettings]

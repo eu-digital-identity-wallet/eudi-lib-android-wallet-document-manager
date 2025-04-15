@@ -16,21 +16,22 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import com.android.identity.crypto.Algorithm
-import com.android.identity.crypto.Crypto
-import com.android.identity.crypto.EcCurve
-import com.android.identity.securearea.KeyLockedException
-import com.android.identity.securearea.KeyPurpose
-import com.android.identity.securearea.PassphraseConstraints
-import com.android.identity.securearea.software.SoftwareCreateKeySettings
-import com.android.identity.securearea.software.SoftwareKeyUnlockData
-import com.android.identity.securearea.software.SoftwareSecureArea
-import com.android.identity.storage.EphemeralStorageEngine
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocData
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.internal.toCoseBytes
+import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toJavaInstant
+import org.multipaz.crypto.Algorithm
+import org.multipaz.crypto.Crypto
+import org.multipaz.crypto.EcCurve
+import org.multipaz.securearea.KeyLockedException
+import org.multipaz.securearea.PassphraseConstraints
+import org.multipaz.securearea.SecureAreaRepository
+import org.multipaz.securearea.software.SoftwareCreateKeySettings
+import org.multipaz.securearea.software.SoftwareKeyUnlockData
+import org.multipaz.securearea.software.SoftwareSecureArea
+import org.multipaz.storage.ephemeral.EphemeralStorage
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -42,16 +43,19 @@ import kotlin.test.assertTrue
 
 class DocumentTest {
 
-    val storageEngineFixture = EphemeralStorageEngine()
-    val secureAreaFixture = SoftwareSecureArea(storageEngineFixture)
+    val storageFixture = EphemeralStorage()
+    val secureAreaFixture = runBlocking { SoftwareSecureArea.create(storageFixture) }
+    val secureAreaRepositoryFixture = SecureAreaRepository.build {
+        add(secureAreaFixture)
+    }
 
     @Test
     fun `verify properties set correctly`() {
         val documentManagerId = "document_manager"
         val documentManager = DocumentManager {
             setIdentifier(documentManagerId)
-            setStorageEngine(storageEngineFixture)
-            addSecureArea(secureAreaFixture)
+            setStorage(storageFixture)
+            setSecureAreaRepository(secureAreaRepositoryFixture)
         }
 
         val documentFormat = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
@@ -69,7 +73,7 @@ class DocumentTest {
         assertFalse(unsignedDocument.isCertified)
         assertFalse(unsignedDocument.isKeyInvalidated)
         assertEquals(
-            secureAreaFixture.getKeyInfo(unsignedDocument.keyAlias).publicKey,
+            runBlocking { secureAreaFixture.getKeyInfo(unsignedDocument.keyAlias).publicKey },
             unsignedDocument.keyInfo.publicKey
         )
     }
@@ -80,8 +84,8 @@ class DocumentTest {
         val documentManagerId = "document_manager"
         val documentManager = DocumentManager {
             setIdentifier(documentManagerId)
-            setStorageEngine(storageEngineFixture)
-            addSecureArea(secureAreaFixture)
+            setStorage(storageFixture)
+            setSecureAreaRepository(secureAreaRepositoryFixture)
         }
 
         val documentFormat = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
@@ -122,8 +126,8 @@ class DocumentTest {
         val documentManagerId = "document_manager"
         val documentManager = DocumentManager {
             setIdentifier(documentManagerId)
-            setStorageEngine(storageEngineFixture)
-            addSecureArea(secureAreaFixture)
+            setStorage(storageFixture)
+            setSecureAreaRepository(secureAreaRepositoryFixture)
         }
 
         val documentFormat = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
@@ -155,8 +159,8 @@ class DocumentTest {
         val documentManagerId = "document_manager"
         val documentManager = DocumentManager {
             setIdentifier(documentManagerId)
-            setStorageEngine(storageEngineFixture)
-            addSecureArea(secureAreaFixture)
+            setStorage(storageFixture)
+            setSecureAreaRepository(secureAreaRepositoryFixture)
         }
 
         val documentFormat = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
@@ -182,8 +186,8 @@ class DocumentTest {
         val documentManagerId = "document_manager"
         val documentManager = DocumentManager {
             setIdentifier(documentManagerId)
-            setStorageEngine(storageEngineFixture)
-            addSecureArea(secureAreaFixture)
+            setStorage(storageFixture)
+            setSecureAreaRepository(secureAreaRepositoryFixture)
         }
         val documentFormat = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
         val unsignedDocument = documentManager.createDocument(
@@ -191,7 +195,7 @@ class DocumentTest {
             createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureAreaFixture.identifier,
                 createKeySettings = SoftwareCreateKeySettings.Builder()
-                    .setKeyPurposes(setOf(KeyPurpose.AGREE_KEY)) // leave out SIGN on purpose
+                    .setAlgorithm(Algorithm.ECDH_P256)
                     .build()
             )
         ).getOrThrow()
@@ -206,8 +210,8 @@ class DocumentTest {
         val documentManagerId = "document_manager"
         val documentManager = DocumentManager {
             setIdentifier(documentManagerId)
-            setStorageEngine(storageEngineFixture)
-            addSecureArea(secureAreaFixture)
+            setStorage(storageFixture)
+            setSecureAreaRepository(secureAreaRepositoryFixture)
         }
         val documentFormat = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
         val unsignedDocument = documentManager.createDocument(
@@ -225,7 +229,9 @@ class DocumentTest {
 
         // Verify the signature
         val publicKey = unsignedDocument.keyInfo.publicKey
-        val isValid = Crypto.checkSignature(publicKey, dataToSign, Algorithm.ES256, signature)
+        val isValid = runCatching {
+            Crypto.checkSignature(publicKey, dataToSign, Algorithm.ES256, signature)
+        }.isSuccess
         assertTrue(isValid)
     }
 
@@ -234,8 +240,8 @@ class DocumentTest {
         val documentManagerId = "document_manager"
         val documentManager = DocumentManager {
             setIdentifier(documentManagerId)
-            setStorageEngine(storageEngineFixture)
-            addSecureArea(secureAreaFixture)
+            setStorage(storageFixture)
+            setSecureAreaRepository(secureAreaRepositoryFixture)
         }
         val documentFormat = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
         val unsignedDocument = documentManager.createDocument(
@@ -257,7 +263,9 @@ class DocumentTest {
 
         // Verify the signature
         val publicKey = unsignedDocument.keyInfo.publicKey
-        val isValid = Crypto.checkSignature(publicKey, dataToSign, Algorithm.ES256, signature)
+        val isValid = runCatching {
+            Crypto.checkSignature(publicKey, dataToSign, Algorithm.ES256, signature)
+        }.isSuccess
         assertTrue(isValid)
     }
 
@@ -266,8 +274,8 @@ class DocumentTest {
         val documentManagerId = "document_manager"
         val documentManager = DocumentManager {
             setIdentifier(documentManagerId)
-            setStorageEngine(storageEngineFixture)
-            addSecureArea(secureAreaFixture)
+            setStorage(storageFixture)
+            setSecureAreaRepository(secureAreaRepositoryFixture)
         }
 
         val documentFormat = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
@@ -276,7 +284,6 @@ class DocumentTest {
             createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureAreaFixture.identifier,
                 createKeySettings = SoftwareCreateKeySettings.Builder()
-                    .setKeyPurposes(setOf(KeyPurpose.AGREE_KEY))
                     .setPassphraseRequired(true, "1234", PassphraseConstraints.PIN_FOUR_DIGITS)
                     .build()
             )
@@ -299,8 +306,8 @@ class DocumentTest {
         val documentManagerId = "document_manager"
         val documentManager = DocumentManager {
             setIdentifier(documentManagerId)
-            setStorageEngine(storageEngineFixture)
-            addSecureArea(secureAreaFixture)
+            setStorage(storageFixture)
+            setSecureAreaRepository(secureAreaRepositoryFixture)
         }
         val documentFormat = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
         val unsignedDocument = documentManager.createDocument(
@@ -308,7 +315,6 @@ class DocumentTest {
             createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureAreaFixture.identifier,
                 createKeySettings = SoftwareCreateKeySettings.Builder()
-                    .setKeyPurposes(setOf(KeyPurpose.SIGN)) // leave out AGREE_KEY on purpose
                     .build()
             )
         ).getOrThrow()
@@ -329,8 +335,8 @@ class DocumentTest {
         val documentManagerId = "document_manager"
         val documentManager = DocumentManager {
             setIdentifier(documentManagerId)
-            setStorageEngine(storageEngineFixture)
-            addSecureArea(secureAreaFixture)
+            setStorage(storageFixture)
+            setSecureAreaRepository(secureAreaRepositoryFixture)
         }
         val documentFormat = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
         val unsignedDocument = documentManager.createDocument(
@@ -338,7 +344,7 @@ class DocumentTest {
             createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureAreaFixture.identifier,
                 createKeySettings = SoftwareCreateKeySettings.Builder()
-                    .setKeyPurposes(setOf(KeyPurpose.AGREE_KEY))
+                    .setAlgorithm(Algorithm.ECDH_P256)
                     .build()
             )
         ).getOrThrow()
@@ -365,8 +371,8 @@ class DocumentTest {
         val documentManagerId = "document_manager"
         val documentManager = DocumentManager {
             setIdentifier(documentManagerId)
-            setStorageEngine(storageEngineFixture)
-            addSecureArea(secureAreaFixture)
+            setStorage(storageFixture)
+            setSecureAreaRepository(secureAreaRepositoryFixture)
         }
         val documentFormat = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1")
         val unsignedDocument = documentManager.createDocument(
@@ -374,7 +380,7 @@ class DocumentTest {
             createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureAreaFixture.identifier,
                 createKeySettings = SoftwareCreateKeySettings.Builder()
-                    .setKeyPurposes(setOf(KeyPurpose.AGREE_KEY))
+                    .setAlgorithm(Algorithm.ECDH_P256)
                     .setPassphraseRequired(true, "1234", PassphraseConstraints.PIN_FOUR_DIGITS)
                     .build()
             )

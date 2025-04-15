@@ -16,7 +16,7 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import com.android.identity.securearea.CreateKeySettings
+import org.multipaz.securearea.CreateKeySettings
 
 /**
  * Interface that defines the required settings when creating a document with
@@ -33,12 +33,12 @@ interface CreateDocumentSettings {
     companion object {
         /**
          * Create a new instance of [CreateDocumentSettings] for [DocumentManagerImpl.createDocument]
-         * that uses the [com.android.identity.securearea.SecureArea].
+         * that uses the [org.multipaz.securearea.SecureArea].
          *
-         * @param secureAreaIdentifier the [com.android.identity.securearea.SecureArea.identifier]
+         * @param secureAreaIdentifier the identifier from [org.multipaz.securearea.SecureArea]
          * where the document's keys should be stored
          * @param createKeySettings the [CreateKeySettings] implementation that accompanies the provided
-         * [com.android.identity.securearea.SecureArea]
+         * [org.multipaz.securearea.SecureArea]
          * @return a new instance of [CreateDocumentSettings]
          */
         operator fun invoke(

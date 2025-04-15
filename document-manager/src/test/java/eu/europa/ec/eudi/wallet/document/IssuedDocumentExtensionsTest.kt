@@ -16,13 +16,13 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import com.android.identity.document.NameSpacedData
 import com.upokecenter.cbor.CBORObject
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocData
 import io.mockk.mockk
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toJavaInstant
 import org.junit.Assert
+import org.multipaz.document.NameSpacedData
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.days
 
@@ -59,7 +59,7 @@ class TestIssuedDocumentExtensions {
             data = MsoMdocData(
                 format = mockk(),
                 nameSpacedData = nameSpacedData,
-                metadata = mockk(relaxed = true)
+                issuerMetadata = mockk(relaxed = true)
             ),
             issuerProvidedData = byteArrayOf(),
         )

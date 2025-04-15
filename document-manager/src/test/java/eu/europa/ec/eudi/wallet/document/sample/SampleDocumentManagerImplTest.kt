@@ -16,20 +16,21 @@
 
 package eu.europa.ec.eudi.wallet.document.sample
 
-import com.android.identity.securearea.SecureArea
-import com.android.identity.securearea.SecureAreaRepository
-import com.android.identity.securearea.software.SoftwareCreateKeySettings
-import com.android.identity.securearea.software.SoftwareSecureArea
-import com.android.identity.storage.EphemeralStorageEngine
-import com.android.identity.storage.StorageEngine
 import eu.europa.ec.eudi.wallet.document.CreateDocumentSettings
 import eu.europa.ec.eudi.wallet.document.DocumentManagerImpl
 import eu.europa.ec.eudi.wallet.document.IssuedDocument
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocData
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.getResourceAsText
+import kotlinx.coroutines.runBlocking
 import org.junit.AfterClass
 import org.junit.BeforeClass
+import org.multipaz.securearea.SecureArea
+import org.multipaz.securearea.SecureAreaRepository
+import org.multipaz.securearea.software.SoftwareCreateKeySettings
+import org.multipaz.securearea.software.SoftwareSecureArea
+import org.multipaz.storage.Storage
+import org.multipaz.storage.ephemeral.EphemeralStorage
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.test.Test
@@ -42,7 +43,7 @@ class SampleDocumentManagerImplTest {
     companion object {
         lateinit var documentManager: SampleDocumentManagerImpl
         lateinit var secureArea: SecureArea
-        lateinit var storageEngine: StorageEngine
+        lateinit var storage: Storage
 
         @OptIn(ExperimentalEncodingApi::class)
         val sampleDocuments
@@ -53,14 +54,15 @@ class SampleDocumentManagerImplTest {
         @BeforeClass
         @JvmStatic
         fun setUp() {
-            storageEngine = EphemeralStorageEngine()
-            secureArea = SoftwareSecureArea(storageEngine)
-            val secureAreaRepository = SecureAreaRepository()
-                .apply { addImplementation(secureArea) }
+            storage = EphemeralStorage()
+            secureArea = runBlocking {  SoftwareSecureArea.create(storage) }
+            val secureAreaRepository = SecureAreaRepository.build {
+                add(secureArea)
+            }
             documentManager = SampleDocumentManagerImpl(
                 DocumentManagerImpl(
                     identifier = SampleDocumentManagerImpl::class.simpleName!!,
-                    storageEngine = storageEngine,
+                    storage = storage,
                     secureAreaRepository = secureAreaRepository
                 )
             )
@@ -82,7 +84,7 @@ class SampleDocumentManagerImplTest {
         @AfterClass
         @JvmStatic
         fun tearDown() {
-            documentManager.getDocuments().forEach { documentManager.deleteDocumentById(it.id) }
+           documentManager.getDocuments().forEach { documentManager.deleteDocumentById(it.id) }
         }
     }
 
@@ -101,8 +103,8 @@ class SampleDocumentManagerImplTest {
 
     @Test
     fun `getDocuments using query with docType should return the appropriate document`() {
-        val documents = documentManager.getDocuments { document ->
-            (document.format as MsoMdocFormat).docType == "eu.europa.ec.eudi.pid.1"
+        val documents = documentManager.getDocuments().filter {
+            (it.format as MsoMdocFormat).docType == "eu.europa.ec.eudi.pid.1"
         }
         assertEquals(1, documents.size)
         val document = documents.first()
@@ -111,13 +113,15 @@ class SampleDocumentManagerImplTest {
 
     @Test
     fun `deleteDocumentById should delete the document`() {
-        val storageEngine = EphemeralStorageEngine()
-        val secureAreaRepository = SecureAreaRepository()
-            .apply { addImplementation(SoftwareSecureArea(storageEngine)) }
+        val storage = EphemeralStorage()
+        val secureArea = runBlocking {  SoftwareSecureArea.create(storage) }
+        val secureAreaRepository = SecureAreaRepository.build {
+            add(secureArea)
+        }
         val documentManager = SampleDocumentManagerImpl(
             DocumentManagerImpl(
                 identifier = SampleDocumentManagerImpl::class.simpleName!!,
-                storageEngine = storageEngine,
+                storage = storage,
                 secureAreaRepository = secureAreaRepository
             )
         )
@@ -142,14 +146,13 @@ class SampleDocumentManagerImplTest {
         assertTrue(deleteResult.isSuccess)
         val documents = documentManager.getDocuments()
         assertEquals(1, documents.size)
-
     }
 
     @Test
     fun `issued document nameSpacedDataValues parses correctly the cbor values`() {
-        val document = documentManager.getDocuments {
+        val document = documentManager.getDocuments().first {
             (it.format as MsoMdocFormat).docType == "org.iso.18013.5.1.mDL"
-        }.first()
+        }
 
         assertIs<IssuedDocument>(document)
         val data = (document.data as MsoMdocData).nameSpacedDataDecoded

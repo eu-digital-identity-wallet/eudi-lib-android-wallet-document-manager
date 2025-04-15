@@ -16,11 +16,12 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import com.android.identity.securearea.SecureAreaRepository
-import com.android.identity.securearea.software.SoftwareSecureArea
-import com.android.identity.storage.EphemeralStorageEngine
+import kotlinx.coroutines.runBlocking
+import org.multipaz.securearea.SecureAreaRepository
+import org.multipaz.securearea.software.SoftwareSecureArea
+import org.multipaz.storage.ephemeral.EphemeralStorage
+import kotlin.test.Ignore
 import kotlin.test.Test
-import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
@@ -28,15 +29,18 @@ import kotlin.test.assertSame
 
 class DocumentManagerBuilderTest {
 
-    val storageEngine = EphemeralStorageEngine()
-    val secureArea = SoftwareSecureArea(storageEngine)
+    val storage = EphemeralStorage()
+    val secureArea = runBlocking { SoftwareSecureArea.create(storage) }
+    val secureAreaRepository = SecureAreaRepository.build {
+        add(secureArea)
+    }
 
     @Test
     fun `build should throw exception when identifier is not set`() {
         // Given
         val builder = DocumentManager.Builder()
-            .addSecureArea(secureArea)
-            .setStorageEngine(storageEngine)
+            .setStorage(storage)
+            .setSecureAreaRepository(secureAreaRepository)
 
         // When
         val exception = assertFailsWith<IllegalArgumentException> {
@@ -48,11 +52,11 @@ class DocumentManagerBuilderTest {
     }
 
     @Test
-    fun `build should throw exception when storageEngine is not set`() {
+    fun `build should throw exception when storage is not set`() {
         // Given
         val builder = DocumentManager.Builder()
             .setIdentifier("document_manager")
-            .addSecureArea(secureArea)
+            .setSecureAreaRepository(secureAreaRepository)
 
         // When
         val exception = assertFailsWith<IllegalArgumentException> {
@@ -60,15 +64,15 @@ class DocumentManagerBuilderTest {
         }
 
         // Then
-        assertEquals("Storage engine is required", exception.message)
+        assertEquals("Storage is required", exception.message)
     }
 
     @Test
-    fun `build should throw exception when secureAreaRepository is empty`() {
+    fun `build should throw exception when secureAreaRepository is not set`() {
         // Given
         val builder = DocumentManager.Builder()
             .setIdentifier("document_manager")
-            .setStorageEngine(storageEngine)
+            .setStorage(storage)
 
         // When
         val exception = assertFailsWith<IllegalArgumentException> {
@@ -76,25 +80,22 @@ class DocumentManagerBuilderTest {
         }
 
         // Then
-        assertEquals("SecureAreaRepository is empty", exception.message)
+        assertEquals("SecureAreaRepository is required", exception.message)
     }
 
     @Test
     fun `build should return DocumentManagerImpl with the provided storageEngine and secureArea as dependencies`() {
         val builder = DocumentManager.Builder()
             .setIdentifier("document_manager")
-            .setStorageEngine(storageEngine)
-            .addSecureArea(secureArea)
+            .setStorage(storage)
+            .setSecureAreaRepository(secureAreaRepository)
 
         val documentManager = builder.build()
 
         assertIs<DocumentManagerImpl>(documentManager)
         assertEquals("document_manager", documentManager.identifier)
-        assertEquals(storageEngine, documentManager.storageEngine)
-        assertContentEquals(
-            listOf(secureArea),
-            documentManager.secureAreaRepository.implementations
-        )
+        assertEquals(storage, documentManager.storage)
+        assertEquals(secureArea, runBlocking { documentManager.secureAreaRepository.getImplementation(secureArea.identifier)})
     }
 
     @Test
@@ -102,29 +103,25 @@ class DocumentManagerBuilderTest {
         // When
         val documentManager = DocumentManager {
             setIdentifier("document_manager")
-            setStorageEngine(this@DocumentManagerBuilderTest.storageEngine)
-            addSecureArea(this@DocumentManagerBuilderTest.secureArea)
+            setStorage(this@DocumentManagerBuilderTest.storage)
+            setSecureAreaRepository(SecureAreaRepository.build {
+                add(secureArea)
+            })
         }
 
         // Then
         assertIs<DocumentManagerImpl>(documentManager)
         assertEquals("document_manager", documentManager.identifier)
-        assertEquals(storageEngine, documentManager.storageEngine)
-        assertContentEquals(
-            listOf(secureArea),
-            documentManager.secureAreaRepository.implementations
-        )
+        assertEquals(storage, documentManager.storage)
+        assertEquals(secureArea, runBlocking { documentManager.secureAreaRepository.getImplementation(secureArea.identifier) })
     }
 
     @Test
     fun `verify that setSecureAreaRepository method overrides the default`() {
         val builder = DocumentManager.Builder()
-            .setIdentifier("documentManager")
-            .setStorageEngine(storageEngine)
-
-        val secureAreaRepository = SecureAreaRepository().apply {
-            addImplementation(secureArea)
-        }
+            .setIdentifier("document_manager")
+            .setStorage(storage)
+            .setSecureAreaRepository(secureAreaRepository)
 
         builder.setSecureAreaRepository(secureAreaRepository)
 

@@ -16,11 +16,6 @@
 
 package eu.europa.ec.eudi.wallet.document.internal
 
-import com.android.identity.crypto.javaPublicKey
-import com.android.identity.document.Document
-import com.android.identity.securearea.CreateKeySettings
-import com.android.identity.securearea.SecureArea
-import com.android.identity.util.Logger
 import com.nimbusds.jose.jwk.JWK
 import com.nimbusds.jose.jwk.KeyConverter
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
@@ -34,6 +29,11 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
+import org.multipaz.crypto.javaPublicKey
+import org.multipaz.document.Document
+import org.multipaz.securearea.CreateKeySettings
+import org.multipaz.securearea.SecureArea
+import org.multipaz.util.Logger
 import kotlin.time.Duration.Companion.days
 
 @JvmSynthetic
@@ -43,14 +43,16 @@ internal fun SdJwtVcFormat.createCredential(
     secureArea: SecureArea,
     createKeySettings: CreateKeySettings,
 ): SdJwtVcCredential {
-    return SdJwtVcCredential(
-        document = identityDocument,
-        asReplacementFor = null,
-        domain = domain,
-        secureArea = secureArea,
-        createKeySettings = createKeySettings,
-        vct = vct
-    )
+    return runBlocking {
+        SdJwtVcCredential.create(
+            document = identityDocument,
+            asReplacementForIdentifier = null,
+            domain = domain,
+            secureArea = secureArea,
+            vct = vct,
+            createKeySettings = createKeySettings,
+        )
+    }
 }
 
 @JvmSynthetic
@@ -70,7 +72,7 @@ internal fun SdJwtVcFormat.storeIssuedDocument(
             },
         ).verify(data.sdJwtVcString).onFailure {
             Logger.w("SdJwtVcVerifier", "Invalid SD-JWT VC with error: ${it.message}", it)
-//            throw IllegalArgumentException("Invalid SD-JWT VC with error: ${it.message}", it)
+            // throw IllegalArgumentException("Invalid SD-JWT VC with error: ${it.message}", it)
         }
 
         val sdJwt = DefaultSdJwtOps.unverifiedIssuanceFrom(data.sdJwtVcString).getOrElse {
@@ -98,7 +100,7 @@ internal fun SdJwtVcFormat.storeIssuedDocument(
         val validFrom = nbf ?: iat ?: Clock.System.now()
         val validUntil = exp ?: validFrom.plus(30.days)
 
-        identityDocument.pendingCredentials.forEach { credential ->
+        identityDocument.getPendingCredentials().forEach { credential ->
             credential.certify(data, validFrom, validUntil)
         }
     }

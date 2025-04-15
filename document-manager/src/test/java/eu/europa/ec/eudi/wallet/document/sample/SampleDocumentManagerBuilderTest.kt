@@ -16,14 +16,16 @@
 
 package eu.europa.ec.eudi.wallet.document.sample
 
-import com.android.identity.securearea.SecureArea
-import com.android.identity.securearea.software.SoftwareSecureArea
-import com.android.identity.storage.EphemeralStorageEngine
-import com.android.identity.storage.StorageEngine
 import eu.europa.ec.eudi.wallet.document.DocumentManager
 import eu.europa.ec.eudi.wallet.document.DocumentManagerImpl
 import io.mockk.mockk
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
+import org.multipaz.securearea.SecureArea
+import org.multipaz.securearea.SecureAreaRepository
+import org.multipaz.securearea.software.SoftwareSecureArea
+import org.multipaz.storage.Storage
+import org.multipaz.storage.ephemeral.EphemeralStorage
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
@@ -31,8 +33,10 @@ import kotlin.test.assertSame
 
 class SampleDocumentManagerBuilderTest {
 
-    val storageEngineFixture: StorageEngine = EphemeralStorageEngine()
-    val secureAreaFixture: SecureArea = SoftwareSecureArea(storageEngineFixture)
+    val storageFixture: Storage = EphemeralStorage()
+    val secureAreaFixture: SecureArea = runBlocking {
+        SoftwareSecureArea.create(storageFixture)
+    }
 
     @Test
     fun `build should throw exception when document manager is not set`() {
@@ -84,8 +88,10 @@ class SampleDocumentManagerBuilderTest {
         // When
         val documentManager = SampleDocumentManager.build {
             setIdentifier("document_manager")
-            addSecureArea(secureAreaFixture)
-            setStorageEngine(storageEngineFixture)
+            setSecureAreaRepository(SecureAreaRepository.build {
+                add(secureAreaFixture)
+            })
+            setStorage(storageFixture)
         }
 
         // Then
