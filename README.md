@@ -66,7 +66,7 @@ file.
 ```kotlin
 dependencies {
     // EUDI Wallet Documents Manager library
-    implementation("eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager:0.9.1")
+    implementation("eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager:0.10.0")
 
     // Optional: Use the identity-android library if you want to use the implementations for StorageEngine and SecureArea
     // for Android devices, provided by the OpenWallet Foundation
