@@ -3,7 +3,7 @@
 # fromJson
 
 [androidJvm]\
-fun [fromJson](from-json.md)(json: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)): [DocumentMetaData](../index.md)
+fun [fromJson](from-json.md)(json: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)): [Result](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-result/index.html)&lt;[DocumentMetaData](../index.md)&gt;
 
 Create a [DocumentMetaData](../index.md) object from a JSON string.
 

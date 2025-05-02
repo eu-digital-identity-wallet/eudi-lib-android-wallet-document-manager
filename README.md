@@ -51,7 +51,7 @@ To use snapshot versions add the following to your project's settings.gradle fil
 ```kotlin
 dependencyResolutionManagement {
     repositories {
-      // .. other repositories
+        // .. other repositories
         maven {
             url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
             mavenContent { snapshotsOnly() }
@@ -66,11 +66,11 @@ file.
 ```kotlin
 dependencies {
     // EUDI Wallet Documents Manager library
-  implementation("eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager:0.9.1")
+    implementation("eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager:0.9.1")
 
     // Optional: Use the identity-android library if you want to use the implementations for StorageEngine and SecureArea
     // for Android devices, provided by the OpenWallet Foundation
-  implementation("com.android.identity:identity-android:202408.1")
+    implementation("com.android.identity:identity-android:202408.1")
 }
 ```
 
@@ -99,9 +99,6 @@ create a DocumentManager instance.
 Any implementations of StorageEngine and SecureArea can be used.
 
 ```kotlin
-import com.android.identity.securearea.software.SoftwareSecureArea
-import com.android.identity.storage.EphemeralStorageEngine
-
 val storageEngine = EphemeralStorageEngine()
 val secureArea = SoftwareSecureArea(storageEngine)
 ```
@@ -112,9 +109,9 @@ implementations for StorageEngine and SecureArea for Android devices.
 
 ```kotlin
 val builder = DocumentManager.Builder()
-  .setIdentifier("eudi_wallet_document_manager")
-  .setStorageEngine(storageEngine)
-  .addSecureArea(secureArea)
+    .setIdentifier("eudi_wallet_document_manager")
+    .setStorageEngine(storageEngine)
+    .addSecureArea(secureArea)
 
 val documentManager = builder.build()
 ```
@@ -127,7 +124,7 @@ A document can be in one of the three following states:
   keys that will be used for signing the proof of possession for the issuer.
 - **Deferred** the document is not yet received from the issuer, but the issuer has received the
   document's public key and proof of possession. It also holds some related to the deferred issuance
-  process, that can be used for the completion of issuance.
+  process that can be used for the completion of issuance.
 - **Issued** the document is issued and contains the data received from the issuer
 
 The following diagram depicts the class hierarchy of the Document classes:
@@ -181,7 +178,7 @@ documents of mso_mdoc format of a specific docType:
 
 ```kotlin
 val documents = documentManager.getDocuments { document ->
-  (document.format as MsoMdocFormat).docType == "eu.europa.ec.eudi.pid.1"
+    (document.format as MsoMdocFormat).docType == "eu.europa.ec.eudi.pid.1"
 }
 ```
 
@@ -196,11 +193,11 @@ To delete a document, use the following code snippet:
 
 ```kotlin
 try {
-  val documentId = "some_document_id"
-  val deleteResult = documentManager.deleteDocumentById(documentId)
-  deleteResult.getOrThrow()
+    val documentId = "some_document_id"
+    val deleteResult = documentManager.deleteDocumentById(documentId)
+    deleteResult.getOrThrow()
 } catch (e: Throwable) {
-  // Handle the exception
+    // Handle the exception
 }
 ```
 
@@ -222,56 +219,67 @@ the DocumentManager.
 
 ```kotlin
 try {
-  // create a new document
-  // Construct the CreateDocumentSettings that will be used to create the key
-  // for the document.
-  val createSettings = CreateDocumentSettings(
-    secureAreaIdentifier = secureArea.identifier,
-    createKeySettings = SoftwareCreateKeySettings.Builder().build()
-  )
-  val createDocumentResult = documentManager.createDocument(
-    format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-    createSettings = createSettings
-  )
-  val unsignedDocument = createDocumentResult.getOrThrow()
-  val publicKeyBytes = unsignedDocument.publicKeyCoseBytes
+    // create a new document
+    // Construct the CreateDocumentSettings that will be used to create the key
+    // for the document.
+    val createSettings = CreateDocumentSettings(
+        secureAreaIdentifier = secureArea.identifier,
+        createKeySettings = SoftwareCreateKeySettings.Builder().build()
+    )
+    
+    // Hypothetical document metadata received from issuer or config
+    val documentMetaData = getDocumentMetadataFromIssuer("eu.europa.ec.eudi.pid.1")
+    
+    val createDocumentResult = documentManager.createDocument(
+        format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
+        createSettings = createSettings,
+        documentMetaData = documentMetaData  // Optional parameter with display information, claims, etc.
+    )
+    val unsignedDocument = createDocumentResult.getOrThrow()
+    val publicKeyBytes = unsignedDocument.publicKeyCoseBytes
 
-  // prepare keyUnlockData to unlock the key
-  // probably prompt the user to enter the passphrase
-  // or use any other method to unlock the key
-  // here we use SoftwareKeyUnlockData as an example
-  // provided by the identity-credential library
-  val keyUnlockData = SoftwareKeyUnlockData(
-    passphrase = "passphrase required to unlock the key"
-  )
-  // proof of key possession
-  // Sign the documents public key with the private key
-  // before sending it to the issuer
-  val signatureResult =
-    unsignedDocument.sign(publicKeyBytes, keyUnlockData = keyUnlockData)
-  val signature = signatureResult.getOrThrow().toCoseEncoded()
+    // prepare keyUnlockData to unlock the key
+    // probably prompt the user to enter the passphrase
+    // or use any other method to unlock the key
+    // here we use SoftwareKeyUnlockData as an example
+    // provided by the identity-credential library
+    val keyUnlockData = SoftwareKeyUnlockData(
+        passphrase = "passphrase required to unlock the key"
+    )
+    // proof of key possession
+    // Sign the documents public key with the private key
+    // before sending it to the issuer
+    val signatureResult =
+        unsignedDocument.sign(publicKeyBytes, keyUnlockData = keyUnlockData)
+    val signature = signatureResult.getOrThrow().toCoseEncoded()
 
-  // send the public key and the signature to the issuer
-  // and get the document data
-  val documentData = sendToIssuer(
-    publicKeyCoseBytes = publicKeyBytes,
-    signatureCoseBytes = signature
-  )
+    // send the public key and the signature to the issuer
+    // and get the document data
+    val documentData = sendToIssuer(
+        publicKeyCoseBytes = publicKeyBytes,
+        signatureCoseBytes = signature
+    )
 
-  // store the issued document with the document data received from the issuer
-  val storeResult =
-    documentManager.storeIssuedDocument(unsignedDocument, documentData)
+    // store the issued document with the document data received from the issuer
+    val storeResult =
+        documentManager.storeIssuedDocument(unsignedDocument, documentData)
 
-  // get the issued document
-  val issuedDocument = storeResult.getOrThrow()
+    // get the issued document
+    val issuedDocument = storeResult.getOrThrow()
 } catch (e: Throwable) {
-  // Handle the exception
+    // Handle the exception
 }
 
 // ...
 
 fun sendToIssuer(publicKeyCoseBytes: ByteArray, signatureCoseBytes: ByteArray): ByteArray {
-  TODO("Send publicKey and proof of possession signature to issuer and retrieve document's data")
+    TODO("Send publicKey and proof of possession signature to issuer and retrieve document's data")
+}
+
+// Helper function to get document metadata (implementation details omitted)
+fun getDocumentMetadataFromIssuer(docType: String): DocumentMetaData? {
+    // In a real implementation, this would retrieve metadata from an issuer or configuration
+    return null  // Return null if metadata is unavailable
 }
 ```
 
@@ -311,22 +319,22 @@ load sample documents:
 
 ```kotlin
 val sampleDocumentManager = SampleDocumentManager.Builder()
-  .setDocumentManager(documentManager)
-  .build()
+    .setDocumentManager(documentManager)
+    .build()
 
 val sampleMdocDocuments: ByteArray = readFileWithSampleData()
 
 val createSettings = CreateDocumentSettings(
-  secureAreaIdentifier = secureArea.identifier,
-  createKeySettings = SoftwareCreateKeySettings.Builder().build()
+    secureAreaIdentifier = secureArea.identifier,
+    createKeySettings = SoftwareCreateKeySettings.Builder().build()
 )
 val loadResult = sampleDocumentManager.loadMdocSampleDocuments(
-  sampleData = sampleMdocDocuments,
-  createSettings = createSettings,
-  documentNamesMap = mapOf(
-    "eu.europa.ec.eudi.pid.1" to "EU PID",
-    "org.iso.18013.5.1.mDL" to "mDL"
-  )
+    sampleData = sampleMdocDocuments,
+    createSettings = createSettings,
+    documentNamesMap = mapOf(
+        "eu.europa.ec.eudi.pid.1" to "EU PID",
+        "org.iso.18013.5.1.mDL" to "mDL"
+    )
 )
 
 val documentIds: List<DocumentId> = loadResult.getOrThrow()
@@ -361,11 +369,59 @@ IssuerSignedItem = {
 }
 ```
 
+### Document metadata
+
+The library provides support for document metadata through the `DocumentMetaData` class. This metadata includes display information, claim details, and issuer information that can enhance the user experience when presenting documents.
+
+#### DocumentMetaData structure
+
+The `DocumentMetaData` class contains:
+
+- `documentConfigurationIdentifier`: Unique identifier for the document configuration
+- `display`: List of display properties (name, logo, colors, etc.) for different locales
+- `claims`: Optional metadata about document claims, including display properties and whether they're mandatory
+- `credentialIssuerIdentifier`: Identifier for the credential issuer
+- `issuerDisplay`: Optional display properties for the issuer
+
+#### Working with DocumentMetaData
+
+You can access document metadata through the `metadata` property on any Document object:
+
+```kotlin
+val document = documentManager.getDocumentById("some_document_id")
+val metadata = document?.metadata
+
+// Check if the document has display information in the user's preferred locale
+val userLocale = Locale.getDefault()
+val localizedDisplay = metadata?.display?.find { it.locale == userLocale }
+
+// Access claim metadata
+metadata?.claims?.forEach { claim ->
+    // Process each claim with its display information
+    val claimName = claim.display.firstOrNull()?.name ?: "Unknown"
+    val isMandatory = claim.mandatory ?: false
+    // Use this information in your UI
+}
+```
+
+#### Creating and parsing DocumentMetaData
+
+You can create `DocumentMetaData` from JSON or convert it to JSON:
+
+```kotlin
+// Parse from JSON
+val jsonMetadata = """{"documentConfigurationIdentifier":"eu.europa.ec.eudi.pid.1", ...}"""
+val metadata = DocumentMetaData.fromJson(jsonMetadata).getOrThrow()
+
+// Convert to JSON
+val jsonString = metadata.toJson()
+```
+
+This metadata can be used to enhance the document presentation in your wallet UI, providing localized display names, visual elements, and structured information about the document's claims.
+
 ### Other features
 
 ```kotlin
-import org.json.JSONObject
-
 val document = documentManager.getDocumentById("some_document_id") as? IssuedDocument
 val documentDataAsJson: JSONObject? = document?.nameSpacedDataJSONObject
 ```
