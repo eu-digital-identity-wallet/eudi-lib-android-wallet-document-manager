@@ -15,8 +15,8 @@ Represents the claims of a document in the SdJwtVc format.
 
 ## Types
 
-| Name                             | Summary                                                 |
-|----------------------------------|---------------------------------------------------------|
+| Name | Summary |
+|---|---|
 | [Companion](-companion/index.md) | [androidJvm]<br>object [Companion](-companion/index.md) |
 
 ## Properties
