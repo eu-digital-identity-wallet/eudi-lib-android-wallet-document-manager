@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 European Commission
+ * Copyright (c) 2024-2025 European Commission
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,24 @@ package eu.europa.ec.eudi.wallet.document.internal
 
 import com.upokecenter.cbor.CBORObject
 import com.upokecenter.cbor.CBORType
-import eu.europa.ec.eudi.wallet.document.NameSpace
-import org.multipaz.document.NameSpacedData
 import java.util.Base64
 
+/**
+ * Decodes a ByteArray to a CBORObject and extracts any embedded CBOR object.
+ *
+ * @return The decoded CBOR object, with any tag-24 wrapping removed.
+ */
 @JvmSynthetic
 internal fun ByteArray.getEmbeddedCBORObject(): CBORObject {
     return CBORObject.DecodeFromBytes(this).getEmbeddedCBORObject()
 }
 
+/**
+ * Extracts an embedded CBOR object if this object has tag 24.
+ * Tag 24 indicates that the byte string contains an encoded CBOR data item.
+ *
+ * @return The embedded CBOR object if this has tag 24, or this object itself otherwise.
+ */
 @JvmSynthetic
 internal fun CBORObject.getEmbeddedCBORObject(): CBORObject {
     return if (HasTag(24)) {
@@ -36,16 +45,41 @@ internal fun CBORObject.getEmbeddedCBORObject(): CBORObject {
     }
 }
 
+/**
+ * Wraps a ByteArray with CBOR tag 24 and encodes it.
+ * Tag 24 indicates that the byte string contains an encoded CBOR data item.
+ *
+ * @return The encoded ByteArray with tag 24 applied.
+ */
 @JvmSynthetic
 internal fun ByteArray.withTag24(): ByteArray {
     return CBORObject.FromObjectAndTag(this, 24).EncodeToBytes()
 }
 
+/**
+ * Converts a CBOR-encoded ByteArray to a native Kotlin object.
+ *
+ * @return The decoded value as a native Kotlin type (Map, List, String, Number, Boolean, or null).
+ */
 @JvmSynthetic
 internal fun ByteArray.toObject(): Any? {
     return CBORObject.DecodeFromBytes(this).parse()
 }
 
+/**
+ * Parses a CBORObject to a native Kotlin object.
+ *
+ * Handles conversion of:
+ * - null values
+ * - boolean values
+ * - numeric values (as Int, Long, or Double)
+ * - byte strings (as Base64URL strings or parsed objects if tagged)
+ * - text strings
+ * - arrays (as Lists)
+ * - maps (as Map associations)
+ *
+ * @return The CBORObject converted to an appropriate native Kotlin type.
+ */
 private fun CBORObject.parse(): Any? = when {
     isNull -> null
     isTrue -> true
@@ -69,25 +103,3 @@ private fun CBORObject.parse(): Any? = when {
     }
 }
 
-@JvmSynthetic
-internal fun CBORObject.toDigestIdMapping(): Map<NameSpace, List<ByteArray>> {
-    return entries.associate { (nameSpace, issuerSignedItems) ->
-        nameSpace.AsString() to issuerSignedItems.values.map { it.EncodeToBytes() }
-    }
-}
-
-@JvmSynthetic
-internal fun CBORObject.asNameSpacedData(): NameSpacedData {
-    val builder = NameSpacedData.Builder()
-    keys.forEach { nameSpace ->
-        this[nameSpace].values.forEach { v ->
-            val el = v.getEmbeddedCBORObject()
-            builder.putEntry(
-                nameSpace.AsString(),
-                el["elementIdentifier"].AsString(),
-                el["elementValue"].EncodeToBytes(),
-            )
-        }
-    }
-    return builder.build()
-}

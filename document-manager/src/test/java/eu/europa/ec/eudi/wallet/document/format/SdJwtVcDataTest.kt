@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2025 European Commission
- *
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,7 +20,7 @@ import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps.recreateClaimsAndDisclosuresPerClaim
 import eu.europa.ec.eudi.sdjwt.SdJwt
 import eu.europa.ec.eudi.wallet.document.getResourceAsText
-import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetaData
+import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import kotlinx.serialization.json.JsonObject
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -33,9 +33,9 @@ class SdJwtVcDataTest {
             .replace("\n", "")
             .replace("\r", "")
 
-    private val metadata: IssuerMetaData
+    private val metadata: IssuerMetadata
         get() = getResourceAsText("sample_sd_jwt_vc_metadata.json")
-            .let { IssuerMetaData.fromJson(it) }
+            .let { IssuerMetadata.fromJson(it) }
             .getOrThrow()
 
 

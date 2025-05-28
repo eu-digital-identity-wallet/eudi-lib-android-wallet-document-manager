@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 European Commission
+ * Copyright (c) 2024-2025 European Commission
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,35 @@
 
 package eu.europa.ec.eudi.wallet.document
 
+import eu.europa.ec.eudi.wallet.document.CreateDocumentSettings.CredentialPolicy
 import org.multipaz.securearea.CreateKeySettings
 
 /**
- * Implementation of [CreateDocumentSettings]
- * @property secureAreaIdentifier the secure area identifier where the document's keys should be stored
- * @property createKeySettings the create key settings that accompanies the provided secure area
+ * Implementation of [CreateDocumentSettings] interface that provides configuration for document creation.
+ *
+ * This class encapsulates all necessary parameters required when creating digital documents
+ * through the [DocumentManager.createDocument] method. It specifies where document keys should be
+ * stored, how they should be created, and defines credential management policies.
+ *
+ * @property secureAreaIdentifier The secure area identifier where the document's keys should be stored.
+ *                               This identifier must reference an existing secure area in the system.
+ * @property createKeySettings The configuration settings for key creation within the specified secure area.
+ *                            These settings control properties such as key algorithms, sizes, and other
+ *                            security parameters required by the secure area implementation.
+ * @property numberOfCredentials The number of credentials to create for this document. Multiple credentials
+ *                              can be used for load balancing or redundancy. Defaults to 1 if not specified.
+ *                              Must be greater than 0.
+ * @property credentialPolicy Defines how credentials are managed after use. Controls whether credentials are
+ *                           used once and deleted or rotated through multiple uses.
+ *                           Defaults to [CredentialPolicy.RotateUse].
+ *
+ * @see CreateDocumentSettings The interface this class implements
+ * @see DocumentManager For usage in document creation operations
+ * @see CredentialPolicy For available credential management policies
  */
 data class CreateDocumentSettingsImpl(
     override val secureAreaIdentifier: String,
     override val createKeySettings: CreateKeySettings,
+    override val numberOfCredentials: Int = 1,
+    override val credentialPolicy: CredentialPolicy = CredentialPolicy.RotateUse,
 ) : CreateDocumentSettings

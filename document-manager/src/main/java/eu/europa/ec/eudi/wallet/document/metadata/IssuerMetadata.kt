@@ -16,7 +16,7 @@
 
 package eu.europa.ec.eudi.wallet.document.metadata
 
-import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetaData.Companion.fromJson
+import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata.Companion.fromJson
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -39,7 +39,7 @@ import java.util.Locale
  * @property issuerDisplay the display properties of the issuer that issued the document
  */
 @Serializable
-data class IssuerMetaData(
+data class IssuerMetadata(
     val documentConfigurationIdentifier: String,
     val display: List<Display>,
     val claims: List<Claim>?,
@@ -68,24 +68,24 @@ data class IssuerMetaData(
         }
 
         /**
-         * Create a [IssuerMetaData] object from a JSON string.
+         * Create a [IssuerMetadata] object from a JSON string.
          * @param json the JSON string representation of the object
-         * @return the [IssuerMetaData] object
-         * @throws IllegalArgumentException if the decoded input cannot be represented as a valid instance of [IssuerMetaData]
+         * @return the [IssuerMetadata] object
+         * @throws IllegalArgumentException if the decoded input cannot be represented as a valid instance of [IssuerMetadata]
          * @throws SerializationException if the given JSON string is not a valid JSON input
          */
-        fun fromJson(json: String): Result<IssuerMetaData> =
+        fun fromJson(json: String): Result<IssuerMetadata> =
             runCatching { Json.decodeFromString(serializer(), json) }
 
         /**
-         * Create a [IssuerMetaData] object from a byte array of json string.
+         * Create a [IssuerMetadata] object from a byte array of json string.
          * @param jsonByteArray the byte array representation of the object
-         * @return the [IssuerMetaData] object
+         * @return the [IssuerMetadata] object
          * @see [fromJson]
-         * @throws IllegalArgumentException if the decoded input cannot be represented as a valid instance of [IssuerMetaData]
+         * @throws IllegalArgumentException if the decoded input cannot be represented as a valid instance of [IssuerMetadata]
          * @throws SerializationException if the given bytearray of JSON string is not a valid JSON input
          */
-        internal fun fromByteArray(jsonByteArray: ByteArray): Result<IssuerMetaData> =
+        internal fun fromByteArray(jsonByteArray: ByteArray): Result<IssuerMetadata> =
             fromJson(jsonByteArray.decodeToString())
     }
 

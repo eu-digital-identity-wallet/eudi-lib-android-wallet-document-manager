@@ -24,7 +24,7 @@ import eu.europa.ec.eudi.wallet.document.NameSpacedValues
 import eu.europa.ec.eudi.wallet.document.NameSpaces
 import eu.europa.ec.eudi.wallet.document.internal.parse
 import eu.europa.ec.eudi.wallet.document.internal.toObject
-import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetaData
+import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import org.multipaz.cbor.Cbor
 import org.multipaz.document.NameSpacedData
 
@@ -37,7 +37,7 @@ import org.multipaz.document.NameSpacedData
 sealed interface DocumentData {
     val format: DocumentFormat
     val claims: List<DocumentClaim>
-    val issuerMetadata: IssuerMetaData?
+    val issuerMetadata: IssuerMetadata?
 }
 
 /**
@@ -51,7 +51,7 @@ sealed class DocumentClaim(
     open val identifier: String,
     open val value: Any?,
     open val rawValue: Any?,
-    open val issuerMetadata: IssuerMetaData.Claim? = null
+    open val issuerMetadata: IssuerMetadata.Claim? = null
 )
 
 /**
@@ -67,7 +67,7 @@ sealed class DocumentClaim(
  */
 data class MsoMdocData(
     override val format: MsoMdocFormat,
-    override val issuerMetadata: IssuerMetaData?,
+    override val issuerMetadata: IssuerMetadata?,
     val nameSpacedData: NameSpacedData
 ) : DocumentData {
 
@@ -130,7 +130,7 @@ data class MsoMdocClaim(
     override val identifier: String,
     override val value: Any?,
     override val rawValue: ByteArray,
-    override val issuerMetadata: IssuerMetaData.Claim?,
+    override val issuerMetadata: IssuerMetadata.Claim?,
 ) : DocumentClaim(identifier, value, rawValue, issuerMetadata) {
 
     override fun equals(other: Any?): Boolean {
@@ -168,7 +168,7 @@ data class MsoMdocClaim(
  */
 data class SdJwtVcData(
     override val format: SdJwtVcFormat,
-    override val issuerMetadata: IssuerMetaData?,
+    override val issuerMetadata: IssuerMetadata?,
     val sdJwtVc: String
 ) : DocumentData {
     override val claims: List<SdJwtVcClaim> by lazy {
@@ -241,7 +241,7 @@ data class SdJwtVcClaim(
     override val identifier: String,
     override val value: Any?,
     override val rawValue: String,
-    override val issuerMetadata: IssuerMetaData.Claim?,
+    override val issuerMetadata: IssuerMetadata.Claim?,
     val selectivelyDisclosable: Boolean,
     val children: List<SdJwtVcClaim>
 ) : DocumentClaim(identifier, value, rawValue, issuerMetadata)
@@ -254,7 +254,7 @@ internal class MutableSdJwtClaim(
     val identifier: String,
     val value: Any?,
     val rawValue: String,
-    val metadata: IssuerMetaData.Claim?,
+    val metadata: IssuerMetadata.Claim?,
     val selectivelyDisclosable: Boolean,
     val children: MutableList<MutableSdJwtClaim> = mutableListOf()
 ) {

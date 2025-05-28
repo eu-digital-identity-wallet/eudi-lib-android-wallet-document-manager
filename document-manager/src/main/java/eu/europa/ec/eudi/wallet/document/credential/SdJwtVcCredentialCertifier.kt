@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,62 +14,40 @@
  * limitations under the License.
  */
 
-package eu.europa.ec.eudi.wallet.document.internal
+package eu.europa.ec.eudi.wallet.document.credential
 
 import com.nimbusds.jose.jwk.JWK
 import com.nimbusds.jose.jwk.KeyConverter
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
-import eu.europa.ec.eudi.wallet.document.UnsignedDocument
-import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
+import eu.europa.ec.eudi.sdjwt.vc.KtorHttpClientFactory
+import eu.europa.ec.eudi.wallet.document.internal.sdJwtVcString
 import io.ktor.client.HttpClient
-import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
+import org.multipaz.credential.SecureAreaBoundCredential
 import org.multipaz.crypto.javaPublicKey
-import org.multipaz.document.Document
-import org.multipaz.securearea.CreateKeySettings
-import org.multipaz.securearea.SecureArea
 import org.multipaz.util.Logger
 import kotlin.time.Duration.Companion.days
 
-@JvmSynthetic
-internal fun SdJwtVcFormat.createCredential(
-    domain: String,
-    identityDocument: Document,
-    secureArea: SecureArea,
-    createKeySettings: CreateKeySettings,
-): SdJwtVcCredential {
-    return runBlocking {
-        SdJwtVcCredential.create(
-            document = identityDocument,
-            asReplacementForIdentifier = null,
-            domain = domain,
-            secureArea = secureArea,
-            vct = vct,
-            createKeySettings = createKeySettings,
-        )
-    }
-}
-
-@JvmSynthetic
-internal fun SdJwtVcFormat.storeIssuedDocument(
-    unsignedDocument: UnsignedDocument,
-    identityDocument: Document,
-    data: ByteArray,
-    checkDevicePublicKey: Boolean,
-    ktorHttpClientFactory: (() -> HttpClient)? = null
-) {
-    runBlocking {
+class SdJwtVcCredentialCertifier(
+    var ktorHttpClientFactory: KtorHttpClientFactory = { HttpClient() }
+) : CredentialCertification {
+    override suspend fun certifyCredential(
+        credential: SecureAreaBoundCredential,
+        issuedCredential: IssuerProvidedCredential,
+        forceKeyCheck: Boolean
+    ) {
+        val data = issuedCredential.data
         DefaultSdJwtOps.SdJwtVcVerifier.usingX5cOrIssuerMetadata(
-            httpClientFactory = { ktorHttpClientFactory?.invoke() ?: HttpClient() },
+            httpClientFactory = ktorHttpClientFactory,
             x509CertificateTrust = { certificateChain ->
                 // TODO Check the certificate path
                 true
-            },
+            }
         ).verify(data.sdJwtVcString).onFailure {
             Logger.w("SdJwtVcVerifier", "Invalid SD-JWT VC with error: ${it.message}", it)
             // throw IllegalArgumentException("Invalid SD-JWT VC with error: ${it.message}", it)
@@ -80,12 +58,13 @@ internal fun SdJwtVcFormat.storeIssuedDocument(
         }
 
         val (_, claims) = sdJwt.jwt
+
         claims["cnf"]?.let {
-            val jwk = JWK.parse(Json.decodeFromString<JsonObject>(it.toString())["jwk"].toString())
+            val jwk = JWK.parse(Json.Default.decodeFromString<JsonObject>(it.toString())["jwk"].toString())
             val sdjwtVcPk = KeyConverter.toJavaKeys(listOf(jwk)).first()
                 ?: throw IllegalArgumentException("Invalid SD-JWT VC")
-            if (unsignedDocument.keyInfo.publicKey.javaPublicKey != sdjwtVcPk) {
-                if (checkDevicePublicKey) {
+            if (credential.secureArea.getKeyInfo(credential.alias).publicKey.javaPublicKey != sdjwtVcPk) {
+                if (forceKeyCheck) {
                     throw IllegalArgumentException("Public key in SD-JWT VC does not match the one in the request")
                 }
             }
@@ -94,14 +73,12 @@ internal fun SdJwtVcFormat.storeIssuedDocument(
         // TODO what to do with validFrom and validUntil if they are not present in the SD-JWT VC
         //  in nbf (or iat if no nbf) and exp claims that are optional
 
-        val nbf = claims["nbf"]?.jsonPrimitive?.longOrNull?.let { Instant.fromEpochSeconds(it) }
-        val iat = claims["iat"]?.jsonPrimitive?.longOrNull?.let { Instant.fromEpochSeconds(it) }
-        val exp = claims["exp"]?.jsonPrimitive?.longOrNull?.let { Instant.fromEpochSeconds(it) }
+        val nbf = claims["nbf"]?.jsonPrimitive?.longOrNull?.let { Instant.Companion.fromEpochSeconds(it) }
+        val iat = claims["iat"]?.jsonPrimitive?.longOrNull?.let { Instant.Companion.fromEpochSeconds(it) }
+        val exp = claims["exp"]?.jsonPrimitive?.longOrNull?.let { Instant.Companion.fromEpochSeconds(it) }
         val validFrom = nbf ?: iat ?: Clock.System.now()
         val validUntil = exp ?: validFrom.plus(30.days)
 
-        identityDocument.getPendingCredentials().forEach { credential ->
-            credential.certify(data, validFrom, validUntil)
-        }
+        credential.certify(data, validFrom, validUntil)
     }
 }

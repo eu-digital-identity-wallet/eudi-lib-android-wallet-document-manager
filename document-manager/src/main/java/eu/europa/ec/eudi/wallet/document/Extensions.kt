@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 European Commission
+ * Copyright (c) 2023-2025 European Commission
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,16 +22,15 @@ import org.json.JSONObject
 
 /**
  * Extension function to convert [IssuedDocument]'s nameSpacedData to [JSONObject]
- * Applicable only when [IssuedDocument.data] is [MsoMdocData]
+ * Applicable only when [IssuedDocument.data] returns [MsoMdocData]
  *
  * @return [JSONObject]
  */
 @get:JvmName("nameSpacedDataAsJSONObject")
 val IssuedDocument.nameSpacedDataJSONObject: JSONObject
-    get() = when (data) {
-        is MsoMdocData -> JSONObject(data.nameSpacedDataDecoded)
-        else -> JSONObject()
-    }
+    get() = (data as? MsoMdocData)?.nameSpacedDataDecoded
+        ?.let { JSONObject(it) }
+        ?: JSONObject()
 
 /**
  * DocumentManager Extension function that returns a list of documents of type [T].

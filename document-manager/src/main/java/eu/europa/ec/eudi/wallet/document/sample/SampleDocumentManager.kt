@@ -22,7 +22,6 @@ import eu.europa.ec.eudi.wallet.document.DocType
 import eu.europa.ec.eudi.wallet.document.DocumentId
 import eu.europa.ec.eudi.wallet.document.DocumentManager
 import eu.europa.ec.eudi.wallet.document.Outcome
-import eu.europa.ec.eudi.wallet.document.sample.SampleDocumentManager.Builder
 
 /**
  * An extension of [DocumentManager] that provides methods to load sample data.

@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2024 European Commission
- *
+ * Copyright (c) 2024-2025 European Commission
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,91 +18,401 @@ package eu.europa.ec.eudi.wallet.document
 
 import eu.europa.ec.eudi.wallet.document.format.DocumentData
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
-import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetaData
+import eu.europa.ec.eudi.wallet.document.format.MsoMdocData
+import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
+import eu.europa.ec.eudi.wallet.document.format.SdJwtVcData
+import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
+import eu.europa.ec.eudi.wallet.document.internal.CredentialPolicyApplier
+import eu.europa.ec.eudi.wallet.document.internal.applicationMetadata
+import eu.europa.ec.eudi.wallet.document.internal.createdAt
+import eu.europa.ec.eudi.wallet.document.internal.documentManagerId
+import eu.europa.ec.eudi.wallet.document.internal.documentName
+import eu.europa.ec.eudi.wallet.document.internal.format
+import eu.europa.ec.eudi.wallet.document.internal.issuedAt
+import eu.europa.ec.eudi.wallet.document.internal.issuerMetaData
+import eu.europa.ec.eudi.wallet.document.internal.sdJwtVcString
+import eu.europa.ec.eudi.wallet.document.internal.toCoseBytes
+import eu.europa.ec.eudi.wallet.document.internal.toEcPublicKey
+import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
+import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.Clock
+import kotlinx.datetime.toJavaInstant
+import kotlinx.datetime.toKotlinInstant
+import org.multipaz.credential.SecureAreaBoundCredential
+import org.multipaz.crypto.EcSignature
+import org.multipaz.document.NameSpacedData
+import org.multipaz.securearea.KeyInfo
+import org.multipaz.securearea.KeyUnlockData
 import org.multipaz.securearea.SecureArea
 import java.time.Instant
 
 /**
- * Represents an Issued Document
- * @property id the document id
- * @property name the document name
- * @property format the document format
- * @property documentManagerId the [DocumentManager.identifier] related to this document
- * @property isCertified whether the document is certified
- * @property keyAlias the key alias
- * @property secureArea the secure area
- * @property createdAt the creation date
- * @property issuerMetaData the document metadata
- * @property issuedAt the issuance date
- * @property issuerProvidedData the issuer provided data
- * @property data the document data (format specific)
+ * Represents an Issued Document in the EUDI Wallet.
+ *
+ * This class models a document that has been issued and stored in the wallet. It provides methods
+ * to access the document's data, verify its validity, and perform cryptographic operations using
+ * the document's credentials. Documents follow a specific credential policy that determines how
+ * credentials are used and managed after cryptographic operations.
+ *
+ * The document's credentials are managed according to the specified [credentialPolicy],
+ * which can either rotate credentials after use or enforce one-time use.
+ *
+ * @property id The unique identifier of the document
+ * @property name The human-readable name of the document
+ * @property format The format specification of the document (e.g., MsoMdoc, SdJwtVc)
+ * @property documentManagerId The identifier of the [DocumentManager] that manages this document
+ * @property createdAt The timestamp when the document was created in the wallet
+ * @property issuedAt The timestamp when the document was issued by the issuer
+ * @property baseDocument The underlying document implementation
+ * @property credentialPolicy The policy that determines how credentials are managed after use
+ * @property issuerMetadata The document metadata provided by the issuer
+ * @property data The document data in its format-specific representation
  */
-data class IssuedDocument(
-    override val id: DocumentId,
-    override val name: String,
-    override val documentManagerId: String,
-    override val isCertified: Boolean,
-    override val keyAlias: String,
-    override val secureArea: SecureArea,
-    override val createdAt: Instant,
-    val validFrom: Instant,
-    val validUntil: Instant,
-    val issuedAt: Instant,
-    val issuerProvidedData: ByteArray,
-    val data: DocumentData,
+class IssuedDocument(
+    internal val baseDocument: org.multipaz.document.Document,
 ) : Document {
 
     override val format: DocumentFormat
-        get() = data.format
+        get() = baseDocument.format
+    override val id: DocumentId
+        get() = baseDocument.identifier
+    override val name: String
+        get() = baseDocument.documentName
+    override val documentManagerId: String
+        get() = baseDocument.documentManagerId
+    override val createdAt: Instant
+        get() = baseDocument.createdAt.toJavaInstant()
+    override val issuerMetadata: IssuerMetadata?
+        get() = baseDocument.issuerMetaData
+    val issuedAt: Instant
+        get() = baseDocument.issuedAt.toJavaInstant()
 
-    override val issuerMetaData: IssuerMetaData?
-        get() = data.issuerMetadata
+    val data: DocumentData
+        get() {
+            val issuerProvidedData = baseDocument.applicationMetadata.issuerProvidedData
+            requireNotNull(issuerProvidedData) { "Issuer provided data not found" }
+
+            return when (val currentFormat = format) {
+                is MsoMdocFormat -> MsoMdocData(
+                    format = currentFormat,
+                    nameSpacedData = NameSpacedData.fromIssuerProvidedData(issuerProvidedData),
+                    issuerMetadata = issuerMetadata
+                )
+
+                is SdJwtVcFormat -> SdJwtVcData(
+                    format = currentFormat,
+                    sdJwtVc = issuerProvidedData.sdJwtVcString,
+                    issuerMetadata = issuerMetadata
+                )
+            }
+        }
 
     /**
-     * Check if the document is valid at a given time, based on the validFrom and validUntil fields
-     * @param time the time to check
-     * @return true if the document is valid at the given time, false otherwise
+     * The credential policy associated with this document.
+     *
+     * This property determines how credentials are managed after cryptographic operations:
+     * - [CreateDocumentSettings.CredentialPolicy.OneTimeUse]: The credential is deleted after use
+     * - [CreateDocumentSettings.CredentialPolicy.RotateUse]: The credential's usage count is incremented after use
+     *
+     * @see CreateDocumentSettings.CredentialPolicy
      */
+    val credentialPolicy: CreateDocumentSettings.CredentialPolicy
+        get() = baseDocument.applicationMetadata.credentialPolicy
+
+    /**
+     * Retrieves all valid credentials associated with this document.
+     *
+     * This method filters the document's credentials based on several criteria:
+     * - Only certified credentials bound to a secure area
+     * - Only credentials that are not invalidated
+     * - Only credentials that belong to the current document manager
+     * - For OneTimeUse policy, only credentials that haven't been used (usageCount == 0)
+     * - For RotateUse policy, all valid credentials
+     *
+     * @return A list of valid [SecureAreaBoundCredential] objects
+     */
+    suspend fun getCredentials(): List<SecureAreaBoundCredential> {
+        return baseDocument.getCertifiedCredentials()
+            .filterIsInstance<SecureAreaBoundCredential>()
+            .filterNot { it.secureArea.getKeyInvalidated(it.alias) }
+            .filter { it.domain == documentManagerId }
+            .filter {
+                when (credentialPolicy) {
+                    CreateDocumentSettings.CredentialPolicy.RotateUse -> true
+                    CreateDocumentSettings.CredentialPolicy.OneTimeUse -> it.usageCount == 0
+                }
+            }
+    }
+
+    /**
+     * Finds the most appropriate credential for the current time or a specified time.
+     *
+     * This method selects a valid credential based on the following criteria:
+     * 1. The credential must be valid at the specified time (now by default)
+     * 2. Among valid credentials, the one with the lowest usage count is selected
+     *
+     * This approach ensures optimal credential rotation when using the RotateUse policy
+     * and helps prevent unnecessary credential invalidation.
+     *
+     * @param now Optional timestamp for which to find a valid credential. If null, the current time is used.
+     * @return The most appropriate credential, or null if no valid credential is found
+     */
+    suspend fun findCredential(now: Instant? = null): SecureAreaBoundCredential? {
+        var candidate: SecureAreaBoundCredential? = null
+        val now = now?.toKotlinInstant() ?: Clock.System.now()
+        getCredentials()
+            .filter { now >= it.validFrom && now <= it.validUntil }
+            .forEach { credential ->
+                // If we already have a candidate, prefer this one if its usage count is lower
+                candidate?.let { candidateCredential ->
+                    if (credential.usageCount < candidateCredential.usageCount) {
+                        candidate = credential
+                    }
+                } ?: run {
+                    candidate = credential
+                }
+
+            }
+        return candidate
+    }
+
+    override suspend fun credentialsCount(): Int {
+        return getCredentials().size
+    }
+
+    /**
+     * Retrieves the start date from which the document's credential is valid.
+     *
+     * This method safely retrieves the validity start date from the document's current
+     * credential using the credential policy. Like other credential operations, this method
+     * applies the document's credential usage policy after accessing the credential.
+     *
+     * @return A [Result] containing the validity start date as an [Instant] if successful,
+     *         or an exception if no valid credential is found
+     */
+    suspend fun getValidFrom() = runCatching {
+        findCredential()?.validFrom?.toJavaInstant()
+            ?: throw IllegalStateException("No valid credential found")
+    }
+
+    /**
+     * Retrieves the end date until which the document's credential is valid.
+     *
+     * This method safely retrieves the validity end date from the document's current
+     * credential using the credential policy. Like other credential operations, this method
+     * applies the document's credential usage policy after accessing the credential.
+     *
+     * @return A [Result] containing the validity end date as an [Instant] if successful,
+     *         or an exception if no valid credential is found
+     */
+    suspend fun getValidUntil() = runCatching {
+        findCredential()?.validUntil?.toJavaInstant()
+            ?: throw IllegalStateException("No valid credential found")
+    }
+
+    /**
+     * Checks if the document is certified.
+     *
+     * A document is certified if it has no pending credentials, meaning all
+     * credentials have been signed by an issuer.
+     *
+     * @return true if the document is certified, false otherwise
+     */
+    suspend fun isCertified(): Boolean {
+        return baseDocument.getPendingCredentials().isEmpty()
+    }
+
+    /**
+     * Performs an operation with a valid credential and handles usage policy enforcement.
+     *
+     * This method finds a valid credential, executes the provided block with it,
+     * and then applies the appropriate credential policy (either incrementing usage count
+     * for RotateUse or deleting the credential for OneTimeUse).
+     *
+     * @param T The return type of the operation
+     * @param credentialContext The suspend function to execute with the credential as receiver
+     * @return A [Result] containing the operation result or an exception if the operation failed
+     */
+    suspend fun <T> consumingCredential(credentialContext: suspend SecureAreaBoundCredential.() -> T): Result<T> {
+        return runCatching {
+            val credential = findCredential() ?: throw IllegalStateException("Credential not found")
+            val result = credentialContext.invoke(credential)
+
+            // Use the internal policy applier to apply the policy
+            val policyApplier = CredentialPolicyApplier.from(credentialPolicy)
+            policyApplier.apply(baseDocument, credential)
+
+            result
+        }
+    }
+
+    /**
+     * Signs data with a document credential and applies the credential policy.
+     *
+     * This method finds a valid credential, uses it to sign the provided data,
+     * and then applies the document's credential policy to the used credential.
+     *
+     * @param dataToSign The byte array containing the data to be signed
+     * @param keyUnlockData Optional data required to unlock the key if it's protected
+     * @return A [Result] containing the [EcSignature] or an exception if the operation failed
+     */
+    suspend fun signConsumingCredential(
+        dataToSign: ByteArray,
+        keyUnlockData: KeyUnlockData? = null
+    ): Result<EcSignature> {
+        return consumingCredential {
+            secureArea.sign(
+                alias = alias,
+                dataToSign = dataToSign,
+                keyUnlockData = keyUnlockData
+            )
+        }
+    }
+
+    /**
+     * Performs key agreement with a document credential and applies the credential policy.
+     *
+     * This method finds a valid credential, uses it to establish a shared secret with
+     * the provided public key, and then applies the document's credential policy to the
+     * used credential. This implementation follows the document's credential policy:
+     * for OneTimeUse, the credential is deleted after use, and for RotateUse, the credential's
+     * usage count is incremented.
+     *
+     * @param otherPublicKey The public key of the other party as a byte array
+     * @param keyUnlockData Optional data required to unlock the key if it's protected
+     * @return A [Result] containing the [SharedSecret] or an exception if the operation failed
+     */
+    suspend fun keyAgreementConsumingCredential(
+        otherPublicKey: ByteArray,
+        keyUnlockData: KeyUnlockData? = null
+    ): Result<SharedSecret> {
+        return consumingCredential {
+            secureArea.keyAgreement(
+                alias = alias,
+                otherKey = otherPublicKey.toEcPublicKey,
+                keyUnlockData = keyUnlockData
+            )
+        }
+    }
+
+    // Deprecated properties and methods moved to the end of the file
+
+    @Deprecated("Use method isCertified()")
+    override val isCertified: Boolean
+        get() = runBlocking { isCertified() }
+
+    @Deprecated("Use findCredential()?.secureArea instead")
+    override val secureArea: SecureArea
+        get() = runBlocking {
+            findCredential()?.secureArea ?: throw IllegalStateException("Credential not found")
+        }
+
+    @Deprecated("Use findCredential()?.alias instead")
+    override val keyAlias: String
+        get() = runBlocking {
+            findCredential()?.alias ?: throw IllegalStateException("Credential not found")
+        }
+
+    @Deprecated("Use findCredential()?.isKeyInvalidated instead")
+    override val isKeyInvalidated: Boolean
+        get() = runBlocking {
+            findCredential()?.isInvalidated() ?: throw IllegalStateException("Credential not found")
+        }
+
+    @Deprecated("Use findCredential()?.secureArea instead to get KeyInfo")
+    override val keyInfo: KeyInfo
+        get() = runBlocking {
+            findCredential()?.let { credential ->
+                credential.secureArea.getKeyInfo(credential.alias)
+            } ?: throw IllegalStateException("Credential not found")
+        }
+
+    @Deprecated("Use findCredential()?.secureArea instead to get KeyInfo")
+    override val publicKeyCoseBytes: ByteArray
+        get() = keyInfo.publicKey.toCoseBytes
+
+    @Deprecated("Use findCredential()?.issuerProvidedData instead")
+    val issuerProvidedData: ByteArray
+        get() = runBlocking {
+            findCredential()?.issuerProvidedData
+                ?: throw IllegalStateException("Credential not found")
+        }
+
+    @Deprecated("Use getValidFrom() instead")
+    val validFrom: Instant
+        get() = runBlocking {
+            findCredential()?.validFrom?.toJavaInstant()
+                ?: throw IllegalStateException("Credential not found")
+
+        }
+
+    @Deprecated("Use getValidUntil() instead")
+    val validUntil: Instant
+        get() = runBlocking {
+            findCredential()?.validUntil?.toJavaInstant()
+                ?: throw IllegalStateException("Credential not found")
+        }
+
+    /**
+     * Checks if the document is valid at a specified point in time.
+     *
+     * A document is considered valid if it has at least one valid credential
+     * at the specified time according to the findCredential criteria.
+     *
+     * @param time The timestamp at which to check validity
+     * @return true if the document is valid at the specified time, false otherwise
+     */
+    @Deprecated("Use findCredential() instead to check validity at a specific time. If findCredential() returns null, the document is not valid.")
     fun isValidAt(time: Instant): Boolean {
-        return time in validFrom..validUntil
+        return runBlocking { findCredential(now = time) != null }
     }
 
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is IssuedDocument) return false
-
-        if (id != other.id) return false
-        if (name != other.name) return false
-        if (documentManagerId != other.documentManagerId) return false
-        if (isCertified != other.isCertified) return false
-        if (keyAlias != other.keyAlias) return false
-        if (secureArea != other.secureArea) return false
-        if (createdAt != other.createdAt) return false
-        if (issuerMetaData != other.issuerMetaData) return false
-        if (validFrom != other.validFrom) return false
-        if (validUntil != other.validUntil) return false
-        if (issuedAt != other.issuedAt) return false
-        if (data != other.data) return false
-        if (!issuerProvidedData.contentEquals(other.issuerProvidedData)) return false
-
-        return true
+    /**
+     * Signs data using the document's cryptographic key.
+     *
+     * This method uses the document's credential to create a cryptographic signature
+     * for the provided data. After signing, it applies the document's credential policy.
+     *
+     * @param dataToSign The byte array containing the data to be signed
+     * @param keyUnlockData Optional data required to unlock the key if it's protected
+     * @return An [Outcome] containing either the [EcSignature] or a failure reason
+     */
+    @Deprecated("use signConsumingCredential method instead")
+    fun sign(
+        dataToSign: ByteArray,
+        keyUnlockData: KeyUnlockData? = null
+    ): Outcome<EcSignature> {
+        return runBlocking {
+            signConsumingCredential(dataToSign, keyUnlockData)
+        }.fold(
+            onSuccess = { Outcome.success(it) },
+            onFailure = { Outcome.failure(it) }
+        )
     }
 
-    override fun hashCode(): Int {
-        var result = id.hashCode()
-        result = 31 * result + name.hashCode()
-        result = 31 * result + documentManagerId.hashCode()
-        result = 31 * result + isCertified.hashCode()
-        result = 31 * result + keyAlias.hashCode()
-        result = 31 * result + secureArea.hashCode()
-        result = issuerMetaData?.let { 31 * result + it.hashCode() } ?: result
-        result = 31 * result + createdAt.hashCode()
-        result = 31 * result + validFrom.hashCode()
-        result = 31 * result + validUntil.hashCode()
-        result = 31 * result + issuedAt.hashCode()
-        result = 31 * result + data.hashCode()
-        result = 31 * result + issuerProvidedData.contentHashCode()
-        return result
+    /**
+     * Performs a key agreement protocol to create a shared secret with another party.
+     *
+     * This method uses the document's private key and the other party's public key
+     * to establish a shared secret through a cryptographic key agreement protocol.
+     * After the operation, it applies the document's credential policy.
+     *
+     * @param otherPublicKey The public key of the other party as a byte array
+     * @param keyUnlockData Optional data required to unlock the document's key if it's protected
+     * @return An [Outcome] containing either the [SharedSecret] or a failure reason
+     */
+    @Deprecated("use keyAgreementConsumingCredential method instead")
+    fun keyAgreement(
+        otherPublicKey: ByteArray,
+        keyUnlockData: KeyUnlockData? = null
+    ): Outcome<SharedSecret> {
+        return runBlocking {
+            keyAgreementConsumingCredential(otherPublicKey, keyUnlockData)
+                .fold(
+                    onSuccess = { Outcome.success(it) },
+                    onFailure = { Outcome.failure(it) }
+                )
+        }
     }
 }
+

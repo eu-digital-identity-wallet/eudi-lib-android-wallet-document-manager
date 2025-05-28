@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2024 European Commission
- *
+ * Copyright (c) 2024-2025 European Commission
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,44 +16,54 @@
 
 package eu.europa.ec.eudi.wallet.document
 
+import eu.europa.ec.eudi.wallet.document.credential.CredentialCertification
+import eu.europa.ec.eudi.wallet.document.credential.CredentialFactory
+import eu.europa.ec.eudi.wallet.document.credential.IssuerProvidedCredential
+import eu.europa.ec.eudi.wallet.document.credential.SdJwtVcCredential
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
-import eu.europa.ec.eudi.wallet.document.internal.ApplicationMetaData
-import eu.europa.ec.eudi.wallet.document.internal.SdJwtVcCredential
-import eu.europa.ec.eudi.wallet.document.internal.clearDeferredRelatedData
-import eu.europa.ec.eudi.wallet.document.internal.createCredential
-import eu.europa.ec.eudi.wallet.document.internal.deferredRelatedData
-import eu.europa.ec.eudi.wallet.document.internal.documentIdentifier
+import eu.europa.ec.eudi.wallet.document.internal.ApplicationMetadata
+import eu.europa.ec.eudi.wallet.document.internal.applicationMetadata
 import eu.europa.ec.eudi.wallet.document.internal.documentManagerId
-import eu.europa.ec.eudi.wallet.document.internal.documentName
-import eu.europa.ec.eudi.wallet.document.internal.issuedAt
-import eu.europa.ec.eudi.wallet.document.internal.storeIssuedDocument
 import eu.europa.ec.eudi.wallet.document.internal.toDocument
-import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetaData
+import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import org.jetbrains.annotations.VisibleForTesting
 import org.multipaz.credential.CredentialLoader
+import org.multipaz.credential.SecureAreaBoundCredential
 import org.multipaz.document.DocumentStore
 import org.multipaz.mdoc.credential.MdocCredential
 import org.multipaz.securearea.SecureAreaRepository
 import org.multipaz.storage.Storage
 import org.multipaz.util.Logger
-import org.multipaz.util.UUID
 
 /**
- * Document Manager Implementation
+ * Default implementation of the [DocumentManager] interface for the EUDI Wallet.
  *
- * @property identifier the identifier
- * @property storage the storage to use for storing/retrieving documents
- * @property secureAreaRepository the secure area
+ * This implementation provides the core functionality for managing digital documents
+ * in the EUDI Wallet ecosystem, including:
+ * - Creation of documents with multiple supported formats (MSO mDoc, SD-JWT VC)
+ * - Secure storage and retrieval of documents using provided storage mechanisms
+ * - Management of document lifecycle and state transitions
+ * - Integration with secure area for cryptographic operations and key management
  *
- * @constructor
- * @param identifier the identifier of the document manager
- * @param storage the storage
- * @param secureAreaRepository the secure area
+ * The implementation maintains strict document identity boundaries by using a unique
+ * document manager identifier to ensure that documents managed by one instance cannot
+ * be accessed or modified by another instance.
+ *
+ * @property identifier Unique identifier for this document manager instance, used to scope document access
+ * @property storage Persistent storage implementation for document data
+ * @property secureAreaRepository Repository for cryptographic operations and secure key management
+ * @property ktorHttpClientFactory Optional factory to provide custom HTTP clients for network operations
+ *
+ * @constructor Creates a new DocumentManagerImpl with the required dependencies
+ * @param identifier Unique identifier for this document manager instance
+ * @param storage Storage implementation for persisting document data
+ * @param secureAreaRepository Repository for secure key management and cryptographic operations
+ * @param ktorHttpClientFactory Optional factory method to create HTTP clients
  */
 class DocumentManagerImpl(
     override val identifier: String,
@@ -63,14 +73,29 @@ class DocumentManagerImpl(
     // TODO: list trusted certificates
 ) : DocumentManager {
 
+    /**
+     * Flag to control device public key verification during credential certification.
+     * When true (default), ensures that the public key from the issuer matches the device key.
+     * May be disabled for testing purposes only.
+     */
     @VisibleForTesting
     @get:JvmSynthetic
     internal var checkDevicePublicKey: Boolean = true
 
+    /**
+     * Storage prefix used to isolate documents managed by this instance.
+     * Constructed from the identifier to ensure uniqueness.
+     */
     @VisibleForTesting
     @get:JvmSynthetic
     internal val prefix = "Document_${identifier}_"
 
+    /**
+     * Document storage and retrieval system, lazily initialized with configured
+     * credential implementations and metadata factory.
+     *
+     * Supports multiple credential formats including MdocCredential and SdJwtVcCredential.
+     */
     @get:VisibleForTesting
     @get:JvmSynthetic
     internal val documentStore by lazy {
@@ -78,14 +103,14 @@ class DocumentManagerImpl(
             storage = storage,
             secureAreaRepository = secureAreaRepository,
             credentialLoader = CredentialLoader().apply {
-                    addCredentialImplementation(MdocCredential::class) { document ->
-                        MdocCredential(document)
-                    }
-                    addCredentialImplementation(SdJwtVcCredential::class) { document ->
-                        SdJwtVcCredential(document)
-                    }
-                },
-            documentMetadataFactory = ApplicationMetaData::create
+                addCredentialImplementation(MdocCredential::class) { document ->
+                    MdocCredential(document)
+                }
+                addCredentialImplementation(SdJwtVcCredential::class) { document ->
+                    SdJwtVcCredential(document)
+                }
+            },
+            documentMetadataFactory = ApplicationMetadata::create
         )
     }
 
@@ -120,6 +145,12 @@ class DocumentManagerImpl(
                     .mapNotNull {
                         getDocumentById(it)?.takeIf { doc -> doc.documentManagerId == identifier }
                     }
+                    .filter {
+                        when (predicate) {
+                            null -> true
+                            else -> predicate(it)
+                        }
+                    }
             } catch (e: Throwable) {
                 Logger.e(TAG, "Failed to get documents", e)
                 emptyList()
@@ -153,13 +184,13 @@ class DocumentManagerImpl(
      *
      * @param format the format of the document
      * @param createSettings the [CreateDocumentSettings] to use for the new document
-     * @param issuerMetaData the [IssuerMetaData] data regarding document display
+     * @param issuerMetadata the [IssuerMetadata] data regarding document display
      * @return the result of the creation. If successful, it will return the document. If not, it will return an error.
      */
     override fun createDocument(
         format: DocumentFormat,
         createSettings: CreateDocumentSettings,
-        issuerMetaData: IssuerMetaData?
+        issuerMetadata: IssuerMetadata?
     ): Outcome<UnsignedDocument> {
         var documentId: String? = null
         return runBlocking {
@@ -167,34 +198,33 @@ class DocumentManagerImpl(
                 val secureArea =
                     secureAreaRepository.getImplementation(createSettings.secureAreaIdentifier)
                         ?: throw IllegalArgumentException("SecureArea '${createSettings.secureAreaIdentifier}' not registered")
-                documentId = "${prefix}${UUID.randomUUID()}"
                 val domain = identifier
                 val identityDocument = documentStore.createDocument { metadata ->
-                    (metadata as ApplicationMetaData).initialize(
-                        documentIdentifier = documentId.toString(),
+                    (metadata as ApplicationMetadata).initialize(
+                        format = format,
                         documentName = documentId.toString(),
                         documentManagerId = domain,
                         createdAt = Clock.System.now(),
-                        issuerMetaData = issuerMetaData,
+                        issuerMetadata = issuerMetadata,
+                        credentialPolicy = createSettings.credentialPolicy
                     )
                 }
-                when (format) {
-                    is MsoMdocFormat -> {
-                        val mdocCredential = format.createCredential(
-                            domain, identityDocument, secureArea, createSettings.createKeySettings
-                        )
-                        identityDocument.documentIdentifier = mdocCredential.document.identifier
-                        identityDocument.documentName = format.docType
-                    }
 
-                    is SdJwtVcFormat -> {
-                        val sdJwtVcCredential = format.createCredential(
-                            domain, identityDocument, secureArea, createSettings.createKeySettings
-                        )
-                        identityDocument.documentIdentifier = sdJwtVcCredential.document.identifier
-                        identityDocument.documentName = format.vct
+                val factory = CredentialFactory(domain = domain, format = format)
+                factory.createCredentials(
+                    format = format,
+                    document = identityDocument,
+                    createDocumentSettings = createSettings,
+                    secureArea = secureArea
+                )
+
+                documentId = identityDocument.identifier
+                identityDocument.applicationMetadata.setDocumentName(
+                    when (format) {
+                        is MsoMdocFormat -> format.docType
+                        is SdJwtVcFormat -> format.vct
                     }
-                }
+                )
                 Outcome.success(identityDocument.toDocument())
             } catch (e: Throwable) {
                 documentId?.let { documentStore.deleteDocument(it) }
@@ -212,36 +242,38 @@ class DocumentManagerImpl(
      */
     override fun storeIssuedDocument(
         unsignedDocument: UnsignedDocument,
-        issuerProvidedData: ByteArray
+        issuerProvidedData: List<IssuerProvidedCredential>
     ): Outcome<IssuedDocument> {
         return runBlocking {
             try {
-                val identityDocument = documentStore.lookupDocument(unsignedDocument.id)
-                    ?: throw IllegalArgumentException("Document with ${unsignedDocument.id} not found")
+                require(issuerProvidedData.isNotEmpty()) {
+                    "Issuer provided data cannot be empty"
+                }
+                val identityDocument = unsignedDocument.baseDocument
 
-                when (val format = unsignedDocument.format) {
-                    is MsoMdocFormat -> format.storeIssuedDocument(
-                        unsignedDocument,
-                        identityDocument,
-                        issuerProvidedData,
-                        checkDevicePublicKey
+                val credentials = identityDocument.getPendingCredentials()
+                    .filterIsInstance<SecureAreaBoundCredential>()
+
+                // check that for all credentials we have issuer provided data
+                require(issuerProvidedData.size == credentials.size) {
+                    "Issuer provided data size (${issuerProvidedData.size}) does not match credentials size (${credentials.size})"
+                }
+
+                val credentialCertifier = CredentialCertification(unsignedDocument.format)
+
+                for (credential in credentials) {
+                    credentialCertifier.certifyCredential(
+                        credential = credential,
+                        issuedCredential = issuerProvidedData.first { it.publicKeyAlias == credential.alias },
+                        forceKeyCheck = checkDevicePublicKey
                     )
-
-                    is SdJwtVcFormat -> format.storeIssuedDocument(
-                        unsignedDocument,
-                        identityDocument,
-                        issuerProvidedData,
-                        checkDevicePublicKey,
-                        ktorHttpClientFactory
-                    )
-
-                    else -> throw IllegalArgumentException("Format ${format::class.simpleName} not supported")
                 }
                 with(identityDocument) {
-                    documentIdentifier = unsignedDocument.id
-                    documentName = unsignedDocument.name
-                    issuedAt = Clock.System.now()
-                    clearDeferredRelatedData()
+                    // copy data from first credential
+                    identityDocument.applicationMetadata.setIssuerProvidedData(issuerProvidedData.first().data)
+                    identityDocument.applicationMetadata.setDocumentName(unsignedDocument.name)
+                    identityDocument.applicationMetadata.setIssuedAt(Clock.System.now())
+                    identityDocument.applicationMetadata.clearDeferredRelatedData()
                 }
                 Outcome.success(identityDocument.toDocument())
             } catch (e: Throwable) {
@@ -268,8 +300,8 @@ class DocumentManagerImpl(
                     ?: throw IllegalArgumentException("Document with ${unsignedDocument.id} not found")
 
                 with(identityDocument) {
-                    documentName = unsignedDocument.name
-                    deferredRelatedData = relatedData
+                    applicationMetadata.setDocumentName(unsignedDocument.name)
+                    applicationMetadata.setDeferredRelatedData(relatedData)
                 }
                 Outcome.success(identityDocument.toDocument())
             } catch (e: Exception) {

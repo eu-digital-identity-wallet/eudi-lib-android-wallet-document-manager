@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2024 European Commission
- *
+ * Copyright (c) 2024-2025 European Commission
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,44 +16,27 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
-import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetaData
-import org.multipaz.securearea.SecureArea
-import java.time.Instant
+import org.multipaz.document.Document
 
 /**
- * Represents a Deferred Document.
- * A Deferred Document is also an [UnsignedDocument], since it is not yet signed by the issuer.
- * @property id the document id
- * @property name the document name
- * @property format the document format
- * @property documentManagerId the [DocumentManager.identifier] related to this document
- * @property isCertified whether the document is certified
- * @property keyAlias the key alias
- * @property secureArea the secure area
- * @property createdAt the creation date
- * @property issuerMetaData the issuer metadata
- * @property relatedData the related data
+ * Represents a Deferred Document in the EUDI Wallet.
+ *
+ * A Deferred Document extends the [UnsignedDocument] class and represents a document that is
+ * waiting to be issued. It contains additional related data necessary for the issuance process.
+ * Deferred documents are created when a document issuance request has been initiated but the
+ * actual issuance is pending or will happen at a later time.
+ *
+ * @property id The unique identifier of the document
+ * @property name The human-readable name of the document
+ * @property format The format specification of the document (e.g., MsoMdoc, SdJwtVc)
+ * @property documentManagerId The identifier of the [DocumentManager] that manages this document
+ * @property createdAt The timestamp when the document was created in the wallet
+ * @property issuerMetadata The document metadata provided by the issuer
+ * @property relatedData Additional data associated with this document that is needed for
+ *                       the deferred issuance process (e.g., issuance request identifiers or tokens)
  */
 class DeferredDocument(
-    id: DocumentId,
-    name: String,
-    format: DocumentFormat,
-    documentManagerId: String,
-    isCertified: Boolean,
-    keyAlias: String,
-    secureArea: SecureArea,
-    createdAt: Instant,
-    issuerMetaData: IssuerMetaData?,
+    baseDocument: Document,
     val relatedData: ByteArray,
-) : UnsignedDocument(
-    id = id,
-    name = name,
-    format = format,
-    documentManagerId = documentManagerId,
-    isCertified = isCertified,
-    keyAlias = keyAlias,
-    secureArea = secureArea,
-    createdAt = createdAt,
-    issuerMetaData = issuerMetaData
-)
+) : UnsignedDocument(baseDocument)
+

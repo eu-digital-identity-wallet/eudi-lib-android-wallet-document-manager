@@ -19,12 +19,14 @@ package eu.europa.ec.eudi.wallet.document
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps.recreateClaimsAndDisclosuresPerClaim
 import eu.europa.ec.eudi.sdjwt.vc.SelectPath.Default.select
+import eu.europa.ec.eudi.wallet.document.credential.IssuerProvidedCredential
 import eu.europa.ec.eudi.wallet.document.format.MutableSdJwtClaim
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcData
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
 import eu.europa.ec.eudi.wallet.document.internal.parse
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.multipaz.securearea.SecureArea
 import org.multipaz.securearea.SecureAreaRepository
 import org.multipaz.securearea.software.SoftwareCreateKeySettings
@@ -140,7 +142,7 @@ class SdJwtVcTest {
 
 
     @Test
-    fun `store sd-jwt vc`() {
+    fun `store sd-jwt vc`() = runTest {
         // set checkDevicePublicKey to false to avoid checking the MSO key
         // since we are using fixed issuer data
         documentManager.checkDevicePublicKey = false
@@ -151,7 +153,8 @@ class SdJwtVcTest {
             format = SdJwtVcFormat("urn:eu.europa.ec.eudi.pid.1"),
             createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureArea.identifier,
-                createKeySettings = createKeySettings
+                createKeySettings = createKeySettings,
+                numberOfCredentials = 1
             )
         )
         assertTrue(createDocumentResult.isSuccess)
@@ -164,26 +167,29 @@ class SdJwtVcTest {
         assertIs<SdJwtVcFormat>(unsignedDocument.format)
         val documentFormat = unsignedDocument.format as SdJwtVcFormat
         assertEquals("urn:eu.europa.ec.eudi.pid.1", documentFormat.vct)
-        assertFalse(unsignedDocument.isKeyInvalidated)
         assertEquals(documentManager.identifier, unsignedDocument.documentManagerId)
 
         val sdjwtVcData = getResourceAsText("sample_sd_jwt_vc.txt")
             .replace("\n", "")
             .replace("\r", "")
 
+        val issuerData = unsignedDocument.getPoPSigners().map {
+            IssuerProvidedCredential(
+                publicKeyAlias = it.keyAlias,
+                data = sdjwtVcData.toByteArray(Charsets.US_ASCII),
+            )
+        }
+
         val storeDocumentResult = documentManager.storeIssuedDocument(
             unsignedDocument,
-            sdjwtVcData.toByteArray(Charsets.US_ASCII)
+            issuerData
         )
         assertTrue(storeDocumentResult.isSuccess)
         val issuedDocument = storeDocumentResult.getOrThrow()
 
-        // assert that unsigned document remains unsigned
         assertEquals("EU PID SD-JWT VC", issuedDocument.name)
         assertEquals(documentManager.identifier, issuedDocument.documentManagerId)
 
-        assertTrue(issuedDocument.isCertified)
-        assertTrue(issuedDocument.issuerProvidedData.isNotEmpty())
         val claims = issuedDocument.data
         assertIs<SdJwtVcData>(claims)
         assertEquals(19, claims.claims.size)
