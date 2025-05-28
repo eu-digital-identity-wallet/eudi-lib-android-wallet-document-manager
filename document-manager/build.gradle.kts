@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2024 European Commission
- *
+ * Copyright (c) 2024-2025 European Commission
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -110,6 +110,7 @@ dependencies {
     implementation(libs.kotlinx.io.core)
     implementation(libs.kotlinx.io.bytestring)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.coroutines.core)
 
     // CBOR
     implementation(libs.cbor)
@@ -130,11 +131,7 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation(libs.mockk)
     testImplementation(libs.json)
-//    androidTestImplementation(libs.androidx.junit)
-//    androidTestImplementation(libs.androidx.espresso.core)
-//    androidTestImplementation(libs.google.identity.android) {
-//        exclude(group = "org.bouncycastle")
-//    }
+    testImplementation(libs.kotlinx.coroutines.test)
 }
 
 // Dependency check

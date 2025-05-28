@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
-package eu.europa.ec.eudi.wallet.document.internal
+package eu.europa.ec.eudi.wallet.document.credential
 
-internal enum class DocumentState { UNSIGNED, ISSUED, DEFERRED }
+data class IssuerProvidedCredential(
+    val publicKeyAlias: String,
+    val data: ByteArray
+)

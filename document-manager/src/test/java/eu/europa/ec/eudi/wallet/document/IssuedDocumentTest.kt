@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2024-2025 European Commission
- *
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,100 +16,845 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import eu.europa.ec.eudi.wallet.document.format.MsoMdocData
+import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
-import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetaData
-import kotlinx.coroutines.runBlocking
+import eu.europa.ec.eudi.wallet.document.internal.ApplicationMetadata
+import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
+import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.Clock
+import kotlinx.datetime.toJavaInstant
+import kotlinx.datetime.toKotlinInstant
+import org.multipaz.cbor.Cbor
+import org.multipaz.cbor.DataItem
+import org.multipaz.credential.SecureAreaBoundCredential
+import org.multipaz.crypto.EcPublicKey
+import org.multipaz.crypto.EcSignature
+import org.multipaz.document.Document
+import org.multipaz.securearea.KeyUnlockData
 import org.multipaz.securearea.SecureArea
-import org.multipaz.securearea.SecureAreaRepository
-import org.multipaz.securearea.software.SoftwareCreateKeySettings
-import org.multipaz.securearea.software.SoftwareSecureArea
-import org.multipaz.storage.Storage
-import org.multipaz.storage.ephemeral.EphemeralStorage
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
+import java.time.Instant
 import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertIs
-import kotlin.test.assertTrue
+import kotlin.test.assertContentEquals
+import kotlin.test.assertNull
+import kotlin.time.Duration.Companion.days
 
 class IssuedDocumentTest {
-    lateinit var documentManager: DocumentManagerImpl
-    lateinit var storage: Storage
-    lateinit var secureArea: SecureArea
-    lateinit var secureAreaRepository: SecureAreaRepository
-    lateinit var issuedDocument: IssuedDocument
 
-    @OptIn(ExperimentalStdlibApi::class)
-    @BeforeTest
-    fun setUp() {
-        storage = EphemeralStorage()
-        secureArea = runBlocking { SoftwareSecureArea.create(storage) }
-        secureAreaRepository = SecureAreaRepository.build {
-            add(secureArea)
+    // Helper methods for creating common mocks
+
+    /**
+     * Creates a mock SecureArea that returns the specified invalidated state for keys
+     */
+    private fun createMockSecureArea(isKeyInvalidated: Boolean = false): SecureArea {
+        return mockk<SecureArea> {
+            coEvery { getKeyInvalidated(any()) } returns isKeyInvalidated
         }
-        documentManager = DocumentManagerImpl(
-            identifier = "document_manager",
-            storage = EphemeralStorage(),
-            secureAreaRepository = secureAreaRepository,
-        )
-
-        val metadata = IssuerMetaData.fromJson(getResourceAsText("eu_pid_metadata_mso_mdoc.json")).getOrNull()
-        // set checkDevicePublicKey to false to avoid checking the MSO key
-        // since we are using fixed issuer data
-        documentManager.checkDevicePublicKey = false
-        val createKeySettings = SoftwareCreateKeySettings.Builder().build()
-        val createDocumentResult = documentManager.createDocument(
-            format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-            createSettings = CreateDocumentSettings(
-                secureAreaIdentifier = secureArea.identifier,
-                createKeySettings = createKeySettings
-            ),
-            issuerMetaData = metadata
-        )
-        assertTrue(createDocumentResult.isSuccess)
-        val unsignedDocument = createDocumentResult.getOrThrow()
-        assertFalse(unsignedDocument.isCertified)
-
-        // change document name
-        unsignedDocument.name = "EU PID"
-
-        assertIs<MsoMdocFormat>(unsignedDocument.format)
-        val documentFormat = unsignedDocument.format as MsoMdocFormat
-        assertEquals("eu.europa.ec.eudi.pid.1", documentFormat.docType)
-        assertFalse(unsignedDocument.isKeyInvalidated)
-        assertEquals(documentManager.identifier, unsignedDocument.documentManagerId)
-
-        val issuerData = getResourceAsText("eu_pid.hex").hexToByteArray(HexFormat.Default)
-
-        val storeDocumentResult = documentManager.storeIssuedDocument(unsignedDocument, issuerData)
-        assertTrue(storeDocumentResult.isSuccess)
-        issuedDocument = storeDocumentResult.getOrThrow()
     }
 
-    @AfterTest
-    fun tearDown() {
-        documentManager.getDocuments().forEach { documentManager.deleteDocumentById(it.id) }
+    /**
+     * Creates a mock credential with the specified properties
+     */
+    private fun createMockCredential(
+        alias: String,
+        domain: String = "test-document-manager-id",
+        isCertified: Boolean = true,
+        usageCount: Int = 0,
+        now: kotlinx.datetime.Instant = Clock.System.now(),
+        isInvalidated: Boolean = false,
+        validFrom: kotlinx.datetime.Instant = now.minus(1.days),
+        validUntil: kotlinx.datetime.Instant = now.plus(1.days),
+    ): SecureAreaBoundCredential {
+        val mockSecureArea = createMockSecureArea(isInvalidated)
+
+        return mockk<SecureAreaBoundCredential>(relaxed = true) {
+            every { this@mockk.alias } returns alias
+            every { this@mockk.domain } returns domain
+            every { this@mockk.isCertified } returns isCertified
+            every { this@mockk.usageCount } returns usageCount
+            every { this@mockk.validFrom } returns validFrom
+            every { this@mockk.validUntil } returns validUntil
+            every { this@mockk.secureArea } returns mockSecureArea
+        }
+    }
+
+    /**
+     * Creates a mock Document with configurable metadata and credentials
+     */
+    private fun createMockBaseDocument(
+        format: DocumentFormat = mockk(),
+        id: String = "test-document-id",
+        name: String = "test-document-name",
+        documentManagerId: String = "test-document-manager-id",
+        createdAt: Instant = Instant.now(),
+        issuedAt: Instant = Instant.now(),
+        credentialPolicy: CreateDocumentSettings.CredentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse,
+        issuerMetaData: IssuerMetadata? = mockk(),
+        certifiedCredentials: List<SecureAreaBoundCredential> = emptyList(),
+        pendingCredentials: List<SecureAreaBoundCredential> = emptyList()
+    ): Document {
+        return mockk<Document> {
+            every { identifier } returns id
+            coEvery { getCredentials() } returns certifiedCredentials
+            coEvery { getCertifiedCredentials() } returns certifiedCredentials
+            coEvery { getPendingCredentials() } returns pendingCredentials
+            every { metadata } returns mockk<ApplicationMetadata> {
+                every { this@mockk.format } returns format
+                every { documentName } returns name
+                every { this@mockk.documentManagerId } returns documentManagerId
+                every { this@mockk.createdAt } returns createdAt.toKotlinInstant()
+                every { this@mockk.issuedAt } returns issuedAt.toKotlinInstant()
+                every { this@mockk.credentialPolicy } returns credentialPolicy
+                every { this@mockk.issuerMetadata } returns issuerMetaData
+            }
+        }
+    }
+
+    /**
+     * Creates a mock IssuedDocument with the specified properties
+     */
+    private fun createMockIssuedDocument(
+        baseDocument: Document = createMockBaseDocument()
+    ): IssuedDocument {
+        return IssuedDocument(baseDocument)
     }
 
     @Test
-    fun `assert metadata for claim is available`() {
-        assertTrue(issuedDocument.data.claims.any { it.issuerMetadata != null })
+    fun `test document format property returns expected value`() {
+        val expectedFormat = MsoMdocFormat(docType = "test-doc-type")
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(format = expectedFormat)
+        )
+        assert(issuedDocument.format == expectedFormat)
+    }
 
-        // pick given_name
+    @Test
+    fun `test document id property returns expected value`() {
+        val expectedIdentifier = "test-document-id"
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(id = expectedIdentifier)
+        )
+        assert(issuedDocument.id == expectedIdentifier)
+    }
 
-        val givenName = (issuedDocument.data as MsoMdocData)
-            .claims
-            .first { it.nameSpace == "eu.europa.ec.eudi.pid.1" && it.identifier == "given_name" }
+    @Test
+    fun `test name property returns expected value`() {
+        val expectedName = "test-document-name"
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(name = expectedName)
+        )
+        assert(issuedDocument.name == expectedName)
+    }
 
-        // Access the path property instead of name, as the claim metadata's path should contain the namespace and identifier
-        assertTrue(
-            givenName.issuerMetadata?.display?.firstOrNull()?.name?.isNotBlank() == true ||
-                    givenName.issuerMetadata?.path == listOf(
-                givenName.nameSpace,
-                givenName.identifier,
+    @Test
+    fun `test documentManagerId property returns expected value`() {
+        val expectedDocumentManagerId = "test-document-manager-id"
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(documentManagerId = expectedDocumentManagerId)
+        )
+        assert(issuedDocument.documentManagerId == expectedDocumentManagerId)
+    }
+
+    @Test
+    fun `test createdAt property returns expected value`() {
+        val expectedCreatedAt = Instant.now()
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(createdAt = expectedCreatedAt)
+        )
+        assert(issuedDocument.createdAt == expectedCreatedAt)
+    }
+
+    @Test
+    fun `test issuedAt property returns expected value`() {
+        val expectedIssuedAt = Instant.now()
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(issuedAt = expectedIssuedAt)
+        )
+        assert(issuedDocument.issuedAt == expectedIssuedAt)
+    }
+
+    @Test
+    fun `test issuerMetaData property returns expected value`() {
+        val expectedIssuerMetadata = mockk<IssuerMetadata>()
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(issuerMetaData = expectedIssuerMetadata)
+        )
+        assert(issuedDocument.issuerMetadata == expectedIssuerMetadata)
+    }
+
+    @Test
+    fun `test credentialPolicy returns expected policy`() {
+        val expectedPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(credentialPolicy = expectedPolicy)
+        )
+        assert(issuedDocument.credentialPolicy == expectedPolicy)
+    }
+
+    // Credential management tests
+    @Test
+    fun `test getCredentials returns all secure area bound credentials`() = runTest {
+        val mockCredential = createMockCredential("test-alias")
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(
+                certifiedCredentials = listOf(mockCredential)
             )
         )
+        assertContentEquals(listOf(mockCredential), issuedDocument.getCredentials())
     }
+
+    @Test
+    fun `test findCredential returns valid credential`() = runTest {
+        val now = Clock.System.now()
+        val documentManagerId = "test-document-manager-id"
+
+        val credential1 = createMockCredential(
+            alias = "alias1",
+            domain = documentManagerId,
+            usageCount = 1,
+            now = now
+        )
+
+        val credential2 = createMockCredential(
+            alias = "alias2",
+            domain = documentManagerId,
+            usageCount = 0,
+            now = now
+        )
+
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(
+                documentManagerId = documentManagerId,
+                certifiedCredentials = listOf(credential1, credential2)
+            )
+        )
+
+        assert(issuedDocument.findCredential() == credential2)
+    }
+
+    @Test
+    fun `test findCredential with time parameter returns credential valid at that time`() =
+        runTest {
+            val documentManagerId = "test-document-manager-id"
+            val now = Clock.System.now()
+
+            val credential1 = createMockCredential(
+                alias = "alias1",
+                domain = documentManagerId,
+                validFrom = now.minus(2.days),
+                validUntil = now.minus(1.days)
+            )
+
+            val credential2 = createMockCredential(
+                alias = "alias2",
+                domain = documentManagerId,
+                validFrom = now.minus(1.days),
+                validUntil = now.plus(1.days)
+            )
+
+            val issuedDocument = createMockIssuedDocument(
+                baseDocument = createMockBaseDocument(
+                    documentManagerId = documentManagerId,
+                    certifiedCredentials = listOf(credential1, credential2)
+                )
+            )
+
+            assert(issuedDocument.findCredential() == credential2)
+        }
+
+    @Test
+    fun `test findCredential returns null when no valid credential exists`() = runTest {
+        val documentManagerId = "test-document-manager-id"
+        val now = Clock.System.now()
+
+        val credential1 = createMockCredential(
+            alias = "alias1",
+            domain = documentManagerId,
+            validFrom = now.minus(2.days),
+            validUntil = now.minus(1.days)
+        )
+
+        val credential2 = createMockCredential(
+            alias = "alias2",
+            domain = documentManagerId,
+            isCertified = false,
+            validFrom = now.minus(1.days),
+            validUntil = now.plus(1.days)
+        )
+
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(
+                documentManagerId = documentManagerId,
+                certifiedCredentials = listOf(credential1),
+                pendingCredentials = listOf(credential2)
+            )
+        )
+
+        assertNull(issuedDocument.findCredential())
+    }
+
+    @Test
+    fun `test findCredential with OneTimeUse policy only returns unused credentials`() = runTest {
+        val documentManagerId = "test-document-manager-id"
+
+        val credential1 = createMockCredential(
+            alias = "alias1",
+            domain = documentManagerId,
+            usageCount = 1
+        )
+
+        val credential2 = createMockCredential(
+            alias = "alias2",
+            domain = documentManagerId,
+            usageCount = 0
+        )
+
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(
+                documentManagerId = documentManagerId,
+                credentialPolicy = CreateDocumentSettings.CredentialPolicy.OneTimeUse,
+                certifiedCredentials = listOf(credential1, credential2)
+            )
+        )
+
+        assert(issuedDocument.findCredential() == credential2)
+    }
+
+    @Test
+    fun `test findCredential with RotateUse policy returns credential with lowest usage count`() =
+        runTest {
+            val documentManagerId = "test-document-manager-id"
+
+            val credential1 = createMockCredential(
+                alias = "alias1",
+                domain = documentManagerId,
+                usageCount = 1
+            )
+
+            val credential2 = createMockCredential(
+                alias = "alias2",
+                domain = documentManagerId,
+                usageCount = 0
+            )
+
+            val issuedDocument = createMockIssuedDocument(
+                baseDocument = createMockBaseDocument(
+                    documentManagerId = documentManagerId,
+                    credentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse,
+                    certifiedCredentials = listOf(credential1, credential2)
+                )
+            )
+
+            assert(issuedDocument.findCredential() == credential2)
+        }
+
+    // Document validity tests
+    @Test
+    fun `test isValidAt returns true when valid credential exists at given time`() = runTest {
+        val now = Clock.System.now()
+
+        val credential = createMockCredential(
+            alias = "test-alias",
+            validFrom = now.minus(1.days),
+            validUntil = now.plus(1.days)
+        )
+
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(
+                certifiedCredentials = listOf(credential)
+            )
+        )
+
+        assert(issuedDocument.isValidAt(now.toJavaInstant()))
+    }
+
+    @Test
+    fun `test isValidAt returns false when no valid credential exists at given time`() = runTest {
+        val now = Instant.now()
+        val javaInstantNow = now
+        val kotlinInstantNow = now.toKotlinInstant()
+
+        val credential = createMockCredential(
+            alias = "test-alias",
+            validFrom = kotlinInstantNow.plus(1.days),
+            validUntil = kotlinInstantNow.plus(2.days)
+        )
+
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(
+                certifiedCredentials = listOf(credential)
+            )
+        )
+
+        assert(!issuedDocument.isValidAt(now))
+    }
+
+    @Test
+    fun `test isCertified returns true when no pending credentials exist`() = runTest {
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(
+                pendingCredentials = emptyList()
+            )
+        )
+
+        assert(issuedDocument.isCertified())
+    }
+
+    @Test
+    fun `test isCertified returns false when pending credentials exist`() = runTest {
+        val credential = createMockCredential(
+            alias = "test-alias"
+        )
+
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(
+                pendingCredentials = listOf(credential)
+            )
+        )
+
+        assert(!issuedDocument.isCertified())
+    }
+
+    // Data retrieval tests
+    @Test
+    fun `test credentialsCount returns correct number of certified credentials`() = runTest {
+        val credentials = listOf(
+            createMockCredential("alias1"),
+            createMockCredential("alias2"),
+            createMockCredential("alias3")
+        )
+
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(
+                certifiedCredentials = credentials
+            )
+        )
+
+        assert(issuedDocument.credentialsCount() == 3)
+    }
+
+    // consumingCredential method tests
+    @Test
+    fun `test consumingCredential executes provided block with valid credential`() = runTest {
+        // Create a test credential
+        val credential = createMockCredential(
+            alias = "test-credential",
+            usageCount = 0
+        )
+
+        // Create the document with RotateUse policy to keep the credential after use
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(
+                credentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse,
+                certifiedCredentials = listOf(credential)
+            )
+        )
+
+        // Execute a simple block that returns the credential alias
+        val result = issuedDocument.consumingCredential {
+            // This block should be executed with the credential as receiver
+            this.alias
+        }
+
+        // Assert the operation succeeded and returned the expected value
+        assert(result.isSuccess)
+        assert(result.getOrNull() == "test-credential")
+    }
+
+    @Test
+    fun `test consumingCredential returns failure when no valid credential found`() = runTest {
+        // Create a document with no valid credentials
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(
+                certifiedCredentials = emptyList()
+            )
+        )
+
+        // Execute a simple block that shouldn't run
+        val result = issuedDocument.consumingCredential {
+            "This should not be returned"
+        }
+
+        // Assert the operation failed with the expected error
+        assert(result.isFailure)
+        assert(result.exceptionOrNull() is IllegalStateException)
+        assert(result.exceptionOrNull()?.message == "Credential not found")
+    }
+
+    @Test
+    fun `test consumingCredential applies RotateUse policy correctly`() = runTest {
+        // Setup - Create a mock credential and a helper to track interactions
+        val credential = createMockCredential(
+            alias = "rotate-credential",
+            usageCount = 0
+        )
+
+        // Create a mock document that can track credential updates
+        val baseDocument = createMockBaseDocument(
+            credentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse,
+            certifiedCredentials = listOf(credential)
+        )
+
+
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = baseDocument
+        )
+
+        // Act - Execute a block that returns a test value
+        val result = issuedDocument.consumingCredential {
+            "test-result"
+        }
+
+        // Assert - The operation succeeded and policy was applied
+        assert(result.isSuccess)
+        assert(result.getOrNull() == "test-result")
+        coVerify(exactly = 1) { credential.increaseUsageCount() }
+    }
+
+    @Test
+    fun `test consumingCredential applies OneTimeUse policy correctly`() = runTest {
+        // Setup - Create a mock credential and a helper to track interactions
+        val credential = createMockCredential(
+            alias = "onetime-credential",
+            usageCount = 0
+        )
+
+        // Create a mock document that can track credential deletions
+        val baseDocument = createMockBaseDocument(
+            credentialPolicy = CreateDocumentSettings.CredentialPolicy.OneTimeUse,
+            certifiedCredentials = listOf(credential)
+        )
+
+        // Setup a counter to track if the policy was applied
+        var policyApplied = false
+
+        // Override our mocks to track policy application
+        coEvery {
+            baseDocument.deleteCredential(any())
+        } answers {
+            policyApplied = true
+        }
+
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = baseDocument
+        )
+
+        // Act - Execute a block that returns a test value
+        val result = issuedDocument.consumingCredential {
+            "test-result"
+        }
+
+        // Assert - The operation succeeded and policy was applied
+        assert(result.isSuccess)
+        assert(result.getOrNull() == "test-result")
+        assert(policyApplied) { "OneTimeUse policy wasn't applied" }
+    }
+
+    // Add additional tests for signConsumingCredential and keyAgreementConsumingCredential
+
+    // signConsumingCredential tests
+    @Test
+    fun `test signConsumingCredential signs data with valid credential`() = runTest {
+        // Setup - Create test data and credential
+        val dataToSign = "test-data".toByteArray()
+        val expectedSignature = mockk<EcSignature>()
+        val alias = "sign-credential"
+
+        val secureArea = mockk<SecureArea> {
+            coEvery {
+                sign(eq(alias), eq(dataToSign), any())
+            } returns expectedSignature
+            coEvery { getKeyInvalidated(any()) } returns false
+        }
+
+        val credential = createMockCredential(
+            alias = alias,
+            usageCount = 0
+        )
+
+        // Override the secureArea for our credential
+        every { credential.secureArea } returns secureArea
+
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(
+                credentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse,
+                certifiedCredentials = listOf(credential)
+            )
+        )
+
+        // Act - Sign the data
+        val result = issuedDocument.signConsumingCredential(dataToSign)
+
+        // Assert - The signature is as expected
+        assert(result.isSuccess)
+        assert(result.getOrNull() == expectedSignature)
+
+        // Verify the signing was done with the right parameters
+        coVerify {
+            secureArea.sign(
+                alias = eq(alias),
+                dataToSign = eq(dataToSign),
+                keyUnlockData = null
+            )
+        }
+
+        // Verify credential policy was applied
+        coVerify { credential.increaseUsageCount() }
+    }
+
+    @Test
+    fun `test signConsumingCredential uses provided keyUnlockData`() = runTest {
+        // Setup - Create test data, credential, and unlock data
+        val dataToSign = "test-data".toByteArray()
+        val expectedSignature = mockk<EcSignature>()
+        val mockUnlockData = mockk<KeyUnlockData>()
+        val alias = "sign-credential"
+
+        val secureArea = mockk<SecureArea> {
+            coEvery {
+                sign(eq(alias), eq(dataToSign), eq(mockUnlockData))
+            } returns expectedSignature
+            coEvery { getKeyInvalidated(any()) } returns false
+        }
+
+        val credential = createMockCredential(
+            alias = alias,
+            usageCount = 0
+        )
+
+        // Override the secureArea for our credential
+        every { credential.secureArea } returns secureArea
+
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(
+                certifiedCredentials = listOf(credential)
+            )
+        )
+
+        // Act - Sign the data with unlock data
+        val result = issuedDocument.signConsumingCredential(dataToSign, mockUnlockData)
+
+        // Assert - The signature is as expected
+        assert(result.isSuccess)
+        assert(result.getOrNull() == expectedSignature)
+
+        // Verify the unlock data was passed correctly
+        coVerify {
+            secureArea.sign(
+                alias = eq(alias),
+                dataToSign = eq(dataToSign),
+                keyUnlockData = eq(mockUnlockData)
+            )
+        }
+    }
+
+    @Test
+    fun `test signConsumingCredential returns failure when signing fails`() = runTest {
+        // Setup - Create test data and a credential whose secureArea throws an exception
+        val dataToSign = "test-data".toByteArray()
+        val testException = RuntimeException("Signing failed")
+        val alias = "sign-credential"
+
+        val secureArea = mockk<SecureArea> {
+            coEvery {
+                sign(eq(alias), eq(dataToSign), any())
+            } throws testException
+            coEvery { getKeyInvalidated(any()) } returns false
+        }
+
+        val credential = createMockCredential(
+            alias = alias,
+            usageCount = 0
+        )
+
+        // Override the secureArea for our credential
+        every { credential.secureArea } returns secureArea
+
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(
+                certifiedCredentials = listOf(credential)
+            )
+        )
+
+        // Act - Attempt to sign the data
+        val result = issuedDocument.signConsumingCredential(dataToSign)
+
+        // Assert - The result is a failure with the expected exception
+        assert(result.isFailure)
+        assert(result.exceptionOrNull() == testException)
+    }
+
+    // keyAgreementConsumingCredential tests
+    @Test
+    fun `test keyAgreementConsumingCredential establishes shared secret`() = runTest {
+        // Setup - Create public key and expected shared secret
+        val otherPublicKey = "other-party-key".toByteArray()
+        val otherPublicKeyDataItem = mockk<DataItem>()
+        mockkObject(Cbor)
+        every { Cbor.decode(otherPublicKey) } returns otherPublicKeyDataItem
+        mockkObject(EcPublicKey.Companion)
+        every { EcPublicKey.Companion.fromDataItem(otherPublicKeyDataItem) } returns mockk()
+        val expectedSharedSecret = byteArrayOf(1, 2, 3, 4) // SharedSecret is a ByteArray type alias
+        val alias = "key-agreement-credential"
+
+        val secureArea = mockk<SecureArea> {
+            coEvery {
+                keyAgreement(eq(alias), any(), any())
+            } returns expectedSharedSecret
+            coEvery { getKeyInvalidated(any()) } returns false
+        }
+
+        val credential = createMockCredential(
+            alias = alias,
+            usageCount = 0
+        )
+
+        // Override the secureArea for our credential
+        every { credential.secureArea } returns secureArea
+
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(
+                credentialPolicy = CreateDocumentSettings.CredentialPolicy.OneTimeUse,
+                certifiedCredentials = listOf(credential)
+            )
+        )
+
+        // Setup tracking for policy application
+        var policyApplied = false
+        coEvery {
+            issuedDocument.baseDocument.deleteCredential(any())
+        } answers {
+            policyApplied = true
+        }
+
+        // Act - Perform key agreement
+        val result = issuedDocument.keyAgreementConsumingCredential(otherPublicKey)
+
+        // Assert - The shared secret is as expected
+        assert(result.isSuccess) { "Expected result to be success but was: $result" }
+        assert(
+            result.getOrNull()?.contentEquals(expectedSharedSecret) == true
+        ) { "Expected shared secret doesn't match" }
+
+        // Verify key agreement was performed with correct parameters
+        coVerify {
+            secureArea.keyAgreement(
+                alias = eq(alias),
+                otherKey = any(), // Can't directly compare the converted key
+                keyUnlockData = null
+            )
+        }
+
+        // Verify OneTimeUse policy was applied
+        assert(policyApplied) { "OneTimeUse policy wasn't applied" }
+
+        unmockkObject(Cbor, EcPublicKey.Companion)
+    }
+
+    @Test
+    fun `test keyAgreementConsumingCredential uses provided keyUnlockData`() = runTest {
+        // Setup - Create public key, unlock data, and expected shared secret
+
+        val otherPublicKey = "other-party-key".toByteArray()
+        val otherPublicKeyDataItem = mockk<DataItem>()
+        mockkObject(Cbor)
+        every { Cbor.decode(otherPublicKey) } returns otherPublicKeyDataItem
+        mockkObject(EcPublicKey.Companion)
+        every { EcPublicKey.Companion.fromDataItem(otherPublicKeyDataItem) } returns mockk()
+        val expectedSharedSecret = byteArrayOf(1, 2, 3, 4) // SharedSecret is a ByteArray type alias
+        val mockUnlockData = mockk<KeyUnlockData>()
+        val alias = "key-agreement-credential"
+
+        val secureArea = mockk<SecureArea> {
+            coEvery {
+                keyAgreement(eq(alias), any(), eq(mockUnlockData))
+            } returns expectedSharedSecret
+            coEvery { getKeyInvalidated(any()) } returns false
+        }
+
+        val credential = createMockCredential(
+            alias = alias,
+            usageCount = 0
+        )
+
+        // Override the secureArea for our credential
+        every { credential.secureArea } returns secureArea
+
+        val issuedDocument = createMockIssuedDocument(
+            baseDocument = createMockBaseDocument(
+                certifiedCredentials = listOf(credential)
+            )
+        )
+
+        // Act - Perform key agreement with unlock data
+        val result = issuedDocument.keyAgreementConsumingCredential(otherPublicKey, mockUnlockData)
+
+        // Assert - The shared secret is as expected
+        assert(result.isSuccess) { "Expected result to be success but was: $result" }
+        assert(
+            result.getOrNull()?.contentEquals(expectedSharedSecret) == true
+        ) { "Expected shared secret doesn't match" }
+
+        // Verify unlock data was passed correctly
+        coVerify {
+            secureArea.keyAgreement(
+                alias = eq(alias),
+                otherKey = any(), // Can't directly compare the converted key
+                keyUnlockData = eq(mockUnlockData)
+            )
+        }
+
+        unmockkObject(Cbor, EcPublicKey.Companion)
+    }
+
+    @Test
+    fun `test keyAgreementConsumingCredential returns failure when key agreement fails`() =
+        runTest {
+            // Setup - Create public key and a credential whose secureArea throws an exception
+            val otherPublicKey = "other-party-key".toByteArray()
+            val otherPublicKeyDataItem = mockk<DataItem>()
+            mockkObject(Cbor)
+            every { Cbor.decode(otherPublicKey) } returns otherPublicKeyDataItem
+            mockkObject(EcPublicKey.Companion)
+            every { EcPublicKey.Companion.fromDataItem(otherPublicKeyDataItem) } returns mockk()
+            val testException = RuntimeException("Out of bounds decoding data")
+            val alias = "key-agreement-credential"
+
+            val secureArea = mockk<SecureArea> {
+                coEvery {
+                    keyAgreement(eq(alias), any(), any())
+                } throws testException
+                coEvery { getKeyInvalidated(any()) } returns false
+            }
+
+            val credential = createMockCredential(
+                alias = alias,
+                usageCount = 0
+            )
+
+            // Override the secureArea for our credential
+            every { credential.secureArea } returns secureArea
+
+            val issuedDocument = createMockIssuedDocument(
+                baseDocument = createMockBaseDocument(
+                    certifiedCredentials = listOf(credential)
+                )
+            )
+
+            // Act - Attempt to perform key agreement
+            val result = issuedDocument.keyAgreementConsumingCredential(otherPublicKey)
+
+            // Assert - The result is a failure with the expected exception
+            assert(result.isFailure) { "Expected result to be a failure but was: $result" }
+            assert(result.exceptionOrNull() is RuntimeException) { "Expected exception to be RuntimeException but was: ${result.exceptionOrNull()?.javaClass?.name}" }
+            assert(result.exceptionOrNull()?.message == "Out of bounds decoding data") { "Expected exception message to be 'Out of bounds decoding data' but was: ${result.exceptionOrNull()?.message}" }
+
+            unmockkObject(Cbor, EcPublicKey.Companion)
+        }
+
 }

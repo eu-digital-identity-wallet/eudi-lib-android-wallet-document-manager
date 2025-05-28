@@ -22,7 +22,9 @@ import eu.europa.ec.eudi.wallet.document.Vct
 /**
  * Represents a Document Format
  */
-sealed interface DocumentFormat
+sealed interface DocumentFormat {
+    companion object
+}
 
 /**
  * Represents a MsoMdoc Format for a [eu.europa.ec.eudi.wallet.document.Document]

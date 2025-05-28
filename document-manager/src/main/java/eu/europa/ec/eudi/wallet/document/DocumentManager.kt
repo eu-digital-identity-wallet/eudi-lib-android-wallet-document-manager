@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2024 European Commission
- *
+ * Copyright (c) 2024-2025 European Commission
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,27 +16,38 @@
 
 package eu.europa.ec.eudi.wallet.document
 
+import eu.europa.ec.eudi.wallet.document.credential.IssuerProvidedCredential
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
-import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetaData
+import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import org.multipaz.securearea.SecureAreaRepository
 import org.multipaz.storage.Storage
 
 /**
- * The DocumentManager interface is the main entry point to interact with documents.
- * It is a high-level abstraction that provides a simplified API to interact with documents.
+ * The DocumentManager interface is the main entry point to interact with documents in the EUDI Wallet.
+ * It is a high-level abstraction that provides a simplified API to manage digital documents
+ * like credentials, certificates, and other identity documents.
  *
- * It provides methods to:
- * - Create a new document
- * - Store a document
- * - Retrieve a document
- * - Delete a document
- * - List all documents
+ * The DocumentManager is responsible for:
+ * - Creating new documents with specific formats and security configurations
+ * - Managing the document lifecycle (creation, issuance, storage, retrieval, deletion)
+ * - Providing secure storage and access to documents
+ * - Supporting different document formats and credential types
  *
- * To create a default instance of the DocumentManager, use the companion object or the [Builder] class.
+ * Document creation follows a specific flow:
+ * 1. Create an unsigned document with [createDocument]
+ * 2. Use the resulting [UnsignedDocument] with an issuer to obtain certified claims
+ * 3. Store the document either as:
+ *    - An [IssuedDocument] with [storeIssuedDocument] when claims are immediately available
+ *    - A [DeferredDocument] with [storeDeferredDocument] when issuance will complete later
+ *
+ * To create a DocumentManager instance, use the companion object or the [Builder] class.
  *
  * @see [Builder]
+ * @see [DocumentManagerImpl] for the default implementation
  *
- * @property identifier the identifier of the document manager
+ * @property identifier Unique identifier for this document manager instance
+ * @property storage Storage mechanism for persistent document data
+ * @property secureAreaRepository Repository for secure key management and cryptographic operations
  */
 interface DocumentManager {
 
@@ -45,65 +56,111 @@ interface DocumentManager {
     val secureAreaRepository: SecureAreaRepository
 
     /**
-     * Retrieve a document by its identifier.
+     * Retrieves a document by its unique identifier.
+     * 
+     * This method searches for a document with the specified ID in the document store.
+     * It will only return documents that are managed by this DocumentManager instance
+     * (matching the DocumentManager's identifier).
      *
-     * @param documentId the identifier of the document
-     * @return the document or null if not found
+     * @param documentId The unique identifier of the document to retrieve
+     * @return The document if found and managed by this DocumentManager, null otherwise
      */
     fun getDocumentById(documentId: DocumentId): Document?
 
     /**
-     * Retrieve all documents.
+     * Retrieves all documents managed by this DocumentManager instance.
      *
-     * @param predicate a query to filter the documents
-     * @return the list of documents
+     * This method returns a list of all documents that are managed by this DocumentManager
+     * (matching the DocumentManager's identifier). An optional predicate can be provided
+     * to filter the results based on custom criteria.
+     *
+     * @param predicate Optional filter function that takes a Document and returns a boolean
+     *                 indicating whether to include the document in the results
+     * @return A list of documents matching the criteria, or an empty list if none found or if an error occurs
      */
     fun getDocuments(predicate: ((Document) -> Boolean)? = null): List<Document>
 
     /**
-     * Delete a document by its identifier.
+     * Deletes a document by its unique identifier.
      *
-     * @param documentId the identifier of the document
-     * @return the result of the deletion. If successful, it will return a proof of deletion. If not, it will return an error.
+     * This method attempts to delete a document with the specified ID from the document store.
+     * The document will only be deleted if it's managed by this DocumentManager instance.
+     * In some cases, a proof of deletion may be returned upon successful deletion.
+     *
+     * @param documentId The unique identifier of the document to delete
+     * @return An [Outcome] containing either:
+     *         - A success result with an optional [ProofOfDeletion] object
+     *         - A failure result with an exception (typically [IllegalArgumentException] if document not found)
      */
     fun deleteDocumentById(documentId: DocumentId): Outcome<ProofOfDeletion?>
 
     /**
-     * Create a new document. This method will create a new document with the given format and keys settings.
-     * If the document is successfully created, it will return an [UnsignedDocument]. This [UnsignedDocument]
-     * contains the keys and the method to proof the ownership of the keys, that can be used with an issuer
-     * to retrieve the document's claims. After that the document can be stored using [storeIssuedDocument] or [storeDeferredDocument].
+     * Creates a new document with the specified format and security settings.
      *
-     * @param format the format of the document
-     * @param createSettings the settings to create the document with
-     * @param issuerMetaData the issuer Metadata
-     * @return the result of the creation. If successful, it will return the document. If not, it will return an error.
+     * This method initializes a new document with its security infrastructure (keys) according to the
+     * provided format and creation settings. The resulting [UnsignedDocument] contains the necessary
+     * keys and means to prove ownership of these keys, which can then be used to interact with an issuer
+     * to obtain the document's certified claims.
+     *
+     * The document creation workflow typically follows these steps:
+     * 1. Create an unsigned document using this method
+     * 2. Use the unsigned document in an issuance protocol with a trusted issuer
+     * 3. Store the resulting document using either [storeIssuedDocument] or [storeDeferredDocument]
+     *
+     * @param format The format specification for the document (e.g., [MsoMdocFormat], [SdJwtVcFormat])
+     * @param createSettings Configuration for document creation, including security settings and credential policies
+     * @param issuerMetadata Optional metadata about the issuer, useful for display and verification purposes
+     * @return An [Outcome] containing either:
+     *         - A success result with the created [UnsignedDocument]
+     *         - A failure result with an exception describing what went wrong
      */
     fun createDocument(
         format: DocumentFormat,
         createSettings: CreateDocumentSettings,
-        issuerMetaData: IssuerMetaData? = null
+        issuerMetadata: IssuerMetadata? = null
     ): Outcome<UnsignedDocument>
 
     /**
-     * Store an issued document. This method will store the document with its issuer provided data.
+     * Stores a document that has completed the issuance process with an issuer.
      *
-     * @param unsignedDocument the unsigned document
-     * @param issuerProvidedData the issuer provided data
-     * @return the result of the storage. If successful, it will return the [IssuedDocument]. If not, it will return an error.
+     * This method finalizes the document issuance process by storing the document along with
+     * the issuer-provided credentials. It completes the document lifecycle from unsigned to
+     * fully issued status. The document becomes ready for use in verification scenarios.
+     *
+     * The method performs the following key operations:
+     * 1. Validates that the issuer-provided credentials match the document's pending credentials
+     * 2. Certifies each credential using the appropriate credential certification handler
+     * 3. Updates the document metadata (name, issuance timestamp)
+     * 4. Clears any deferred issuance data that may exist
+     *
+     * @param unsignedDocument The unsigned document to be transformed into an issued document
+     * @param issuerProvidedData List of credentials provided by the issuer containing the certified claims
+     * @return An [Outcome] containing either:
+     *         - A success result with the stored [IssuedDocument]
+     *         - A failure result with an exception describing what went wrong
      */
     fun storeIssuedDocument(
         unsignedDocument: UnsignedDocument,
-        issuerProvidedData: ByteArray,
+        issuerProvidedData: List<IssuerProvidedCredential>
     ): Outcome<IssuedDocument>
 
     /**
-     * Store an unsigned document for deferred issuance. This method will store the document with the related
-     * to the issuance data.
+     * Stores an unsigned document for deferred issuance processing.
      *
-     * @param unsignedDocument the unsigned document
-     * @param relatedData the related data
-     * @return the result of the storage. If successful, it will return the [DeferredDocument]. If not, it will return an error.
+     * This method is used when the document issuance process cannot be completed immediately
+     * and requires additional steps or time to complete. It stores the unsigned document 
+     * along with additional data needed to resume and complete the issuance process later.
+     *
+     * Deferred issuance is useful in scenarios where:
+     * - The issuer requires multi-step verification
+     * - The issuance process has a time delay
+     * - Additional user actions are needed before issuance can complete
+     *
+     * @param unsignedDocument The unsigned document that is undergoing deferred issuance
+     * @param relatedData Binary data containing information needed to resume the issuance process
+     * @return An [Outcome] containing either:
+     *         - A success result with the stored [DeferredDocument]
+     *         - A failure result with an exception describing what went wrong
      */
     fun storeDeferredDocument(
         unsignedDocument: UnsignedDocument,

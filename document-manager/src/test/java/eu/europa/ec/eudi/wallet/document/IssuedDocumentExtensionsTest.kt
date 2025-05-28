@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2023-2024 European Commission
- *
+ * Copyright (c) 2023-2025 European Commission
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,16 +18,14 @@ package eu.europa.ec.eudi.wallet.document
 
 import com.upokecenter.cbor.CBORObject
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocData
+import io.mockk.every
 import io.mockk.mockk
-import kotlinx.datetime.Clock
-import kotlinx.datetime.toJavaInstant
 import org.junit.Assert
 import org.multipaz.document.NameSpacedData
 import kotlin.test.Test
-import kotlin.time.Duration.Companion.days
 
 
-class TestIssuedDocumentExtensions {
+class IssuedDocumentExtensionsTest {
     @Test
     fun testDocumentCborToJson() {
         val nameSpacedData = NameSpacedData.Builder()
@@ -45,25 +43,30 @@ class TestIssuedDocumentExtensions {
             }.EncodeToBytes())
             .build()
 
-        val issuedDocument = IssuedDocument(
-            id = "id",
-            name = "name",
-            isCertified = true,
-            keyAlias = "keyAlias",
-            secureArea = mockk(),
-            documentManagerId = "DocumentManagerId",
-            createdAt = Clock.System.now().toJavaInstant(),
-            issuedAt = Clock.System.now().toJavaInstant(),
-            validFrom = Clock.System.now().toJavaInstant(),
-            validUntil = Clock.System.now().plus(10.days).toJavaInstant(),
-            data = MsoMdocData(
-                format = mockk(),
-                nameSpacedData = nameSpacedData,
-                issuerMetadata = mockk(relaxed = true)
+        // Create a mock MsoMdocData with the nameSpacedData
+        val mdocData = mockk<MsoMdocData>()
+        every { mdocData.nameSpacedDataDecoded } returns mapOf(
+            "namespace1" to mapOf(
+                "element1" to 1,
+                "element2" to "AQID"
             ),
-            issuerProvidedData = byteArrayOf(),
+            "namespace2" to mapOf(
+                "element3" to "value3",
+                "element4" to mapOf(
+                    "subelement1" to "2023-11-09T00:01:02Z",
+                    "subelement2" to 5.4
+                )
+            ),
+            "namespace3" to mapOf(
+                "element1" to listOf(1, "string", "AQID")
+            )
         )
 
+        // Create a mock IssuedDocument
+        val issuedDocument = mockk<IssuedDocument>()
+        every { issuedDocument.data } returns mdocData
+
+        // Test the extension property
         val json = issuedDocument.nameSpacedDataJSONObject
 
         Assert.assertEquals(3, json.keys().asSequence().toList().size)
@@ -80,15 +83,19 @@ class TestIssuedDocumentExtensions {
             json.getJSONObject("namespace2").getJSONObject("element4").getString("subelement1")
         )
         Assert.assertEquals(
-            5.4f,
-            json.getJSONObject("namespace2").getJSONObject("element4").getDouble("subelement2")
-                .toFloat(),
-            0.0001f
+            5.4,
+            json.getJSONObject("namespace2").getJSONObject("element4").getDouble("subelement2"),
+            0.0001
         )
 
-        Assert.assertEquals(1, json.getJSONObject("namespace3").getJSONArray("element1")[0])
-        Assert.assertEquals("string", json.getJSONObject("namespace3").getJSONArray("element1")[1])
-        Assert.assertEquals("AQID", json.getJSONObject("namespace3").getJSONArray("element1")[2])
-
+        Assert.assertEquals(1, json.getJSONObject("namespace3").getJSONArray("element1").get(0))
+        Assert.assertEquals(
+            "string",
+            json.getJSONObject("namespace3").getJSONArray("element1").get(1)
+        )
+        Assert.assertEquals(
+            "AQID",
+            json.getJSONObject("namespace3").getJSONArray("element1").get(2)
+        )
     }
 }

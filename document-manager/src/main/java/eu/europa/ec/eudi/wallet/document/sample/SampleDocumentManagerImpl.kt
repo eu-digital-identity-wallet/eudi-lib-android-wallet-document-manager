@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 European Commission
+ * Copyright (c) 2023-2025 European Commission
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,12 @@ import eu.europa.ec.eudi.wallet.document.DocType
 import eu.europa.ec.eudi.wallet.document.DocumentId
 import eu.europa.ec.eudi.wallet.document.DocumentManager
 import eu.europa.ec.eudi.wallet.document.Outcome
+import eu.europa.ec.eudi.wallet.document.credential.IssuerProvidedCredential
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.internal.generateData
 import eu.europa.ec.eudi.wallet.document.internal.generateMso
 import eu.europa.ec.eudi.wallet.document.internal.signMso
-import eu.europa.ec.eudi.wallet.document.internal.toEcPublicKey
+import kotlinx.coroutines.runBlocking
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.jetbrains.annotations.VisibleForTesting
 import java.security.Security
@@ -63,10 +64,19 @@ class SampleDocumentManagerImpl(
                     createSettings = createSettings
                 ).getOrThrow()
                 unsignedDocument.name = documentNamesMap?.get(docType) ?: docType
-                val authKey = unsignedDocument.publicKeyCoseBytes.toEcPublicKey
-                val mso = generateMso(DIGEST_ALG, docType, authKey, nameSpaces)
-                val issuerAuth = signMso(mso)
-                val data = generateData(nameSpaces, issuerAuth)
+                val data = runBlocking {
+                    unsignedDocument.getPoPSigners().map {
+                        val authKey = it.getKeyInfo()
+                        val mso = generateMso(DIGEST_ALG, docType, authKey.publicKey, nameSpaces)
+                        val issuerAuth = signMso(mso)
+                        IssuerProvidedCredential(
+                            publicKeyAlias = authKey.alias,
+                            data = generateData(nameSpaces, issuerAuth)
+                        )
+                    }
+
+                }
+
                 val issuedDocument = storeIssuedDocument(unsignedDocument, data).getOrThrow()
                 documentIds.add(issuedDocument.id)
             }

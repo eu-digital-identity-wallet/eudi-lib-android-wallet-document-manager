@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 European Commission
+ * Copyright (c) 2024-2025 European Commission
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,19 @@
 
 package eu.europa.ec.eudi.wallet.document.mock_data
 
-import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetaData
+import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import java.net.URI
 import java.util.Locale
 
-object IssuerMetaDataMockData {
+object IssuerMetadataMockData {
 
-    fun getData(): IssuerMetaData {
+    fun getData(): IssuerMetadata {
         // Initialize displays
         val displays = listOf(
-            IssuerMetaData.Display(
+            IssuerMetadata.Display(
                 name = "Example Display",
                 locale = Locale.ENGLISH,
-                logo = IssuerMetaData.Logo(
+                logo = IssuerMetadata.Logo(
                     uri = URI.create("https://example.com/logo.png"),
                     alternativeText = "Example Logo"
                 ),
@@ -48,22 +48,22 @@ object IssuerMetaDataMockData {
             "SdJwtClaim"
         )
 
-        val claims: List<IssuerMetaData.Claim> = listOf(
-            IssuerMetaData.Claim(
+        val claims: List<IssuerMetadata.Claim> = listOf(
+            IssuerMetadata.Claim(
                 path = msoClaimName,
                 mandatory = true,
                 display = listOf(
-                    IssuerMetaData.Claim.Display(
+                    IssuerMetadata.Claim.Display(
                         name = "Mso Claim Display",
                         locale = Locale.ENGLISH
                     )
                 )
             ),
-            IssuerMetaData.Claim(
+            IssuerMetadata.Claim(
                 path = sdJwtClaimName,
                 mandatory = false,
                 display = listOf(
-                    IssuerMetaData.Claim.Display(
+                    IssuerMetadata.Claim.Display(
                         name = "SdJwt Claim Display",
                         locale = Locale.FRENCH
                     )
@@ -71,15 +71,15 @@ object IssuerMetaDataMockData {
             )
         )
 
-        val issuerDisplay: List<IssuerMetaData.IssuerDisplay> = listOf(
-            IssuerMetaData.IssuerDisplay(
+        val issuerDisplay: List<IssuerMetadata.IssuerDisplay> = listOf(
+            IssuerMetadata.IssuerDisplay(
                 name = "Greek Goverment",
                 locale = Locale.ENGLISH
             )
         )
 
         // Create and return IssuerMetaData
-        return IssuerMetaData(
+        return IssuerMetadata(
             display = displays,
             claims = claims,
             issuerDisplay = issuerDisplay,

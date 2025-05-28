@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2024 European Commission
- *
+ * Copyright (c) 2024-2025 European Commission
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,6 +23,7 @@ import eu.europa.ec.eudi.wallet.document.format.MsoMdocData
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.getResourceAsText
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.multipaz.securearea.SecureArea
@@ -36,6 +37,7 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class SampleDocumentManagerImplTest {
@@ -55,7 +57,7 @@ class SampleDocumentManagerImplTest {
         @JvmStatic
         fun setUp() {
             storage = EphemeralStorage()
-            secureArea = runBlocking {  SoftwareSecureArea.create(storage) }
+            secureArea = runBlocking { SoftwareSecureArea.create(storage) }
             val secureAreaRepository = SecureAreaRepository.build {
                 add(secureArea)
             }
@@ -72,6 +74,7 @@ class SampleDocumentManagerImplTest {
                 createSettings = CreateDocumentSettings(
                     secureAreaIdentifier = secureArea.identifier,
                     createKeySettings = createKeySettings,
+                    numberOfCredentials = 1
                 ),
                 documentNamesMap = mapOf(
                     "eu.europa.ec.eudi.pid.1" to "EU PID",
@@ -84,7 +87,7 @@ class SampleDocumentManagerImplTest {
         @AfterClass
         @JvmStatic
         fun tearDown() {
-           documentManager.getDocuments().forEach { documentManager.deleteDocumentById(it.id) }
+            documentManager.getDocuments().forEach { documentManager.deleteDocumentById(it.id) }
         }
     }
 
@@ -114,7 +117,7 @@ class SampleDocumentManagerImplTest {
     @Test
     fun `deleteDocumentById should delete the document`() {
         val storage = EphemeralStorage()
-        val secureArea = runBlocking {  SoftwareSecureArea.create(storage) }
+        val secureArea = runBlocking { SoftwareSecureArea.create(storage) }
         val secureAreaRepository = SecureAreaRepository.build {
             add(secureArea)
         }
@@ -131,6 +134,7 @@ class SampleDocumentManagerImplTest {
             createSettings = CreateDocumentSettings(
                 secureAreaIdentifier = secureArea.identifier,
                 createKeySettings = createKeySettings,
+                numberOfCredentials = 1
             ),
             documentNamesMap = mapOf(
                 "eu.europa.ec.eudi.pid.1" to "EU PID",
@@ -149,7 +153,7 @@ class SampleDocumentManagerImplTest {
     }
 
     @Test
-    fun `issued document nameSpacedDataValues parses correctly the cbor values`() {
+    fun `issued document nameSpacedDataValues parses correctly the cbor values`() = runTest {
         val document = documentManager.getDocuments().first {
             (it.format as MsoMdocFormat).docType == "org.iso.18013.5.1.mDL"
         }
@@ -166,6 +170,7 @@ class SampleDocumentManagerImplTest {
         val documentId = firstDocument.id
         val document = documentManager.getDocumentById(documentId)
 
-        assertEquals(firstDocument, document)
+        assertNotNull(document)
+        assertEquals(firstDocument.id, document.id)
     }
 }
