@@ -3,4 +3,12 @@
 # secureArea
 
 [androidJvm]\
-open override val [secureArea](secure-area.md): SecureArea
+open override val [~~secureArea~~](secure-area.md): SecureArea
+
+---
+
+### Deprecated
+
+Use findCredential()?.secureArea instead
+
+---

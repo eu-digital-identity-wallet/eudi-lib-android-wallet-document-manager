@@ -3,4 +3,12 @@
 # secureArea
 
 [androidJvm]\
-abstract val [secureArea](secure-area.md): SecureArea
+abstract val [~~secureArea~~](secure-area.md): SecureArea
+
+---
+
+### Deprecated
+
+For UnsignedDocument, use getPoPSigners() to access secure areas. For IssuedDocument, use findCredential()?.secureArea
+
+---

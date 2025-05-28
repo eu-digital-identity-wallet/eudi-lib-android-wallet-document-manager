@@ -3,7 +3,7 @@
 # setSecureAreaRepository
 
 [androidJvm]\
-fun [setSecureAreaRepository](set-secure-area-repository.md)(secureAreaRepository: SecureAreaRepository): [DocumentManager.Builder](index.md)
+fun [setSecureAreaRepository](set-secure-area-repository.md)(secureAreaRepository: SecureAreaRepository): &lt;Error class: unknown class&gt;
 
 Sets the [secureAreaRepository](set-secure-area-repository.md) that will be used for documents' keys management
 

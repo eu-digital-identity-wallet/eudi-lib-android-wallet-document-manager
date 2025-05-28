@@ -3,4 +3,12 @@
 # isCertified
 
 [androidJvm]\
-open override val [isCertified](is-certified.md): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-boolean/index.html)
+open override val [~~isCertified~~](is-certified.md): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-boolean/index.html) = false
+
+---
+
+### Deprecated
+
+For unsigned documents, this is always false. No replacement needed.
+
+---

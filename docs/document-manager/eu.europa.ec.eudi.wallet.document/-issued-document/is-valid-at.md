@@ -3,13 +3,23 @@
 # isValidAt
 
 [androidJvm]\
-fun [isValidAt](is-valid-at.md)(time: [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html)): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-boolean/index.html)
+fun [~~isValidAt~~](is-valid-at.md)(time: [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html)): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-boolean/index.html)
 
-Check if the document is valid at a given time, based on the validFrom and validUntil fields
+---
+
+### Deprecated
+
+Use findCredential() instead to check validity at a specific time. If findCredential() returns null, the document is not valid.
+
+---
+
+Checks if the document is valid at a specified point in time.
+
+A document is considered valid if it has at least one valid credential at the specified time according to the findCredential criteria.
 
 #### Return
 
-true if the document is valid at the given time, false otherwise
+true if the document is valid at the specified time, false otherwise
 
 #### Parameters
 
@@ -17,4 +27,4 @@ androidJvm
 
 | | |
 |---|---|
-| time | the time to check |
+| time | The timestamp at which to check validity |

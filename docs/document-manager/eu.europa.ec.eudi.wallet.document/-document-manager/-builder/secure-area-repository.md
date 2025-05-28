@@ -3,4 +3,4 @@
 # secureAreaRepository
 
 [androidJvm]\
-var [secureAreaRepository](secure-area-repository.md): SecureAreaRepository
+var [secureAreaRepository](secure-area-repository.md): SecureAreaRepository?

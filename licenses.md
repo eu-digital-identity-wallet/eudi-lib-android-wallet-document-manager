@@ -1,55 +1,56 @@
 
 # EUDI wallet library for managing documents
 ## Dependency License Report
-_2025-05-02 13:14:57 EEST_
+_2025-05-27 17:49:57 EEST_
 ## Apache License, Version 2.0
 
-**1** **Group:** `com.android.identity` **Name:** `identity` **Version:** `202408.1` 
-> - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
-
-**2** **Group:** `com.android.identity` **Name:** `identity-mdoc` **Version:** `202408.1` 
-> - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
-
-**3** **Group:** `com.nimbusds` **Name:** `nimbus-jose-jwt` **Version:** `9.47` 
+**1** **Group:** `com.nimbusds` **Name:** `nimbus-jose-jwt` **Version:** `9.47` 
 > - **Manifest Project URL**: [https://connect2id.com](https://connect2id.com)
 > - **Manifest License**: Apache License, Version 2.0 (Not Packaged)
 > - **POM Project URL**: [https://bitbucket.org/connect2id/nimbus-jose-jwt](https://bitbucket.org/connect2id/nimbus-jose-jwt)
 > - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-**4** **Group:** `io.ktor` **Name:** `ktor-serialization-kotlinx-json` **Version:** `3.0.1` 
+**2** **Group:** `io.ktor` **Name:** `ktor-serialization-kotlinx-json` **Version:** `3.0.1` 
 > - **POM Project URL**: [https://github.com/ktorio/ktor](https://github.com/ktorio/ktor)
 > - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-**5** **Group:** `io.ktor` **Name:** `ktor-client-core` **Version:** `3.0.1` 
+**3** **Group:** `io.ktor` **Name:** `ktor-client-core` **Version:** `3.0.1` 
 > - **POM Project URL**: [https://github.com/ktorio/ktor](https://github.com/ktorio/ktor)
 > - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-**6** **Group:** `io.ktor` **Name:** `ktor-client-serialization` **Version:** `3.0.1` 
+**4** **Group:** `io.ktor` **Name:** `ktor-client-serialization` **Version:** `3.0.1` 
 > - **POM Project URL**: [https://github.com/ktorio/ktor](https://github.com/ktorio/ktor)
 > - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-**7** **Group:** `io.ktor` **Name:** `ktor-client-content-negotiation` **Version:** `3.0.1` 
+**5** **Group:** `io.ktor` **Name:** `ktor-client-content-negotiation` **Version:** `3.0.1` 
 > - **POM Project URL**: [https://github.com/ktorio/ktor](https://github.com/ktorio/ktor)
 > - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-**8** **Group:** `org.jetbrains.kotlin` **Name:** `kotlin-stdlib` **Version:** `2.0.21` 
+**6** **Group:** `org.jetbrains.kotlin` **Name:** `kotlin-stdlib` **Version:** `2.1.0` 
 > - **POM Project URL**: [https://kotlinlang.org/](https://kotlinlang.org/)
 > - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-**9** **Group:** `org.jetbrains.kotlinx` **Name:** `kotlinx-datetime` **Version:** `0.6.0` 
+**7** **Group:** `org.jetbrains.kotlinx` **Name:** `kotlinx-datetime` **Version:** `0.6.0` 
 > - **POM Project URL**: [https://github.com/Kotlin/kotlinx-datetime](https://github.com/Kotlin/kotlinx-datetime)
 > - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-**10** **Group:** `org.jetbrains.kotlinx` **Name:** `kotlinx-serialization-json` **Version:** `1.7.3` 
+**8** **Group:** `org.jetbrains.kotlinx` **Name:** `kotlinx-coroutines-core` **Version:** `1.9.0` 
+> - **POM Project URL**: [https://github.com/Kotlin/kotlinx.coroutines](https://github.com/Kotlin/kotlinx.coroutines)
+> - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
+
+**9** **Group:** `org.jetbrains.kotlinx` **Name:** `kotlinx-serialization-json` **Version:** `1.7.3` 
 > - **POM Project URL**: [https://github.com/Kotlin/kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization)
 > - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-**11** **Group:** `org.jetbrains.kotlinx` **Name:** `kotlinx-io-bytestring` **Version:** `0.5.4` 
+**10** **Group:** `org.jetbrains.kotlinx` **Name:** `kotlinx-io-bytestring` **Version:** `0.5.4` 
 > - **POM Project URL**: [https://github.com/Kotlin/kotlinx-io](https://github.com/Kotlin/kotlinx-io)
 > - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-**12** **Group:** `org.jetbrains.kotlinx` **Name:** `kotlinx-io-core` **Version:** `0.5.4` 
+**11** **Group:** `org.jetbrains.kotlinx` **Name:** `kotlinx-io-core` **Version:** `0.5.4` 
 > - **POM Project URL**: [https://github.com/Kotlin/kotlinx-io](https://github.com/Kotlin/kotlinx-io)
+> - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
+
+**12** **Group:** `org.multipaz` **Name:** `multipaz` **Version:** `0.90` 
 > - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
 ## BSD3

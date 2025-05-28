@@ -12,3 +12,9 @@ Represents a Document Format
 |---|
 | [MsoMdocFormat](../-mso-mdoc-format/index.md) |
 | [SdJwtVcFormat](../-sd-jwt-vc-format/index.md) |
+
+## Types
+
+| Name | Summary |
+|---|---|
+| [Companion](-companion/index.md) | [androidJvm]<br>object [Companion](-companion/index.md) |

@@ -3,4 +3,12 @@
 # validFrom
 
 [androidJvm]\
-val [validFrom](valid-from.md): [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html)
+val [~~validFrom~~](valid-from.md): [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html)
+
+---
+
+### Deprecated
+
+Use getValidFrom() instead
+
+---
