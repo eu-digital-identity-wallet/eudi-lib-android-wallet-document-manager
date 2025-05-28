@@ -3,13 +3,24 @@
 # createDocument
 
 [androidJvm]\
-abstract fun [createDocument](create-document.md)(format: [DocumentFormat](../../eu.europa.ec.eudi.wallet.document.format/-document-format/index.md), createSettings: [CreateDocumentSettings](../-create-document-settings/index.md), documentMetaData: [DocumentMetaData](../../eu.europa.ec.eudi.wallet.document.metadata/-document-meta-data/index.md)? = null): [Outcome](../-outcome/index.md)&lt;[UnsignedDocument](../-unsigned-document/index.md)&gt;
+abstract fun [createDocument](create-document.md)(format: [DocumentFormat](../../eu.europa.ec.eudi.wallet.document.format/-document-format/index.md), createSettings: [CreateDocumentSettings](../-create-document-settings/index.md), issuerMetadata: [IssuerMetadata](../../eu.europa.ec.eudi.wallet.document.metadata/-issuer-metadata/index.md)? = null): [Outcome](../-outcome/index.md)&lt;[UnsignedDocument](../-unsigned-document/index.md)&gt;
 
-Create a new document. This method will create a new document with the given format and keys settings. If the document is successfully created, it will return an [UnsignedDocument](../-unsigned-document/index.md). This [UnsignedDocument](../-unsigned-document/index.md) contains the keys and the method to proof the ownership of the keys, that can be used with an issuer to retrieve the document's claims. After that the document can be stored using [storeIssuedDocument](store-issued-document.md) or [storeDeferredDocument](store-deferred-document.md).
+Creates a new document with the specified format and security settings.
+
+This method initializes a new document with its security infrastructure (keys) according to the provided format and creation settings. The resulting [UnsignedDocument](../-unsigned-document/index.md) contains the necessary keys and means to prove ownership of these keys, which can then be used to interact with an issuer to obtain the document's certified claims.
+
+The document creation workflow typically follows these steps:
+
+1. 
+   Create an unsigned document using this method
+2. 
+   Use the unsigned document in an issuance protocol with a trusted issuer
+3. 
+   Store the resulting document using either [storeIssuedDocument](store-issued-document.md) or [storeDeferredDocument](store-deferred-document.md)
 
 #### Return
 
-the result of the creation. If successful, it will return the document. If not, it will return an error.
+An [Outcome](../-outcome/index.md) containing either:     - A success result with the created [UnsignedDocument](../-unsigned-document/index.md)     - A failure result with an exception describing what went wrong
 
 #### Parameters
 
@@ -17,5 +28,6 @@ androidJvm
 
 | | |
 |---|---|
-| format | the format of the document |
-| createSettings | the settings to create the document with |
+| format | The format specification for the document (e.g., MsoMdocFormat, SdJwtVcFormat) |
+| createSettings | Configuration for document creation, including security settings and credential policies |
+| issuerMetadata | Optional metadata about the issuer, useful for display and verification purposes |

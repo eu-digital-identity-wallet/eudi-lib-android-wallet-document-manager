@@ -3,13 +3,26 @@
 # storeIssuedDocument
 
 [androidJvm]\
-abstract fun [storeIssuedDocument](store-issued-document.md)(unsignedDocument: [UnsignedDocument](../-unsigned-document/index.md), issuerProvidedData: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html)): [Outcome](../-outcome/index.md)&lt;[IssuedDocument](../-issued-document/index.md)&gt;
+abstract fun [storeIssuedDocument](store-issued-document.md)(unsignedDocument: [UnsignedDocument](../-unsigned-document/index.md), issuerProvidedData: [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin.collections/-list/index.html)&lt;[IssuerProvidedCredential](../../eu.europa.ec.eudi.wallet.document.credential/-issuer-provided-credential/index.md)&gt;): [Outcome](../-outcome/index.md)&lt;[IssuedDocument](../-issued-document/index.md)&gt;
 
-Store an issued document. This method will store the document with its issuer provided data.
+Stores a document that has completed the issuance process with an issuer.
+
+This method finalizes the document issuance process by storing the document along with the issuer-provided credentials. It completes the document lifecycle from unsigned to fully issued status. The document becomes ready for use in verification scenarios.
+
+The method performs the following key operations:
+
+1. 
+   Validates that the issuer-provided credentials match the document's pending credentials
+2. 
+   Certifies each credential using the appropriate credential certification handler
+3. 
+   Updates the document metadata (name, issuance timestamp)
+4. 
+   Clears any deferred issuance data that may exist
 
 #### Return
 
-the result of the storage. If successful, it will return the [IssuedDocument](../-issued-document/index.md). If not, it will return an error.
+An [Outcome](../-outcome/index.md) containing either:     - A success result with the stored [IssuedDocument](../-issued-document/index.md)     - A failure result with an exception describing what went wrong
 
 #### Parameters
 
@@ -17,5 +30,5 @@ androidJvm
 
 | | |
 |---|---|
-| unsignedDocument | the unsigned document |
-| issuerProvidedData | the issuer provided data |
+| unsignedDocument | The unsigned document to be transformed into an issued document |
+| issuerProvidedData | List of credentials provided by the issuer containing the certified claims |

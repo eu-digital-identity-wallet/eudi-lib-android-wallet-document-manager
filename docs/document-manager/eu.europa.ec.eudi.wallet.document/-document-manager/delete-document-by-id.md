@@ -5,11 +5,13 @@
 [androidJvm]\
 abstract fun [deleteDocumentById](delete-document-by-id.md)(documentId: [DocumentId](../-document-id/index.md)): [Outcome](../-outcome/index.md)&lt;[ProofOfDeletion](../-proof-of-deletion/index.md)?&gt;
 
-Delete a document by its identifier.
+Deletes a document by its unique identifier.
+
+This method attempts to delete a document with the specified ID from the document store. The document will only be deleted if it's managed by this DocumentManager instance. In some cases, a proof of deletion may be returned upon successful deletion.
 
 #### Return
 
-the result of the deletion. If successful, it will return a proof of deletion. If not, it will return an error.
+An [Outcome](../-outcome/index.md) containing either:     - A success result with an optional [ProofOfDeletion](../-proof-of-deletion/index.md) object     - A failure result with an exception (typically [IllegalArgumentException](https://developer.android.com/reference/kotlin/java/lang/IllegalArgumentException.html) if document not found)
 
 #### Parameters
 
@@ -17,4 +19,4 @@ androidJvm
 
 | | |
 |---|---|
-| documentId | the identifier of the document |
+| documentId | The unique identifier of the document to delete |

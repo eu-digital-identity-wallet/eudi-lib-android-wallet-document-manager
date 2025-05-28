@@ -11,6 +11,16 @@ It defines the interfaces for DocumentManager and Document classes and provides 
 implementation of the DocumentManager interface using Identity Credential library by the
 OpenWallet Foundation.
 
+Key features include:
+
+- **Multiple Credential Support**: Create multiple credentials per document for enhanced privacy and
+  security
+- **Credential Policies**: Manage credential lifecycle with one-time use or rotate use policies
+- **Multiple Document Formats**: Support for both MSO mDOC (ISO 18013-5) and SD-JWT VC (
+  draft-ietf-oauth-selective-disclosure-jwt-12) formats
+- **Enhanced Security**: Advanced key management and secure credential storage
+- **Metadata Support**: Rich display information and claim metadata for improved user experience
+
 The library is written in Kotlin.
 
 ## :heavy_exclamation_mark: Disclaimer
@@ -18,25 +28,20 @@ The library is written in Kotlin.
 The released software is a initial development release version:
 
 - The initial development release is an early endeavor reflecting the efforts of a short timeboxed
-  period, and by no
-  means can be considered as the final product.
+  period, and by no means can be considered as the final product.
 - The initial development release may be changed substantially over time, might introduce new
-  features but also may
-  change or remove existing ones, potentially breaking compatibility with your existing code.
+  features but also may change or remove existing ones, potentially breaking compatibility with your
+  existing code.
 - The initial development release is limited in functional scope.
 - The initial development release may contain errors or design flaws and other problems that could
-  cause system or other
-  failures and data loss.
+  cause system or other failures and data loss.
 - The initial development release has reduced security, privacy, availability, and reliability
-  standards relative to
-  future releases. This could make the software slower, less reliable, or more vulnerable to attacks
-  than mature
-  software.
+  standards relative to future releases. This could make the software slower, less reliable, or more
+  vulnerable to attacks than mature software.
 - The initial development release is not yet comprehensively documented.
 - Users of the software must perform sufficient engineering and additional testing in order to
-  properly evaluate their
-  application and determine whether any of the open-sourced components is suitable for use in that
-  application.
+  properly evaluate their application and determine whether any of the open-sourced components is
+  suitable for use in that application.
 - We strongly recommend not putting this version of the software into production use.
 - Only the latest version of the software will be supported
 
@@ -66,19 +71,13 @@ file.
 ```kotlin
 dependencies {
     // EUDI Wallet Documents Manager library
-    implementation("eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager:0.10.0")
+    implementation("eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager:0.11.0")
 
     // Optional: Use the multipaz-android library if you want to use the implementations for Storage and SecureArea
     // for Android devices, provided by the OpenWallet Foundation
-  implementation("org.multipaz:multipaz-android:0.90")
+    implementation("org.multipaz:multipaz-android:0.90")
 }
 ```
-
-### Breaking changes
-
-**Note** that version 0.6.x introduces breaking changes internally to the library.
-That means that any stored documents or keypairs with versions up to 0.4.x of the library
-will not be available after upgrading to version 0.6.x.
 
 ## How to Use
 
@@ -102,7 +101,7 @@ Any implementations of Storage and SecureArea can be used.
 val storage = EphemeralStorage()
 val secureArea = SoftwareSecureArea.create(storage)
 val secureAreaRepository = SecureAreaRepository.build {
-  add(secureArea)
+    add(secureArea)
 }
 ```
 
@@ -138,45 +137,38 @@ classDiagram
     Document <|.. DeferredDocument
     UnsignedDocument <|-- DeferredDocument
     Document <|.. IssuedDocument
-  Document -- IssuerMetaData
+
     class Document {
         <<interface>>
         + id DocumentId
         + name String
         + format DocumentFormat
-      + documentManagerId String
-        + keyAlias String
-        + secureArea SecureArea
+        + documentManagerId String
         + createdAt Instant
-        + isCertified Boolean
-        + keyInfo KeyInfo
-        + publicKeyCoseBytes ByteArray
-        + isKeyInvalidated Boolean
-      + issuerMetaData IssuerMetaData?
-        + sign(dataToSign ByteArray, algorithm Algorithm, keyUnlockData KeyUnlockData?) SignResult
-        + keyAgreement(otherPublicKey ByteArray, keyUnlockData KeyUnlockData?) SharedSecretResult
+        + issuerMetadata IssuerMetadata?
+        + credentialsCount() Int
     }
-  class UnsignedDocument
 
-  class DeferredDocument {
-    + relatedData ByteArray
-  }
+    class UnsignedDocument {
+        + getPoPSigners() ProofOfPossessionSigners
+    }
 
-  class IssuedDocument {
-    + issuedAt Instant
-    + nameSpacedDataInBytes NameSpacedValues~ByteArray~
-    + nameSpacedDataDecoded NameSpacedValues~Any?~
-    + nameSpaces NameSpaces
-    + issuerProvidedData ByteArray
-    + isValidAt(time Instant) Boolean
-  }
+    class DeferredDocument {
+        + relatedData ByteArray
+    }
 
-  class IssuerMetaData {
-    + documentConfigurationIdentifier String
-    + display List~Display~
-    + claims List~Claim~ ?
-    + credentialIssuerIdentifier String
-    + issuerDisplay List~IssuerDisplay~ ?
+    class IssuedDocument {
+        + issuedAt Instant
+        + data DocumentData
+        + credentialPolicy CredentialPolicy
+        + getCredentials() List~SecureAreaBoundCredential~
+        + findCredential(now Instant?) SecureAreaBoundCredential?
+        + getValidFrom() Result
+        + getValidUntil() Result
+        + isCertified() Boolean
+        + consumingCredential(block) Result~T~
+        + signConsumingCredential(keyUnlockData KeyUnlockData?) Result~EcSignature~
+        + keyAgreementConsumingCredential(keyUnlockData KeyUnlockData?) Result~SharedSecret~
     }
 ```
 
@@ -225,81 +217,144 @@ specify the secure area identifier and the create key settings that will be used
 After the document is created, the user must retrieve the document's data from the issuer and store
 it in the DocumentManager using the storeIssuedDocument method.
 
-The following snippet demonstrates how to create a new document for the mso_mdoc format, using
-SoftwareCreateKeySettings implementation provided by the IdentityCredential library. The
-implementation of the CreateKeySettings interface must match the SecureArea implementation used by
-the DocumentManager.
+### Multiple Credential Support
+
+Library supports creating multiple credentials per document. This feature allows for enhanced
+privacy and security by enabling credential rotation and managing credential policies.
+
+The `CreateDocumentSettings` now includes a `numberOfCredentials` parameter:
 
 ```kotlin
-try {
-    // create a new document
-    // Construct the CreateDocumentSettings that will be used to create the key
-    // for the document.
-    val createSettings = CreateDocumentSettings(
-        secureAreaIdentifier = secureArea.identifier,
-        createKeySettings = SoftwareCreateKeySettings.Builder().build()
-    )
+val createSettings = CreateDocumentSettings(
+    secureAreaIdentifier = secureArea.identifier,
+    createKeySettings = SoftwareCreateKeySettings.Builder().build(),
+    numberOfCredentials = 3 // Create 3 credentials for this document (default is 1)
+)
+```
 
-  // Get or create metadata for the document
-  val issuerMetaData = getIssuerMetadata("eu.europa.ec.eudi.pid.1")
-    
-    val createDocumentResult = documentManager.createDocument(
-        format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-        createSettings = createSettings,
-      issuerMetaData = issuerMetaData  // Adds display information and claim details
-    )
-    val unsignedDocument = createDocumentResult.getOrThrow()
-    val publicKeyBytes = unsignedDocument.publicKeyCoseBytes
+**Important Notes:**
 
-    // prepare keyUnlockData to unlock the key
-    // probably prompt the user to enter the passphrase
-    // or use any other method to unlock the key
-    // here we use SoftwareKeyUnlockData as an example
-    // provided by the identity-credential library
-    val keyUnlockData = SoftwareKeyUnlockData(
-        passphrase = "passphrase required to unlock the key"
-    )
-    // proof of key possession
-    // Sign the documents public key with the private key
-    // before sending it to the issuer
-    val signatureResult =
-        unsignedDocument.sign(publicKeyBytes, keyUnlockData = keyUnlockData)
-    val signature = signatureResult.getOrThrow().toCoseEncoded()
+- The `numberOfCredentials` parameter must be greater than 0
+- Each credential within a document shares the same document data but has its own unique key pair
+- Multiple credentials enable advanced privacy features by allowing credential rotation or
+  single-use policies
 
-    // send the public key and the signature to the issuer
-    // and get the document data
-    val documentData = sendToIssuer(
-        publicKeyCoseBytes = publicKeyBytes,
-        signatureCoseBytes = signature
-    )
+### Credential Policies
 
-    // store the issued document with the document data received from the issuer
-    val storeResult =
-        documentManager.storeIssuedDocument(unsignedDocument, documentData)
+The library supports credential policies that determine how credentials are managed after use:
 
-    // get the issued document
-    val issuedDocument = storeResult.getOrThrow()
-} catch (e: Throwable) {
-    // Handle the exception
-}
+#### OneTimeUse Policy
 
-// ...
+Credentials with this policy are automatically deleted after a single use:
 
-fun sendToIssuer(publicKeyCoseBytes: ByteArray, signatureCoseBytes: ByteArray): ByteArray {
-    TODO("Send publicKey and proof of possession signature to issuer and retrieve document's data")
-}
+```kotlin
+val createSettings = CreateDocumentSettings(
+    secureAreaIdentifier = secureArea.identifier,
+    createKeySettings = SoftwareCreateKeySettings.Builder().build(),
+    numberOfCredentials = 5,
+    credentialPolicy = CredentialPolicy.OneTimeUse
+)
+```
 
-// Helper function to get issuer metadata (implementation details omitted)
-fun getIssuerMetadata(docType: String): IssuerMetaData? {
-    // In a real implementation, this would retrieve metadata from an issuer or configuration
-  val json = fetchMetadataJson(docType)
-  return IssuerMetaData.fromJson(json).getOrNull()
+#### RotateUse Policy (Default)
+
+Credentials with this policy increment their usage count but remain available for reuse:
+
+```kotlin
+val createSettings = CreateDocumentSettings(
+    secureAreaIdentifier = secureArea.identifier,
+    createKeySettings = SoftwareCreateKeySettings.Builder().build(),
+    numberOfCredentials = 3,
+    credentialPolicy = CredentialPolicy.RotateUse // This is the default
+)
+```
+
+### Working with Credentials in Issued Documents
+
+Issued documents provide methods to work with individual credentials:
+
+```kotlin
+val issuedDocument = documentManager.getDocumentById("document_id") as? IssuedDocument
+requireNotNull(issuedDocument)
+
+// Get the number of valid credentials for the document
+val numberOfValidCredentials = issuedDocument.credentialsCount()
+
+// Get a list of all valid credentials for the document
+val validCredentials = issuedDocument.getCredentials()
+
+// Find an available credential (automatically selects the best one based on policy)
+val credential = issuedDocument?.findCredential()
+
+// Use a credential and apply the policy (e.g., delete if OneTimeUse, increment usage if RotateUse)
+issuedDocument?.consumingCredential {
+    // Use the credential for presentation or other operations
+    // The credential policy will be applied automatically after this block
+    performPresentationWithCredential(this)
 }
 ```
 
-**Important!:** In the case of `DocumentFormat.MsoMdoc`, `DocumentManager.storeIssuedDocument()`
+The `findCredential()` method intelligently selects credentials based on:
+
+- Credential policy (e.g., OneTimeUse or RotateUse)
+- Usage count (selecting least-used credentials first in RotateUse policy)
+- Validity period (ensuring the credential is currently valid)
+- Availability (excluding deleted or invalidated credentials)
+
+### Document Creation Example
+
+The following snippet demonstrates how to create a new document for the mso_mdoc format with
+multiple credentials:
+
+```kotlin
+// create a new document with multiple credentials
+val createSettings = CreateDocumentSettings(
+    secureAreaIdentifier = SoftwareSecureArea.IDENTIFIER,
+    createKeySettings = SoftwareCreateKeySettings.Builder().build(),
+    numberOfCredentials = 3, // Create 3 credentials
+    credentialPolicy = CredentialPolicy.OneTimeUse // Delete after single use
+)
+
+// Get or create metadata for the document
+val issuerMetadata: IssuerMetadata = TODO("Retrieve metadata from issuer")
+
+val createDocumentResult = documentManager.createDocument(
+    format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
+    createSettings = createSettings,
+    issuerMetadata = issuerMetadata  // Adds display information and claim details
+)
+
+val unsignedDocument = createDocumentResult.getOrThrow()
+val popSigners = unsignedDocument.getPoPSigners()
+
+
+// prepare keyUnlockData to unlock the key
+val keyUnlockData = SoftwareKeyUnlockData(
+    passphrase = "passphrase required to unlock the key"
+)
+
+// proof of key possession
+val publicKeys = popSigners.map { it.getKeyInfo().publicKey.toCoseBytes }
+val dataToSignFromIssuer: ByteArray = TODO("Data to sign from issuer for proof of key possession")
+val proofs = popSigners
+    .map { it.signPoP(dataToSignFromIssuer, keyUnlockData = keyUnlockData) }
+    .map { it.toCoseEncoded() }
+// send the public keys and the signature proofs to the issuer
+
+val documentData: List<IssuerProvidedCredential> =
+    TODO("Retrieve document data from issuer. This is a list of credentials")
+
+// store the issued document with the document data received from the issuer
+val storeResult =
+    documentManager.storeIssuedDocument(unsignedDocument, documentData)
+
+// get the issued document (now contains multiple credentials)
+val issuedDocument = storeResult.getOrThrow()
+```
+
+**Important!:** In the case of `MsoMdocFormat`, `DocumentManager.storeIssuedDocument()`
 method expects
-document's data to be in CBOR bytes and have the IssuerSigned structure according to ISO 23220-4.
+credentials' data to be in CBOR bytes and have the IssuerSigned structure according to ISO 23220-4.
 Currently, the library does not support IssuerSigned structure without the `nameSpaces` field.
 
 The following CDDL schema describes the structure of the IssuerSigned structure:
@@ -322,6 +377,149 @@ IssuerSignedItem = {
 IssuerAuth = COSE_Sign1 ; The payload is MobileSecurityObjectBytes
 ```
 
+#### Working with SD-JWT VC Data
+
+SD-JWT VC documents provide access to both the original JWT format and decoded claim data:
+
+```kotlin
+val sdJwtVcDocument = documentManager.getDocumentById("document_id") as? IssuedDocument
+// Check if the document is an SD-JWT VC document
+requireNotNull(sdJwtVcDocument)
+require(sdJwtVcDocument.format is SdJwtVcFormat)
+
+// Access the original SD-JWT VC string from the credential 
+val sdJwtVc = sdJwtVcDocument.findCredential()?.issuerProvidedData?.let { String(it) }
+```
+
+**Note:** For `SdJwtVcFormat`, the `DocumentManager.storeIssuedDocument()` method expects the
+document data to be a valid SD-JWT VC string as defined in the specification.
+
+### Document metadata
+
+The library provides robust support for document metadata through the `IssuerMetadata` class. This
+metadata includes display information, claim details, and issuer information that enhances the user
+experience when working with and presenting documents.
+
+#### IssuerMetadata structure
+
+The `IssuerMetadata` class contains:
+
+- `documentConfigurationIdentifier`: Unique identifier for the document configuration
+- `display`: List of display properties (name, logo, colors, etc.) for different locales
+- `claims`: Optional metadata about document claims, including display properties and whether
+  they're mandatory
+- `credentialIssuerIdentifier`: Identifier for the credential issuer
+- `issuerDisplay`: Optional display properties for the issuer
+
+Each `Display` object can include:
+
+- `name`: The display name of the document (required)
+- `locale`: Language/locale information
+- `logo`: Visual representation of the document
+- `description`: Explanatory text about the document
+- `backgroundColor`, `textColor`: Visual styling properties
+- `backgroundImageUri`: URI to a background image
+
+#### Working with IssuerMetadata
+
+You can access document metadata through the `issuerMetadata` property on any Document object:
+
+```kotlin
+val document = documentManager.getDocumentById("some_document_id")
+val metadata = document?.issuerMetadata
+
+// Check if the document has display information in the user's preferred locale
+val userLocale = Locale.getDefault()
+val localizedDisplay = metadata?.display?.find { it.locale == userLocale }
+
+// Access claim metadata
+metadata?.claims?.forEach { claim ->
+  // Process each claim with its display information
+  val claimPath = claim.path // Contains namespace and identifier information
+  val claimDisplays = claim.display // Contains localized names for the claim
+  val isMandatory = claim.mandatory ?: false
+  // Use this information in your UI
+}
+
+// Access issuer display information
+val issuerName = metadata?.issuerDisplay?.firstOrNull()?.name
+val issuerLogo = metadata?.issuerDisplay?.firstOrNull()?.logo?.uri
+```
+
+#### Creating and parsing IssuerMetadata
+
+You can create `IssuerMetadata` from JSON or convert it to JSON:
+
+```kotlin
+// Parse from JSON
+val jsonMetadata = """{"documentConfigurationIdentifier":"eu.europa.ec.eudi.pid.1", ...}"""
+val metadata = IssuerMetadata.fromJson(jsonMetadata).getOrThrow()
+
+// Convert to JSON
+val jsonString = metadata.toJson()
+
+// Handle potential parsing errors safely
+IssuerMetadata.fromJson(jsonString).fold(
+  onSuccess = { validMetadata ->
+    // Use the metadata
+  },
+  onFailure = { error ->
+    // Handle parsing error
+  }
+)
+```
+
+This metadata system allows for rich document visualization and user-friendly presentations by
+providing localized names, descriptions, colors, and logos for documents and their claims.
+
+### Enhanced Document Features
+
+The library provides several enhanced features for working with issued documents:
+
+#### Document Validation
+
+Check if a document is valid:
+
+```kotlin
+val issuedDocument = documentManager.getDocumentById("document_id") as? IssuedDocument
+val currentlyValidCredential = issuedDocument?.findCredential() != null
+```
+
+#### Document Certification
+
+Documents can be certified to verify their authenticity:
+
+```kotlin
+val issuedDocument = documentManager.getDocumentById("document_id") as? IssuedDocument
+val isCertified = issuedDocument?.isCertified() == true
+
+// Check if any of the document's key has been invalidated
+val invalidatedKeys: Map<String, Boolean> = issuedDocument?.getCredentials()
+    ?.associate { it.alias to it.isInvalidated() }
+    ?: emptyMap()
+```
+
+#### Data Access Methods
+
+Access document data in various formats:
+
+```kotlin
+val issuedDocument = documentManager.getDocumentById("document_id") as? IssuedDocument
+
+requireNotNull(issuedDocument)
+// Access the given_name claim from the document
+val givenNameClaim = when (val data = issuedDocument.data) {
+  is MsoMdocData -> data.claims
+    .find { it.nameSpace == "eu.europa.ec.eudi.pid.1" && it.identifier == "given_name" }
+
+  is SdJwtVcData -> data.claims
+    .find { it.identifier == "given_name" }
+}
+val givenName = givenNameClaim?.value as String
+val givenNameDisplay = givenNameClaim.issuerMetadata?.display
+  ?.find { it.locale == Locale.getDefault() }
+```
+
 ### Working with sample documents
 
 The library also provides a `SampleDocumentManager` implementation that can be used to load sample
@@ -339,8 +537,10 @@ val sampleDocumentManager = SampleDocumentManager.Builder()
 val sampleMdocDocuments: ByteArray = readFileWithSampleData()
 
 val createSettings = CreateDocumentSettings(
-    secureAreaIdentifier = secureArea.identifier,
-    createKeySettings = SoftwareCreateKeySettings.Builder().build()
+    secureAreaIdentifier = SoftwareSecureArea.IDENTIFIER,
+    createKeySettings = SoftwareCreateKeySettings.Builder().build(),
+    numberOfCredentials = 3, // Create multiple credentials for sample documents
+    credentialPolicy = CredentialPolicy.RotateUse
 )
 val loadResult = sampleDocumentManager.loadMdocSampleDocuments(
     sampleData = sampleMdocDocuments,
@@ -383,83 +583,6 @@ IssuerSignedItem = {
 }
 ```
 
-### Document metadata
-
-The library provides robust support for document metadata through the `IssuerMetaData` class. This
-metadata includes display information, claim details, and issuer information that enhances the user
-experience when working with and presenting documents.
-
-#### IssuerMetaData structure
-
-The `IssuerMetaData` class contains:
-
-- `documentConfigurationIdentifier`: Unique identifier for the document configuration
-- `display`: List of display properties (name, logo, colors, etc.) for different locales
-- `claims`: Optional metadata about document claims, including display properties and whether they're mandatory
-- `credentialIssuerIdentifier`: Identifier for the credential issuer
-- `issuerDisplay`: Optional display properties for the issuer
-
-Each `Display` object can include:
-
-- `name`: The display name of the document (required)
-- `locale`: Language/locale information
-- `logo`: Visual representation of the document
-- `description`: Explanatory text about the document
-- `backgroundColor`, `textColor`: Visual styling properties
-- `backgroundImageUri`: URI to a background image
-
-#### Working with IssuerMetaData
-
-You can access document metadata through the `issuerMetaData` property on any Document object:
-
-```kotlin
-val document = documentManager.getDocumentById("some_document_id")
-val metadata = document?.issuerMetaData
-
-// Check if the document has display information in the user's preferred locale
-val userLocale = Locale.getDefault()
-val localizedDisplay = metadata?.display?.find { it.locale == userLocale }
-
-// Access claim metadata
-metadata?.claims?.forEach { claim ->
-    // Process each claim with its display information
-  val claimPath = claim.path // Contains namespace and identifier information
-  val claimDisplays = claim.display // Contains localized names for the claim
-    val isMandatory = claim.mandatory ?: false
-    // Use this information in your UI
-}
-
-// Access issuer display information
-val issuerName = metadata?.issuerDisplay?.firstOrNull()?.name
-val issuerLogo = metadata?.issuerDisplay?.firstOrNull()?.logo?.uri
-```
-
-#### Creating and parsing IssuerMetaData
-
-You can create `IssuerMetaData` from JSON or convert it to JSON:
-
-```kotlin
-// Parse from JSON
-val jsonMetadata = """{"documentConfigurationIdentifier":"eu.europa.ec.eudi.pid.1", ...}"""
-val metadata = IssuerMetaData.fromJson(jsonMetadata).getOrThrow()
-
-// Convert to JSON
-val jsonString = metadata.toJson()
-
-// Handle potential parsing errors safely
-IssuerMetaData.fromJson(jsonString).fold(
-  onSuccess = { validMetadata ->
-    // Use the metadata
-  },
-  onFailure = { error ->
-    // Handle parsing error
-  }
-)
-```
-
-This metadata system allows for rich document visualization and user-friendly presentations by
-providing localized names, descriptions, colors, and logos for documents and their claims.
-
 ### Other features
 
 ```kotlin
@@ -486,7 +609,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+<http://www.apache.org/licenses/LICENSE-2.0>
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,

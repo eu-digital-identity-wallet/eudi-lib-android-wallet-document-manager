@@ -3,4 +3,12 @@
 # validUntil
 
 [androidJvm]\
-val [validUntil](valid-until.md): [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html)
+val [~~validUntil~~](valid-until.md): [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html)
+
+---
+
+### Deprecated
+
+Use getValidUntil() instead
+
+---

@@ -3,4 +3,12 @@
 # secureArea
 
 [androidJvm]\
-open override val [secureArea](secure-area.md): SecureArea
+open override val [~~secureArea~~](secure-area.md): SecureArea
+
+---
+
+### Deprecated
+
+Use getPoPSigners() instead to access credentials and their secure areas
+
+---

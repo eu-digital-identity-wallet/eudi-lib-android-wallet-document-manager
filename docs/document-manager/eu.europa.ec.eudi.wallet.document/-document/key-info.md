@@ -3,4 +3,12 @@
 # keyInfo
 
 [androidJvm]\
-open val [keyInfo](key-info.md): KeyInfo
+abstract val [~~keyInfo~~](key-info.md): KeyInfo
+
+---
+
+### Deprecated
+
+For UnsignedDocument, use getPoPSigners().first().getKeyInfo(). For IssuedDocument, use findCredential()?.secureArea.getKeyInfo()
+
+---

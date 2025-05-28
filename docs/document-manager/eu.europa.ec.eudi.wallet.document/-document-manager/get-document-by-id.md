@@ -5,11 +5,13 @@
 [androidJvm]\
 abstract fun [getDocumentById](get-document-by-id.md)(documentId: [DocumentId](../-document-id/index.md)): [Document](../-document/index.md)?
 
-Retrieve a document by its identifier.
+Retrieves a document by its unique identifier.
+
+This method searches for a document with the specified ID in the document store. It will only return documents that are managed by this DocumentManager instance (matching the DocumentManager's identifier).
 
 #### Return
 
-the document or null if not found
+The document if found and managed by this DocumentManager, null otherwise
 
 #### Parameters
 
@@ -17,4 +19,4 @@ androidJvm
 
 | | |
 |---|---|
-| documentId | the identifier of the document |
+| documentId | The unique identifier of the document to retrieve |
