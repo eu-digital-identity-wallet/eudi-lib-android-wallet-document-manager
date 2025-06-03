@@ -101,6 +101,13 @@ internal class ApplicationMetadata private constructor(
         get() = data.format ?: throw IllegalStateException("Document format not set")
 
     /**
+     * The number of credentials that created when this document was created.
+     */
+    val initialCredentialsCount: Int
+        get() = data.initialCredentialsCount
+            ?: throw IllegalStateException("Initial credentials count not set")
+
+    /**
      * The credential usage policy for this document.
      * Defaults to RotateUse if not explicitly set.
      */
@@ -262,6 +269,7 @@ internal class ApplicationMetadata private constructor(
         documentManagerId: String,
         createdAt: Instant,
         issuerMetadata: IssuerMetadata? = null,
+        initialCredentialsCount: Int = 1,
         credentialPolicy: CreateDocumentSettings.CredentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse
     ) {
         lock.withLock {
@@ -270,6 +278,7 @@ internal class ApplicationMetadata private constructor(
             data.documentManagerId = documentManagerId
             data.createdAt = createdAt
             data.issuerMetadata = issuerMetadata
+            data.initialCredentialsCount = initialCredentialsCount
             data.credentialPolicy = credentialPolicy
             save()
         }
@@ -312,6 +321,7 @@ internal class ApplicationMetadata private constructor(
         @Volatile var issuedAt: Instant? = null,
         @Volatile var nameSpacedData: NameSpacedData? = null,
         @Volatile var deferredRelatedData: ByteArray? = null,
+        @Volatile var initialCredentialsCount: Int? = null,
         @Volatile var credentialPolicy: CreateDocumentSettings.CredentialPolicy? = null
     ) {
         companion object
@@ -364,6 +374,7 @@ internal class ApplicationMetadata private constructor(
         putIfNotNull("nameSpacedData", this.nameSpacedData) { it.toDataItem() }
         putIfNotNull("deferredRelatedData", this.deferredRelatedData) { Bstr(it) }
         putIfNotNull("credentialPolicy", this.credentialPolicy) { it.toDataItem() }
+        putIfNotNull("initialCredentialsCount", this.initialCredentialsCount) { it.toDataItem() }
         return builder.end().build()
     }
 

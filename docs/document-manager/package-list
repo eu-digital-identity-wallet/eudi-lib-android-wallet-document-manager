@@ -247,6 +247,7 @@ $dokka.location:eu.europa.ec.eudi.wallet.document/IssuedDocument/getCredentials/
 $dokka.location:eu.europa.ec.eudi.wallet.document/IssuedDocument/getValidFrom/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-issued-document/get-valid-from.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/IssuedDocument/getValidUntil/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-issued-document/get-valid-until.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/IssuedDocument/id/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-issued-document/id.md
+$dokka.location:eu.europa.ec.eudi.wallet.document/IssuedDocument/initialCredentialsCount/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-issued-document/initial-credentials-count.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/IssuedDocument/isCertified/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-issued-document/is-certified.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/IssuedDocument/isKeyInvalidated/#/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-issued-document/is-key-invalidated.md
 $dokka.location:eu.europa.ec.eudi.wallet.document/IssuedDocument/isValidAt/#java.time.Instant/PointingToDeclaration/document-manager/eu.europa.ec.eudi.wallet.document/-issued-document/is-valid-at.md

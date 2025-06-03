@@ -1,7 +1,7 @@
 
 # EUDI wallet library for managing documents
 ## Dependency License Report
-_2025-05-27 17:49:57 EEST_
+_2025-06-03 16:17:31 EEST_
 ## Apache License, Version 2.0
 
 **1** **Group:** `com.nimbusds` **Name:** `nimbus-jose-jwt` **Version:** `9.47` 

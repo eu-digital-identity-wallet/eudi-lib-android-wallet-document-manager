@@ -19,6 +19,7 @@ package eu.europa.ec.eudi.wallet.document
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.internal.ApplicationMetadata
+import eu.europa.ec.eudi.wallet.document.internal.applicationMetadata
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -95,6 +96,7 @@ class IssuedDocumentTest {
         issuedAt: Instant = Instant.now(),
         credentialPolicy: CreateDocumentSettings.CredentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse,
         issuerMetaData: IssuerMetadata? = mockk(),
+        initialCredentialsCount: Int = 1,
         certifiedCredentials: List<SecureAreaBoundCredential> = emptyList(),
         pendingCredentials: List<SecureAreaBoundCredential> = emptyList()
     ): Document {
@@ -111,6 +113,7 @@ class IssuedDocumentTest {
                 every { this@mockk.issuedAt } returns issuedAt.toKotlinInstant()
                 every { this@mockk.credentialPolicy } returns credentialPolicy
                 every { this@mockk.issuerMetadata } returns issuerMetaData
+                every { this@mockk.initialCredentialsCount } returns initialCredentialsCount
             }
         }
     }
@@ -436,6 +439,19 @@ class IssuedDocumentTest {
         )
 
         assert(issuedDocument.credentialsCount() == 3)
+    }
+
+    @Test
+    fun `test initialCredentialsCount returns correct number of initial credentials`() = runTest {
+        // Mock the base document with a specific initial credential count
+        val baseDocument = createMockBaseDocument(
+            initialCredentialsCount = 5
+        )
+
+        val issuedDocument = createMockIssuedDocument(baseDocument)
+
+        // Assert that initialCredentialsCount returns the expected value
+        assert(issuedDocument.initialCredentialsCount() == 5)
     }
 
     // consumingCredential method tests
