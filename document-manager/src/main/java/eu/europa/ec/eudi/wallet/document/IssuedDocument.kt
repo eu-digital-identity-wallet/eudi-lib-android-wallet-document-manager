@@ -181,6 +181,16 @@ class IssuedDocument(
     }
 
     /**
+     * Retrieves the initial number of credentials for this document.
+     * The number of credentials initially created for this document.
+     *
+     * @return The initial number of credentials
+     */
+    fun initialCredentialsCount(): Int {
+        return baseDocument.applicationMetadata.initialCredentialsCount
+    }
+
+    /**
      * Retrieves the start date from which the document's credential is valid.
      *
      * This method safely retrieves the validity start date from the document's current

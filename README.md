@@ -280,6 +280,9 @@ requireNotNull(issuedDocument)
 // Get the number of valid credentials for the document
 val numberOfValidCredentials = issuedDocument.credentialsCount()
 
+// Get the initial number of credentials for the document
+val initialNumberOfCredentials = issuedDocument.initialCredentialsCount()
+
 // Get a list of all valid credentials for the document
 val validCredentials = issuedDocument.getCredentials()
 

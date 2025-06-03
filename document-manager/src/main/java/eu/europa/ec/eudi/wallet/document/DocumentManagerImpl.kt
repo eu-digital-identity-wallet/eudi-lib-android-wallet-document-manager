@@ -206,6 +206,7 @@ class DocumentManagerImpl(
                         documentManagerId = domain,
                         createdAt = Clock.System.now(),
                         issuerMetadata = issuerMetadata,
+                        initialCredentialsCount = createSettings.numberOfCredentials,
                         credentialPolicy = createSettings.credentialPolicy
                     )
                 }
