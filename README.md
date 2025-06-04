@@ -23,9 +23,9 @@ Key features include:
 
 The library is written in Kotlin.
 
-## :heavy_exclamation_mark: Disclaimer
+## Disclaimer
 
-The released software is a initial development release version:
+The released software is an initial development release version:
 
 - The initial development release is an early endeavor reflecting the efforts of a short timeboxed
   period, and by no means can be considered as the final product.
@@ -71,7 +71,7 @@ file.
 ```kotlin
 dependencies {
     // EUDI Wallet Documents Manager library
-    implementation("eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager:0.11.0")
+    implementation("eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager:0.11.1-SNAPSHOT")
 
     // Optional: Use the multipaz-android library if you want to use the implementations for Storage and SecureArea
     // for Android devices, provided by the OpenWallet Foundation
