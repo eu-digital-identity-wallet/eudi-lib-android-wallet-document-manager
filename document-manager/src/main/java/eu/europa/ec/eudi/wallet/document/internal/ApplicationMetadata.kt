@@ -408,6 +408,7 @@ internal class ApplicationMetadata private constructor(
             issuedAt = getValue("issuedAt") { it.asDateTimeString },
             nameSpacedData = getValue("nameSpacedData") { NameSpacedData.fromDataItem(it) },
             deferredRelatedData = getValue("deferredRelatedData") { it.asBstr },
+            initialCredentialsCount = getValue("initialCredentialsCount") { it.asNumber.toInt() },
             credentialPolicy = getValue("credentialPolicy") {
                 CreateDocumentSettings.CredentialPolicy.fromDataItem(it)
             },

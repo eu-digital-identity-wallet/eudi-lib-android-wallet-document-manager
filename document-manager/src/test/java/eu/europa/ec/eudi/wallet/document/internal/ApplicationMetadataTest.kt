@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2024-2025 European Commission
- *
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,6 +18,7 @@ package eu.europa.ec.eudi.wallet.document.internal
 
 import eu.europa.ec.eudi.wallet.document.CreateDocumentSettings
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
+import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import io.mockk.coVerify
 import io.mockk.every
@@ -41,6 +42,7 @@ class ApplicationMetadataTest {
     private val testDocumentManagerId = "test-manager-id"
     private val testCreatedAt = Clock.System.now()
     private val testFormat = MsoMdocFormat("test-doc-type")
+    private val testSdJwtVcFormat = SdJwtVcFormat("test-vct")
 
     @Test
     fun `create factory method returns ApplicationMetaData instance`() = runTest {
@@ -162,6 +164,21 @@ class ApplicationMetadataTest {
     }
 
     @Test
+    fun `initialCredentialsCount property throws exception when not set`() = runTest {
+        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
+
+        val metadata = ApplicationMetadata.create(
+            documentId = testDocumentId,
+            serializedData = null,
+            saveFn = saveFn
+        )
+
+        assertFailsWith<IllegalStateException> {
+            metadata.initialCredentialsCount
+        }
+    }
+
+    @Test
     fun `credentialPolicy defaults to RotateUse when not set`() = runTest {
         val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
 
@@ -210,6 +227,7 @@ class ApplicationMetadataTest {
             documentManagerId = testDocumentManagerId,
             createdAt = testCreatedAt,
             issuerMetadata = issuerMetadata,
+            initialCredentialsCount = 2,
             credentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse
         )
 
@@ -218,9 +236,33 @@ class ApplicationMetadataTest {
         assertEquals(testDocumentManagerId, metadata.documentManagerId)
         assertEquals(testCreatedAt, metadata.createdAt)
         assertEquals(issuerMetadata, metadata.issuerMetadata)
+        assertEquals(2, metadata.initialCredentialsCount)
         assertEquals(CreateDocumentSettings.CredentialPolicy.RotateUse, metadata.credentialPolicy)
 
         coVerify { saveFn(any()) }
+    }
+
+    @Test
+    fun `initialize with SdJwtVcFormat sets correct format`() = runTest {
+        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
+
+        val metadata = ApplicationMetadata.create(
+            documentId = testDocumentId,
+            serializedData = null,
+            saveFn = saveFn
+        )
+
+        metadata.initialize(
+            format = testSdJwtVcFormat,
+            documentName = testDocumentName,
+            documentManagerId = testDocumentManagerId,
+            createdAt = testCreatedAt
+        )
+
+        assertEquals(testSdJwtVcFormat, metadata.format)
+        assertEquals(testDocumentName, metadata.documentName)
+        assertEquals(testDocumentManagerId, metadata.documentManagerId)
+        assertEquals(testCreatedAt, metadata.createdAt)
     }
 
     @Test
@@ -244,6 +286,7 @@ class ApplicationMetadataTest {
         assertEquals(testDocumentName, metadata.documentName)
         assertEquals(testDocumentManagerId, metadata.documentManagerId)
         assertEquals(testCreatedAt, metadata.createdAt)
+        assertEquals(1, metadata.initialCredentialsCount) // Default value is 1
         assertNull(metadata.issuerMetadata)
         assertEquals(CreateDocumentSettings.CredentialPolicy.RotateUse, metadata.credentialPolicy)
     }
@@ -515,7 +558,8 @@ class ApplicationMetadataTest {
             format = testFormat,
             documentName = testDocumentName,
             documentManagerId = testDocumentManagerId,
-            createdAt = testCreatedAt
+            createdAt = testCreatedAt,
+            initialCredentialsCount = 3
         )
 
         originalMetadata.setAsProvisioned()
@@ -533,7 +577,46 @@ class ApplicationMetadataTest {
         assertEquals(originalMetadata.documentManagerId, deserializedMetadata.documentManagerId)
         assertEquals(originalMetadata.createdAt, deserializedMetadata.createdAt)
         assertEquals(originalMetadata.provisioned, deserializedMetadata.provisioned)
+        assertEquals(
+            originalMetadata.initialCredentialsCount,
+            deserializedMetadata.initialCredentialsCount
+        )
         assertEquals(originalMetadata.credentialPolicy, deserializedMetadata.credentialPolicy)
+    }
+
+    @Test
+    fun `serialization and deserialization with SdJwtVcFormat preserves format data`() = runTest {
+        var savedData: ByteString? = null
+        val saveFn: suspend (ByteString) -> Unit = { data -> savedData = data }
+
+        // Create and initialize metadata with SdJwtVcFormat
+        val originalMetadata = ApplicationMetadata.create(
+            documentId = testDocumentId,
+            serializedData = null,
+            saveFn = saveFn
+        )
+
+        originalMetadata.initialize(
+            format = testSdJwtVcFormat,
+            documentName = testDocumentName,
+            documentManagerId = testDocumentManagerId,
+            createdAt = testCreatedAt
+        )
+
+        // Create new metadata from serialized data
+        val deserializedMetadata = ApplicationMetadata.create(
+            documentId = testDocumentId,
+            serializedData = savedData,
+            saveFn = saveFn
+        )
+
+        // Verify format type is preserved
+        assertEquals(testSdJwtVcFormat, deserializedMetadata.format)
+        assertTrue(deserializedMetadata.format is SdJwtVcFormat)
+        assertEquals(
+            (testSdJwtVcFormat as SdJwtVcFormat).vct,
+            (deserializedMetadata.format as SdJwtVcFormat).vct
+        )
     }
 
     @Test
@@ -617,9 +700,66 @@ class ApplicationMetadataTest {
         metadata.setCreatedAt(Clock.System.now()) // +1
         metadata.setIssuedAt(Clock.System.now()) // +1
         metadata.setNameSpacedData(nameSpacedData) // +1
-        metadata.setDeferredRelatedData("test".encodeToByteArray()) // +1        metadata.clearDeferredRelatedData() // +1
+        metadata.setDeferredRelatedData("test".encodeToByteArray()) // +1
+        metadata.clearDeferredRelatedData() // +1
 
-        // Total: 9 save calls including initialize
-        coVerify(exactly = 9) { saveFn(any()) }
+        // Total: 10 save calls including initialize
+        coVerify(exactly = 10) { saveFn(any()) }
+    }
+
+    @Test
+    fun `SdJwtVcFormat contains the correct vct value`() = runTest {
+        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
+        val vct = "https://example.org/credentials/identity/v1"
+        val sdJwtVcFormat = SdJwtVcFormat(vct)
+
+        val metadata = ApplicationMetadata.create(
+            documentId = testDocumentId,
+            serializedData = null,
+            saveFn = saveFn
+        )
+
+        metadata.initialize(
+            format = sdJwtVcFormat,
+            documentName = testDocumentName,
+            documentManagerId = testDocumentManagerId,
+            createdAt = testCreatedAt
+        )
+
+        assertTrue(metadata.format is SdJwtVcFormat)
+        assertEquals(vct, (metadata.format as SdJwtVcFormat).vct)
+    }
+
+    @Test
+    fun `initialCredentialsCount is correctly set and preserved`() = runTest {
+        var savedData: ByteString? = null
+        val saveFn: suspend (ByteString) -> Unit = { data -> savedData = data }
+
+        val customCredentialCount = 5
+        val metadata = ApplicationMetadata.create(
+            documentId = testDocumentId,
+            serializedData = null,
+            saveFn = saveFn
+        )
+
+        metadata.initialize(
+            format = testFormat,
+            documentName = testDocumentName,
+            documentManagerId = testDocumentManagerId,
+            createdAt = testCreatedAt,
+            initialCredentialsCount = customCredentialCount
+        )
+
+        // Verify initial setting
+        assertEquals(customCredentialCount, metadata.initialCredentialsCount)
+
+        // Test deserialization preserves the count
+        val deserializedMetadata = ApplicationMetadata.create(
+            documentId = testDocumentId,
+            serializedData = savedData,
+            saveFn = saveFn
+        )
+
+        assertEquals(customCredentialCount, deserializedMetadata.initialCredentialsCount)
     }
 }
