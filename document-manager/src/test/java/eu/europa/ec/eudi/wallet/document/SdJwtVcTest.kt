@@ -33,6 +33,7 @@ import org.multipaz.securearea.software.SoftwareCreateKeySettings
 import org.multipaz.securearea.software.SoftwareSecureArea
 import org.multipaz.storage.Storage
 import org.multipaz.storage.ephemeral.EphemeralStorage
+import org.multipaz.util.Logger
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Ignore
@@ -43,6 +44,11 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class SdJwtVcTest {
+
+    @BeforeTest
+    fun setup() {
+        Logger.logPrinter = Logger.LogPrinter { _, tag, msg, _ -> println("$tag: $msg") }
+    }
 
     @Test
     @Ignore("This test is failing because of invalid sd jwt vc, need to fix the test")
