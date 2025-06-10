@@ -32,8 +32,10 @@ import org.multipaz.securearea.software.SoftwareCreateKeySettings
 import org.multipaz.securearea.software.SoftwareSecureArea
 import org.multipaz.storage.Storage
 import org.multipaz.storage.ephemeral.EphemeralStorage
+import org.multipaz.util.Logger
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -52,6 +54,11 @@ class SampleDocumentManagerImplTest {
             get() = getResourceAsText("sample_documents.txt").let {
                 Base64.Default.decode(it)
             }
+
+        @BeforeTest
+        fun setup() {
+            Logger.logPrinter = Logger.LogPrinter { _, tag, msg, _ -> println("$tag: $msg") }
+        }
 
         @BeforeClass
         @JvmStatic
