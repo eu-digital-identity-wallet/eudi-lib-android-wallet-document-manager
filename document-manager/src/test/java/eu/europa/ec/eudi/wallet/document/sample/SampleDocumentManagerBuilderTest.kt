@@ -88,9 +88,9 @@ class SampleDocumentManagerBuilderTest {
         // When
         val documentManager = SampleDocumentManager.build {
             setIdentifier("document_manager")
-            setSecureAreaRepository(SecureAreaRepository.build {
+            setSecureAreaRepository(SecureAreaRepository.Builder().apply {
                 add(secureAreaFixture)
-            })
+            }.build())
             setStorage(storageFixture)
         }
 

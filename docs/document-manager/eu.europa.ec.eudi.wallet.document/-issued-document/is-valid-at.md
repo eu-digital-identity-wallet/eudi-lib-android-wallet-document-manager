@@ -3,7 +3,8 @@
 # isValidAt
 
 [androidJvm]\
-fun [~~isValidAt~~](is-valid-at.md)(time: [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html)): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-boolean/index.html)
+fun [~~isValidAt~~](is-valid-at.md)(
+time: [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html)): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-boolean/index.html)
 
 ---
 

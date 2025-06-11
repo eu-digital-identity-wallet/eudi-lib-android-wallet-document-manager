@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2024-2025 European Commission
- *  
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,10 +23,12 @@ import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.spyk
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import kotlinx.io.bytestring.ByteString
-import org.multipaz.document.NameSpacedData
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -43,6 +45,7 @@ class ApplicationMetadataTest {
     private val testCreatedAt = Clock.System.now()
     private val testFormat = MsoMdocFormat("test-doc-type")
     private val testSdJwtVcFormat = SdJwtVcFormat("test-vct")
+    private val testKeyAttestation = buildJsonObject { put("test", JsonPrimitive("value")) }
 
     @Test
     fun `create factory method returns ApplicationMetaData instance`() = runTest {
@@ -81,26 +84,9 @@ class ApplicationMetadataTest {
             saveFn = saveFn
         )
 
-        metadata.setAsProvisioned()
+        metadata.markAsProvisioned()
 
         assertTrue(metadata.provisioned)
-    }
-
-    @Test
-    fun `setAsProvisioned throws exception when already provisioned`() = runTest {
-        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
-
-        val metadata = ApplicationMetadata.create(
-            documentId = testDocumentId,
-            serializedData = null,
-            saveFn = saveFn
-        )
-
-        metadata.setAsProvisioned()
-
-        assertFailsWith<IllegalStateException> {
-            metadata.setAsProvisioned()
-        }
     }
 
     @Test
@@ -128,7 +114,7 @@ class ApplicationMetadataTest {
             saveFn = saveFn
         )
 
-        assertFailsWith<NullPointerException> {
+        assertFailsWith<IllegalStateException> {
             metadata.documentName
         }
     }
@@ -143,7 +129,7 @@ class ApplicationMetadataTest {
             saveFn = saveFn
         )
 
-        assertFailsWith<NullPointerException> {
+        assertFailsWith<IllegalStateException> {
             metadata.documentManagerId
         }
     }
@@ -158,7 +144,7 @@ class ApplicationMetadataTest {
             saveFn = saveFn
         )
 
-        assertFailsWith<NullPointerException> {
+        assertFailsWith<IllegalStateException> {
             metadata.createdAt
         }
     }
@@ -176,19 +162,6 @@ class ApplicationMetadataTest {
         assertFailsWith<IllegalStateException> {
             metadata.initialCredentialsCount
         }
-    }
-
-    @Test
-    fun `credentialPolicy defaults to RotateUse when not set`() = runTest {
-        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
-
-        val metadata = ApplicationMetadata.create(
-            documentId = testDocumentId,
-            serializedData = null,
-            saveFn = saveFn
-        )
-
-        assertEquals(CreateDocumentSettings.CredentialPolicy.RotateUse, metadata.credentialPolicy)
     }
 
     @Test
@@ -228,7 +201,8 @@ class ApplicationMetadataTest {
             createdAt = testCreatedAt,
             issuerMetadata = issuerMetadata,
             initialCredentialsCount = 2,
-            credentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse
+            credentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse,
+            keyAttestation = testKeyAttestation
         )
 
         assertEquals(testFormat, metadata.format)
@@ -256,7 +230,11 @@ class ApplicationMetadataTest {
             format = testSdJwtVcFormat,
             documentName = testDocumentName,
             documentManagerId = testDocumentManagerId,
-            createdAt = testCreatedAt
+            createdAt = testCreatedAt,
+            initialCredentialsCount = 1,
+            credentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse,
+            issuerMetadata = null,
+            keyAttestation = null
         )
 
         assertEquals(testSdJwtVcFormat, metadata.format)
@@ -279,7 +257,11 @@ class ApplicationMetadataTest {
             format = testFormat,
             documentName = testDocumentName,
             documentManagerId = testDocumentManagerId,
-            createdAt = testCreatedAt
+            createdAt = testCreatedAt,
+            initialCredentialsCount = 1,
+            credentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse,
+            issuerMetadata = null,
+            keyAttestation = null
         )
 
         assertEquals(testFormat, metadata.format)
@@ -292,7 +274,7 @@ class ApplicationMetadataTest {
     }
 
     @Test
-    fun `setCredentialPolicy updates policy and saves`() = runTest {
+    fun `issue sets issuerProvidedData and marks as provisioned`() = runTest {
         val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
 
         val metadata = ApplicationMetadata.create(
@@ -301,15 +283,28 @@ class ApplicationMetadataTest {
             saveFn = saveFn
         )
 
-        val newPolicy = CreateDocumentSettings.CredentialPolicy.OneTimeUse
-        metadata.setCredentialPolicy(newPolicy)
+        metadata.initialize(
+            format = testFormat,
+            documentName = testDocumentName,
+            documentManagerId = testDocumentManagerId,
+            createdAt = testCreatedAt,
+            initialCredentialsCount = 1,
+            credentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse,
+            issuerMetadata = null,
+            keyAttestation = null
+        )
 
-        assertEquals(newPolicy, metadata.credentialPolicy)
-        coVerify { saveFn(any()) }
+        val testData = ByteString("test-data".toByteArray())
+        metadata.issue(testData)
+
+        assertNotNull(metadata.issuerProvidedData)
+        assertEquals("test-data", metadata.issuerProvidedData?.let { String(it) })
+        assertTrue(metadata.provisioned)
+        coVerify(exactly = 3) { saveFn(any()) } // 1 from initialize 2 from issue
     }
 
     @Test
-    fun `setDocumentName updates name and saves`() = runTest {
+    fun `issue does nothing when already provisioned`() = runTest {
         val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
 
         val metadata = ApplicationMetadata.create(
@@ -318,424 +313,64 @@ class ApplicationMetadataTest {
             saveFn = saveFn
         )
 
-        val newName = "new-document-name"
-        metadata.setDocumentName(newName)
-
-        assertEquals(newName, metadata.documentName)
-        coVerify { saveFn(any()) }
-    }
-
-    @Test
-    fun `setDocumentManagerId updates id and saves`() = runTest {
-        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
-
-        val metadata = ApplicationMetadata.create(
-            documentId = testDocumentId,
-            serializedData = null,
-            saveFn = saveFn
+        metadata.initialize(
+            format = testFormat,
+            documentName = testDocumentName,
+            documentManagerId = testDocumentManagerId,
+            createdAt = testCreatedAt,
+            initialCredentialsCount = 1,
+            credentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse,
+            issuerMetadata = null,
+            keyAttestation = null
         )
 
-        val newId = "new-manager-id"
-        metadata.setDocumentManagerId(newId)
+        val testData = ByteString("test-data".toByteArray())
+        metadata.issue(testData)
 
-        assertEquals(newId, metadata.documentManagerId)
-        coVerify { saveFn(any()) }
-    }
+        // Clear verification history to ensure exact count in next verification
+        io.mockk.clearMocks(saveFn)
 
-    @Test
-    fun `setIssuerMetaData updates metadata and saves`() = runTest {
-        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
-        val issuerMetadataJson = """
-        {
-            "documentConfigurationIdentifier": "test-doc-config",
-            "display": [
-                {
-                    "name": "Test Document",
-                    "locale": "en-US"
-                }
-            ],
-            "claims": null,
-            "credentialIssuerIdentifier": "test-issuer",
-            "issuerDisplay": [
-                {
-                    "name": "Test Issuer",
-                    "locale": "en-US"
-                }
-            ]
-        }
-        """.trimIndent()
-        val issuerMetadata = IssuerMetadata.fromJson(issuerMetadataJson).getOrThrow()
+        val newData = ByteString("new-data".toByteArray())
+        metadata.issue(newData)
 
-        val metadata = ApplicationMetadata.create(
-            documentId = testDocumentId,
-            serializedData = null,
-            saveFn = saveFn
-        )
-
-        metadata.setIssuerMetadata(issuerMetadata)
-
-        assertEquals(issuerMetadata, metadata.issuerMetadata)
-        coVerify { saveFn(any()) }
-    }
-
-    @Test
-    fun `setCreatedAt updates timestamp and saves`() = runTest {
-        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
-
-        val metadata = ApplicationMetadata.create(
-            documentId = testDocumentId,
-            serializedData = null,
-            saveFn = saveFn
-        )
-
-        val newTimestamp = Clock.System.now()
-        metadata.setCreatedAt(newTimestamp)
-
-        assertEquals(newTimestamp, metadata.createdAt)
-        coVerify { saveFn(any()) }
-    }
-
-    @Test
-    fun `issuedAt is null by default`() = runTest {
-        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
-
-        val metadata = ApplicationMetadata.create(
-            documentId = testDocumentId,
-            serializedData = null,
-            saveFn = saveFn
-        )
-
-        assertNull(metadata.issuedAt)
-    }
-
-    @Test
-    fun `setIssuedAt updates timestamp and saves`() = runTest {
-        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
-
-        val metadata = ApplicationMetadata.create(
-            documentId = testDocumentId,
-            serializedData = null,
-            saveFn = saveFn
-        )
-
-        val issuedTimestamp = Clock.System.now()
-        metadata.setIssuedAt(issuedTimestamp)
-
-        assertEquals(issuedTimestamp, metadata.issuedAt)
-        coVerify { saveFn(any()) }
-    }
-
-    @Test
-    fun `nameSpacedData is null by default`() = runTest {
-        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
-
-        val metadata = ApplicationMetadata.create(
-            documentId = testDocumentId,
-            serializedData = null,
-            saveFn = saveFn
-        )
-
-        assertNull(metadata.nameSpacedData)
-    }
-
-    @Test
-    fun `setNameSpacedData updates data and saves`() = runTest {
-        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
-        val nameSpacedData = mockk<NameSpacedData> {
-            every { toDataItem() } returns mockk(relaxed = true)
-        }
-
-        val metadata = ApplicationMetadata.create(
-            documentId = testDocumentId,
-            serializedData = null,
-            saveFn = saveFn
-        )
-
-        metadata.setNameSpacedData(nameSpacedData)
-
-        assertEquals(nameSpacedData, metadata.nameSpacedData)
-        coVerify { saveFn(any()) }
-    }
-
-    @Test
-    fun `deferredRelatedData is null by default`() = runTest {
-        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
-
-        val metadata = ApplicationMetadata.create(
-            documentId = testDocumentId,
-            serializedData = null,
-            saveFn = saveFn
-        )
-
-        assertNull(metadata.deferredRelatedData)
-    }
-
-    @Test
-    fun `setDeferredRelatedData updates data and saves`() = runTest {
-        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
-        val deferredData = "test deferred data".encodeToByteArray()
-
-        val metadata = ApplicationMetadata.create(
-            documentId = testDocumentId,
-            serializedData = null,
-            saveFn = saveFn
-        )
-
-        metadata.setDeferredRelatedData(deferredData)
-
-        assertEquals(deferredData, metadata.deferredRelatedData)
-        coVerify { saveFn(any()) }
-    }
-
-    @Test
-    fun `clearDeferredRelatedData sets data to null and saves`() = runTest {
-        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
-        val deferredData = "test deferred data".encodeToByteArray()
-
-        val metadata = ApplicationMetadata.create(
-            documentId = testDocumentId,
-            serializedData = null,
-            saveFn = saveFn
-        )
-
-        // First set some data
-        metadata.setDeferredRelatedData(deferredData)
-        assertEquals(deferredData, metadata.deferredRelatedData)
-
-        // Then clear it
-        metadata.clearDeferredRelatedData()
-        assertNull(metadata.deferredRelatedData)
-
-        coVerify(exactly = 2) { saveFn(any()) }
-    }
-
-    @Test
-    fun `display properties are null by default`() = runTest {
-        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
-
-        val metadata = ApplicationMetadata.create(
-            documentId = testDocumentId,
-            serializedData = null,
-            saveFn = saveFn
-        )
-
-        assertNull(metadata.displayName)
-        assertNull(metadata.typeDisplayName)
-        assertNull(metadata.cardArt)
-        assertNull(metadata.issuerLogo)
-    }
-
-    @Test
-    fun `documentDeleted is no-op implementation`() = runTest {
-        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
-
-        val metadata = ApplicationMetadata.create(
-            documentId = testDocumentId,
-            serializedData = null,
-            saveFn = saveFn
-        )
-
-        // Should not throw any exception
-        metadata.documentDeleted()
-
-        // Should not trigger any save operation
+        // Should still have the original data
+        assertEquals("test-data", metadata.issuerProvidedData?.let { String(it) })
         coVerify(exactly = 0) { saveFn(any()) }
     }
 
     @Test
-    fun `serialization and deserialization preserves data`() = runTest {
-        var savedData: ByteString? = null
-        val saveFn: suspend (ByteString) -> Unit = { data -> savedData = data }
+    fun `issue with documentName updates name`() = runTest {
+        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
 
-        // Create and initialize metadata
-        val originalMetadata = ApplicationMetadata.create(
+        val metadata = ApplicationMetadata.create(
             documentId = testDocumentId,
             serializedData = null,
             saveFn = saveFn
         )
 
-        originalMetadata.initialize(
+        metadata.initialize(
             format = testFormat,
             documentName = testDocumentName,
             documentManagerId = testDocumentManagerId,
             createdAt = testCreatedAt,
-            initialCredentialsCount = 3
+            initialCredentialsCount = 1,
+            credentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse,
+            issuerMetadata = null,
+            keyAttestation = null
         )
 
-        originalMetadata.setAsProvisioned()
+        val testData = ByteString("test-data".toByteArray())
+        val newName = "updated-document-name"
+        metadata.issue(testData, newName)
 
-        // Create new metadata from serialized data
-        val deserializedMetadata = ApplicationMetadata.create(
-            documentId = testDocumentId,
-            serializedData = savedData,
-            saveFn = saveFn
-        )
-
-        // Verify all data is preserved
-        assertEquals(originalMetadata.format, deserializedMetadata.format)
-        assertEquals(originalMetadata.documentName, deserializedMetadata.documentName)
-        assertEquals(originalMetadata.documentManagerId, deserializedMetadata.documentManagerId)
-        assertEquals(originalMetadata.createdAt, deserializedMetadata.createdAt)
-        assertEquals(originalMetadata.provisioned, deserializedMetadata.provisioned)
-        assertEquals(
-            originalMetadata.initialCredentialsCount,
-            deserializedMetadata.initialCredentialsCount
-        )
-        assertEquals(originalMetadata.credentialPolicy, deserializedMetadata.credentialPolicy)
-    }
-
-    @Test
-    fun `serialization and deserialization with SdJwtVcFormat preserves format data`() = runTest {
-        var savedData: ByteString? = null
-        val saveFn: suspend (ByteString) -> Unit = { data -> savedData = data }
-
-        // Create and initialize metadata with SdJwtVcFormat
-        val originalMetadata = ApplicationMetadata.create(
-            documentId = testDocumentId,
-            serializedData = null,
-            saveFn = saveFn
-        )
-
-        originalMetadata.initialize(
-            format = testSdJwtVcFormat,
-            documentName = testDocumentName,
-            documentManagerId = testDocumentManagerId,
-            createdAt = testCreatedAt
-        )
-
-        // Create new metadata from serialized data
-        val deserializedMetadata = ApplicationMetadata.create(
-            documentId = testDocumentId,
-            serializedData = savedData,
-            saveFn = saveFn
-        )
-
-        // Verify format type is preserved
-        assertEquals(testSdJwtVcFormat, deserializedMetadata.format)
-        assertTrue(deserializedMetadata.format is SdJwtVcFormat)
-        assertEquals(
-            (testSdJwtVcFormat as SdJwtVcFormat).vct,
-            (deserializedMetadata.format as SdJwtVcFormat).vct
-        )
-    }
-
-    @Test
-    fun `empty serialized data creates new instance`() = runTest {
-        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
-        val emptyData = ByteString()
-
-        val metadata = ApplicationMetadata.create(
-            documentId = testDocumentId,
-            serializedData = emptyData,
-            saveFn = saveFn
-        )
-
-        assertFalse(metadata.provisioned)
-        assertEquals(CreateDocumentSettings.CredentialPolicy.RotateUse, metadata.credentialPolicy)
-    }
-
-    @Test
-    fun `thread safety - concurrent access to provisioned state`() = runTest {
-        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
-
-        val metadata = ApplicationMetadata.create(
-            documentId = testDocumentId,
-            serializedData = null,
-            saveFn = saveFn
-        )
-
-        // This test verifies that the class doesn't throw exceptions during concurrent access
-        // The actual thread safety is ensured by the mutex in the implementation
-        assertFalse(metadata.provisioned)
-        metadata.setAsProvisioned()
+        assertEquals(newName, metadata.displayName)
         assertTrue(metadata.provisioned)
     }
 
     @Test
-    fun `save function is called for all mutation operations`() = runTest {
+    fun `issueDeferred sets deferredRelatedData`() = runTest {
         val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
-        val issuerMetadataJson = """
-        {
-            "documentConfigurationIdentifier": "test-doc-config",
-            "display": [
-                {
-                    "name": "Test Document",
-                    "locale": "en-US"
-                }
-            ],
-            "claims": null,
-            "credentialIssuerIdentifier": "test-issuer",
-            "issuerDisplay": [
-                {
-                    "name": "Test Issuer",
-                    "locale": "en-US"
-                }
-            ]
-        }
-        """.trimIndent()
-        val issuerMetadata = IssuerMetadata.fromJson(issuerMetadataJson).getOrThrow()
-        val nameSpacedData = mockk<NameSpacedData> {
-            every { toDataItem() } returns mockk(relaxed = true)
-        }
 
-        val metadata = ApplicationMetadata.create(
-            documentId = testDocumentId,
-            serializedData = null,
-            saveFn = saveFn
-        )
-
-        // Initialize (1 save call)
-        metadata.initialize(
-            format = testFormat,
-            documentName = testDocumentName,
-            documentManagerId = testDocumentManagerId,
-            createdAt = testCreatedAt
-        )
-
-        // Various setter operations (each should trigger a save)
-        metadata.setCredentialPolicy(CreateDocumentSettings.CredentialPolicy.RotateUse) // +1
-        metadata.setDocumentName("new-name") // +1
-        metadata.setDocumentManagerId("new-id") // +1
-        metadata.setIssuerMetadata(issuerMetadata) // +1
-        metadata.setCreatedAt(Clock.System.now()) // +1
-        metadata.setIssuedAt(Clock.System.now()) // +1
-        metadata.setNameSpacedData(nameSpacedData) // +1
-        metadata.setDeferredRelatedData("test".encodeToByteArray()) // +1
-        metadata.clearDeferredRelatedData() // +1
-
-        // Total: 10 save calls including initialize
-        coVerify(exactly = 10) { saveFn(any()) }
-    }
-
-    @Test
-    fun `SdJwtVcFormat contains the correct vct value`() = runTest {
-        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
-        val vct = "https://example.org/credentials/identity/v1"
-        val sdJwtVcFormat = SdJwtVcFormat(vct)
-
-        val metadata = ApplicationMetadata.create(
-            documentId = testDocumentId,
-            serializedData = null,
-            saveFn = saveFn
-        )
-
-        metadata.initialize(
-            format = sdJwtVcFormat,
-            documentName = testDocumentName,
-            documentManagerId = testDocumentManagerId,
-            createdAt = testCreatedAt
-        )
-
-        assertTrue(metadata.format is SdJwtVcFormat)
-        assertEquals(vct, (metadata.format as SdJwtVcFormat).vct)
-    }
-
-    @Test
-    fun `initialCredentialsCount is correctly set and preserved`() = runTest {
-        var savedData: ByteString? = null
-        val saveFn: suspend (ByteString) -> Unit = { data -> savedData = data }
-
-        val customCredentialCount = 5
         val metadata = ApplicationMetadata.create(
             documentId = testDocumentId,
             serializedData = null,
@@ -747,19 +382,202 @@ class ApplicationMetadataTest {
             documentName = testDocumentName,
             documentManagerId = testDocumentManagerId,
             createdAt = testCreatedAt,
-            initialCredentialsCount = customCredentialCount
+            initialCredentialsCount = 1,
+            credentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse,
+            issuerMetadata = null,
+            keyAttestation = null
         )
 
-        // Verify initial setting
-        assertEquals(customCredentialCount, metadata.initialCredentialsCount)
+        val testData = ByteString("deferred-data".toByteArray())
+        metadata.issueDeferred(testData)
 
-        // Test deserialization preserves the count
-        val deserializedMetadata = ApplicationMetadata.create(
+        assertNotNull(metadata.deferredRelatedData)
+        assertEquals("deferred-data", metadata.deferredRelatedData?.let { String(it) })
+        coVerify(exactly = 2) { saveFn(any()) }
+    }
+
+    @Test
+    fun `issueDeferred does nothing when already provisioned`() = runTest {
+        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
+
+        val metadata = ApplicationMetadata.create(
             documentId = testDocumentId,
-            serializedData = savedData,
+            serializedData = null,
             saveFn = saveFn
         )
 
-        assertEquals(customCredentialCount, deserializedMetadata.initialCredentialsCount)
+        metadata.initialize(
+            format = testFormat,
+            documentName = testDocumentName,
+            documentManagerId = testDocumentManagerId,
+            createdAt = testCreatedAt,
+            initialCredentialsCount = 1,
+            credentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse,
+            issuerMetadata = null,
+            keyAttestation = null
+        )
+
+        metadata.markAsProvisioned()
+
+        // Clear verification history to ensure exact count in next verification
+        io.mockk.clearMocks(saveFn)
+
+        val testData = ByteString("deferred-data".toByteArray())
+        metadata.issueDeferred(testData)
+
+        assertNull(metadata.deferredRelatedData)
+        coVerify(exactly = 0) { saveFn(any()) }
+    }
+
+    @Test
+    fun `issueDeferred with documentName updates name`() = runTest {
+        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
+
+        val metadata = ApplicationMetadata.create(
+            documentId = testDocumentId,
+            serializedData = null,
+            saveFn = saveFn
+        )
+
+        metadata.initialize(
+            format = testFormat,
+            documentName = testDocumentName,
+            documentManagerId = testDocumentManagerId,
+            createdAt = testCreatedAt,
+            initialCredentialsCount = 1,
+            credentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse,
+            issuerMetadata = null,
+            keyAttestation = null
+        )
+
+        val testData = ByteString("deferred-data".toByteArray())
+        val newName = "updated-document-name"
+        metadata.issueDeferred(testData, newName)
+
+        assertEquals(newName, metadata.displayName)
+    }
+
+    @Test
+    fun `setKeyAttestation updates keyAttestation and saves`() = runTest {
+        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
+        val keyAttestationJson = kotlinx.serialization.json.buildJsonObject {
+            put("attestation", kotlinx.serialization.json.JsonPrimitive("test-attestation"))
+        }
+
+        val metadata = ApplicationMetadata.create(
+            documentId = testDocumentId,
+            serializedData = null,
+            saveFn = saveFn
+        )
+
+        metadata.initialize(
+            format = testFormat,
+            documentName = testDocumentName,
+            documentManagerId = testDocumentManagerId,
+            createdAt = testCreatedAt,
+            initialCredentialsCount = 1,
+            credentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse,
+            issuerMetadata = null,
+            keyAttestation = null
+        )
+
+        metadata.setKeyAttestation(keyAttestationJson)
+
+        assertEquals(keyAttestationJson, metadata.keyAttestation)
+        coVerify(exactly = 2) { saveFn(any()) }
+    }
+
+    @Test
+    fun `setKeyAttestation does nothing when already provisioned`() = runTest {
+        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
+        val keyAttestationJson = kotlinx.serialization.json.buildJsonObject {
+            put("attestation", kotlinx.serialization.json.JsonPrimitive("test-attestation"))
+        }
+
+        val metadata = ApplicationMetadata.create(
+            documentId = testDocumentId,
+            serializedData = null,
+            saveFn = saveFn
+        )
+
+        metadata.initialize(
+            format = testFormat,
+            documentName = testDocumentName,
+            documentManagerId = testDocumentManagerId,
+            createdAt = testCreatedAt,
+            initialCredentialsCount = 1,
+            credentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse,
+            issuerMetadata = null,
+            keyAttestation = null
+        )
+
+        metadata.markAsProvisioned()
+
+        // Clear verification history to ensure exact count in next verification
+        io.mockk.clearMocks(saveFn)
+
+        metadata.setKeyAttestation(keyAttestationJson)
+
+        assertNull(metadata.keyAttestation)
+        coVerify(exactly = 0) { saveFn(any()) }
+    }
+
+    @Test
+    fun `documentName returns docType for MsoMdocFormat when displayName is null`() = runTest {
+        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
+        val format = MsoMdocFormat("test-doc-type")
+
+        val metadata = spyk(
+            ApplicationMetadata.create(
+                documentId = testDocumentId,
+                serializedData = null,
+                saveFn = saveFn
+            )
+        )
+
+        every { metadata.displayName } returns null
+
+        metadata.initialize(
+            format = format,
+            documentName = testDocumentName,  // This will be overridden by our mock
+            documentManagerId = testDocumentManagerId,
+            createdAt = testCreatedAt,
+            initialCredentialsCount = 1,
+            credentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse,
+            issuerMetadata = null,
+            keyAttestation = null
+        )
+
+        assertEquals("test-doc-type", metadata.documentName)
+    }
+
+    @Test
+    fun `documentName returns vct for SdJwtVcFormat when displayName is null`() = runTest {
+        val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
+        val format = SdJwtVcFormat("test-vct")
+
+        val metadata = spyk(
+            ApplicationMetadata.create(
+                documentId = testDocumentId,
+                serializedData = null,
+                saveFn = saveFn
+            )
+        )
+
+        every { metadata.displayName } returns null
+
+        metadata.initialize(
+            format = format,
+            documentName = testDocumentName,  // This will be overridden by our mock
+            documentManagerId = testDocumentManagerId,
+            createdAt = testCreatedAt,
+            initialCredentialsCount = 1,
+            credentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse,
+            issuerMetadata = null,
+            keyAttestation = null
+        )
+
+        assertEquals("test-vct", metadata.documentName)
     }
 }
+

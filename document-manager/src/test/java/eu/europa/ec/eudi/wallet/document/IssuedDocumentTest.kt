@@ -19,7 +19,6 @@ package eu.europa.ec.eudi.wallet.document
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.internal.ApplicationMetadata
-import eu.europa.ec.eudi.wallet.document.internal.applicationMetadata
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import io.mockk.coEvery
 import io.mockk.coVerify

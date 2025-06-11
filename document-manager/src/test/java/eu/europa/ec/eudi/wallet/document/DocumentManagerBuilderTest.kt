@@ -30,9 +30,9 @@ class DocumentManagerBuilderTest {
 
     val storage = EphemeralStorage()
     val secureArea = runBlocking { SoftwareSecureArea.create(storage) }
-    val secureAreaRepository = SecureAreaRepository.build {
+    val secureAreaRepository = SecureAreaRepository.Builder().apply {
         add(secureArea)
-    }
+    }.build()
 
     @Test
     fun `build should throw exception when identifier is not set`() {
@@ -94,7 +94,9 @@ class DocumentManagerBuilderTest {
         assertIs<DocumentManagerImpl>(documentManager)
         assertEquals("document_manager", documentManager.identifier)
         assertEquals(storage, documentManager.storage)
-        assertEquals(secureArea, runBlocking { documentManager.secureAreaRepository.getImplementation(secureArea.identifier)})
+        assertEquals(
+            secureArea,
+            runBlocking { documentManager.secureAreaRepository.getImplementation(secureArea.identifier) })
     }
 
     @Test
@@ -103,16 +105,18 @@ class DocumentManagerBuilderTest {
         val documentManager = DocumentManager {
             setIdentifier("document_manager")
             setStorage(this@DocumentManagerBuilderTest.storage)
-            setSecureAreaRepository(SecureAreaRepository.build {
+            setSecureAreaRepository(SecureAreaRepository.Builder().apply {
                 add(secureArea)
-            })
+            }.build())
         }
 
         // Then
         assertIs<DocumentManagerImpl>(documentManager)
         assertEquals("document_manager", documentManager.identifier)
         assertEquals(storage, documentManager.storage)
-        assertEquals(secureArea, runBlocking { documentManager.secureAreaRepository.getImplementation(secureArea.identifier) })
+        assertEquals(
+            secureArea,
+            runBlocking { documentManager.secureAreaRepository.getImplementation(secureArea.identifier) })
     }
 
     @Test

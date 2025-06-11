@@ -3,7 +3,10 @@
 # storeDeferredDocument
 
 [androidJvm]\
-open override fun [storeDeferredDocument](store-deferred-document.md)(unsignedDocument: [UnsignedDocument](../-unsigned-document/index.md), relatedData: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html)): [Outcome](../-outcome/index.md)&lt;[DeferredDocument](../-deferred-document/index.md)&gt;
+open override fun [storeDeferredDocument](store-deferred-document.md)(
+unsignedDocument: [UnsignedDocument](../-unsigned-document/index.md),
+relatedData: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html)): [Outcome](../-outcome/index.md)
+&lt;[DeferredDocument](../-deferred-document/index.md)&gt;
 
 Store an unsigned document for deferred issuance. This method will store the document with the related to the issuance data.
 

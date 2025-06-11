@@ -3,4 +3,5 @@
 # documentManagerId
 
 [androidJvm]\
-open override val [documentManagerId](document-manager-id.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)
+open override
+val [documentManagerId](document-manager-id.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)

@@ -13,6 +13,6 @@ object [Companion](index.md)
 
 ## Functions
 
-| Name | Summary |
-|---|---|
+| Name                     | Summary                                                                                                                                                                                                                                                                                                                                                      |
+|--------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [fromJson](from-json.md) | [androidJvm]<br>fun [fromJson](from-json.md)(json: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)): [Result](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-result/index.html)&lt;[IssuerMetadata](../index.md)&gt;<br>Create a [IssuerMetadata](../index.md) object from a JSON string. |
