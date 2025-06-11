@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,420 +18,446 @@ package eu.europa.ec.eudi.wallet.document.internal
 
 import eu.europa.ec.eudi.wallet.document.CreateDocumentSettings
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
+import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
+import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata.Companion.fromJson
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.io.bytestring.ByteString
-import kotlinx.io.bytestring.isEmpty
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import org.multipaz.cbor.Bstr
 import org.multipaz.cbor.Cbor
+import org.multipaz.cbor.CborBuilder
 import org.multipaz.cbor.CborMap
 import org.multipaz.cbor.DataItem
+import org.multipaz.cbor.MapBuilder
 import org.multipaz.cbor.Tstr
-import org.multipaz.cbor.annotation.CborSerializable
 import org.multipaz.cbor.toDataItem
 import org.multipaz.cbor.toDataItemDateTimeString
+import org.multipaz.document.AbstractDocumentMetadata
 import org.multipaz.document.DocumentMetadata
-import org.multipaz.document.NameSpacedData
 
 /**
- * Internal implementation of DocumentMetadata for managing application-specific metadata
- * related to wallet documents.
+ * Interface for application-specific document metadata management.
  *
- * This class provides storage and access to various document properties, including:
- * - Document format information
- * - Document provisioning status
- * - Display information (names, artwork)
- * - Timing information (creation, issuance)
- * - Credential policies
- * - Issuer metadata
- * - Document namespaced data
- * - Related deferred data
- *
- * The class ensures thread safety using a mutex lock for all data modifications.
- * Data is serialized to/from CBOR format for persistent storage.
- *
- * @property serializedData Existing serialized CBOR data to initialize from, if available
- * @property saveFn Callback function to persist serialized data when changes occur
+ * This interface extends [AbstractDocumentMetadata] to provide functionality for storing and
+ * managing metadata related to documents in the EUDI wallet application. It handles document format,
+ * credentials, issuer information, and the document lifecycle from creation through issuance.
  */
-internal class ApplicationMetadata private constructor(
-    serializedData: ByteString?,
-    private val saveFn: suspend (data: ByteString) -> Unit
-) : DocumentMetadata {
-    private val lock = Mutex()
-    private val data: Data = if (serializedData == null || serializedData.isEmpty()) {
-        Data()
-    } else {
-        Data.fromCbor(serializedData.toByteArray())
-    }
-
-    /** Indicates whether the document has been provisioned */
-    override val provisioned get() = data.provisioned
+internal interface ApplicationMetadata : AbstractDocumentMetadata {
 
     /**
-     * Sets the document as provisioned.
-     *
-     * @throws IllegalStateException If the document is already provisioned
+     * The unique identifier of the document manager handling this document.
+     * @throws IllegalStateException if the document manager ID is not set
      */
-    suspend fun setAsProvisioned() = lock.withLock {
-        check(!data.provisioned)
-        data.provisioned = true
-        save()
-    }
-
-    /** The document's display name to show to users */
-    override val displayName get() = data.displayName
-
-    /** The document type's display name to show to users */
-    override val typeDisplayName get() = data.typeDisplayName
-
-    /** Card art image data to display for this document */
-    override val cardArt get() = data.cardArt
-
-    /** Issuer logo image data to display for this document */
-    override val issuerLogo get() = data.issuerLogo
+    val documentManagerId: String
 
     /**
-     * The document format (e.g., MsoMdoc or SdJwtVc).
-     *
-     * @throws IllegalStateException If the format has not been set
+     * The format of the document (e.g., MSO MDL or SD-JWT VC).
+     * @throws IllegalStateException if the document format is not set
      */
     val format: DocumentFormat
-        get() = data.format ?: throw IllegalStateException("Document format not set")
 
     /**
-     * The number of credentials that created when this document was created.
+     * The initial number of credentials in the document.
+     * @throws IllegalStateException if the initial credentials count is not set
      */
     val initialCredentialsCount: Int
-        get() = data.initialCredentialsCount
-            ?: throw IllegalStateException("Initial credentials count not set")
 
     /**
-     * The credential usage policy for this document.
-     * Defaults to RotateUse if not explicitly set.
+     * The policy that determines how credentials are handled for this document.
+     * @throws IllegalStateException if the credential policy is not set
      */
     val credentialPolicy: CreateDocumentSettings.CredentialPolicy
-        get() = data.credentialPolicy ?: CreateDocumentSettings.CredentialPolicy.RotateUse
 
     /**
-     * Sets the credential policy for this document.
-     *
-     * @param credentialPolicy The policy to set
+     * The timestamp when the document was created.
+     * @throws IllegalStateException if the creation timestamp is not set
      */
-    suspend fun setCredentialPolicy(credentialPolicy: CreateDocumentSettings.CredentialPolicy) =
-        lock.withLock {
-            data.credentialPolicy = credentialPolicy
-            save()
-        }
+    val createdAt: Instant
 
     /**
-     * The document's name identifier.
-     *
-     * @throws NullPointerException If the document name has not been set
+     * The display name of the document.
+     * Falls back to format-specific identifiers if no display name is set.
      */
-    val documentName get() = data.documentName!!
+    val documentName: String
 
     /**
-     * Sets the document name.
-     *
-     * @param documentName The name to set for this document
+     * Optional key attestation data in JSON format.
      */
-    suspend fun setDocumentName(documentName: String) =
-        lock.withLock {
-            data.documentName = documentName
-            save()
-        }
+    val keyAttestation: JsonObject?
 
     /**
-     * The document manager's unique identifier.
-     *
-     * @throws NullPointerException If the document manager ID has not been set
+     * Optional metadata about the issuer of the document.
      */
-    val documentManagerId get() = data.documentManagerId!!
+    val issuerMetadata: IssuerMetadata?
 
     /**
-     * Sets the document manager's identifier.
-     *
-     * @param documentManagerId The ID to set
+     * Optional data provided by the issuer during document issuance.
      */
-    suspend fun setDocumentManagerId(documentManagerId: String) =
-        lock.withLock {
-            data.documentManagerId = documentManagerId
-            save()
-        }
-
-    /** Metadata about the document issuer */
-    val issuerMetadata get() = data.issuerMetadata
-
-    /**
-     * Sets the issuer metadata.
-     *
-     * @param issuerMetaData The issuer metadata to set
-     */
-    suspend fun setIssuerMetadata(issuerMetaData: IssuerMetadata) =
-        lock.withLock {
-            data.issuerMetadata = issuerMetaData
-            save()
-        }
-
     val issuerProvidedData: ByteArray?
-        get() = data.issuerProvidedData
-
-    suspend fun setIssuerProvidedData(issuerProvidedData: ByteArray) =
-        lock.withLock {
-            data.issuerProvidedData = issuerProvidedData
-            save()
-        }
 
     /**
-     * The timestamp when this document was created.
-     *
-     * @throws NullPointerException If the creation time has not been set
+     * Optional timestamp when the document was issued.
      */
-    val createdAt get() = data.createdAt!!
+    val issuedAt: Instant?
 
     /**
-     * Sets the document creation timestamp.
-     *
-     * @param createdAt The creation timestamp
+     * Optional data related to deferred issuance.
      */
-    suspend fun setCreatedAt(createdAt: Instant) =
-        lock.withLock {
-            data.createdAt = createdAt
-            save()
-        }
-
-    /** The timestamp when this document was issued (may be null for documents not yet issued) */
-    val issuedAt get() = data.issuedAt
+    val deferredRelatedData: ByteArray?
 
     /**
-     * Sets the document issuance timestamp.
+     * Initializes the document metadata with essential information.
      *
-     * @param issuedAt The issuance timestamp
-     */
-    suspend fun setIssuedAt(issuedAt: Instant) =
-        lock.withLock {
-            data.issuedAt = issuedAt
-            save()
-        }
-
-    /** The namespaced data associated with this document */
-    val nameSpacedData get() = data.nameSpacedData
-
-    /**
-     * Sets the namespaced data for this document.
-     *
-     * @param nameSpacedData The namespaced data to set
-     */
-    suspend fun setNameSpacedData(nameSpacedData: NameSpacedData) =
-        lock.withLock {
-            data.nameSpacedData = nameSpacedData
-            save()
-        }
-
-    /** Deferred related data associated with this document */
-    val deferredRelatedData get() = data.deferredRelatedData
-
-    /**
-     * Sets deferred related data for this document.
-     *
-     * @param deferredRelatedData The deferred data to set
-     */
-    suspend fun setDeferredRelatedData(deferredRelatedData: ByteArray) =
-        lock.withLock {
-            data.deferredRelatedData = deferredRelatedData
-            save()
-        }
-
-    /**
-     * Clears any deferred related data associated with this document.
-     */
-    suspend fun clearDeferredRelatedData() =
-        lock.withLock {
-            data.deferredRelatedData = null
-            save()
-        }
-
-    /**
-     * Initializes the core document metadata.
-     *
-     * @param format The document format
-     * @param documentName The document name identifier
-     * @param documentManagerId The document manager identifier
-     * @param createdAt The creation timestamp
-     * @param issuerMetadata Optional metadata about the issuer
-     * @param credentialPolicy The credential usage policy
+     * @param documentManagerId Identifier of the document manager
+     * @param format Format specification of the document
+     * @param initialCredentialsCount Number of credentials initially in the document
+     * @param credentialPolicy Policy for handling credentials
+     * @param createdAt Timestamp of document creation
+     * @param documentName Display name for the document
+     * @param issuerMetadata Optional metadata about the document issuer
+     * @param keyAttestation Optional key attestation data
      */
     suspend fun initialize(
-        format: DocumentFormat,
-        documentName: String,
         documentManagerId: String,
+        format: DocumentFormat,
+        initialCredentialsCount: Int,
+        credentialPolicy: CreateDocumentSettings.CredentialPolicy,
         createdAt: Instant,
-        issuerMetadata: IssuerMetadata? = null,
-        initialCredentialsCount: Int = 1,
-        credentialPolicy: CreateDocumentSettings.CredentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse
-    ) {
-        lock.withLock {
-            data.format = format
-            data.documentName = documentName
-            data.documentManagerId = documentManagerId
-            data.createdAt = createdAt
-            data.issuerMetadata = issuerMetadata
-            data.initialCredentialsCount = initialCredentialsCount
-            data.credentialPolicy = credentialPolicy
-            save()
-        }
-    }
+        documentName: String,
+        issuerMetadata: IssuerMetadata?,
+        keyAttestation: JsonObject?
+    )
 
     /**
-     * Saves the current metadata state using the provided save function.
+     * Issues the document with provided issuer data.
      *
-     * @throws IllegalStateException If called without holding the lock
-     */
-    private suspend fun save() {
-        check(lock.isLocked)
-        saveFn(ByteString(data.toCbor()))
-    }
-
-    /**
-     * Called when the associated document is deleted.
-     * Currently a no-op implementation of the DocumentMetadata interface.
-     */
-    override suspend fun documentDeleted() {}
-
-    /**
-     * Data class that holds all metadata properties.
-     * Uses @CborSerializable to enable CBOR serialization.
-     * All properties are marked @Volatile to ensure visibility across threads.
-     */
-    @CborSerializable
-    data class Data(
-        @Volatile var format: DocumentFormat? = null,
-        @Volatile var provisioned: Boolean = false,
-        @Volatile var displayName: String? = null,
-        @Volatile var typeDisplayName: String? = null,
-        @Volatile var cardArt: ByteString? = null,
-        @Volatile var issuerLogo: ByteString? = null,
-        @Volatile var documentName: String? = null,
-        @Volatile var documentManagerId: String? = null,
-        @Volatile var issuerMetadata: IssuerMetadata? = null,
-        @Volatile var issuerProvidedData: ByteArray? = null,
-        @Volatile var createdAt: Instant? = null,
-        @Volatile var issuedAt: Instant? = null,
-        @Volatile var nameSpacedData: NameSpacedData? = null,
-        @Volatile var deferredRelatedData: ByteArray? = null,
-        @Volatile var initialCredentialsCount: Int? = null,
-        @Volatile var credentialPolicy: CreateDocumentSettings.CredentialPolicy? = null
-    ) {
-        companion object
-    }
-
-    /**
-     * Deserializes Data from CBOR-encoded bytes.
+     * This marks the document as fully provisioned and updates its metadata.
      *
-     * @param data CBOR-encoded bytes to deserialize
-     * @return Deserialized Data instance
+     * @param issuerProvidedData Data provided by the issuer
+     * @param documentName Optional new name for the document
      */
-    private fun Data.Companion.fromCbor(data: ByteArray): Data {
-        return Data.fromDataItem(Cbor.decode(data))
-    }
+    suspend fun issue(
+        issuerProvidedData: ByteString,
+        documentName: String? = null
+    )
 
     /**
-     * Serializes Data to CBOR-encoded bytes.
+     * Sets up the document for deferred issuance.
      *
-     * @return CBOR-encoded representation of this Data instance
+     * @param deferredRelatedData Data related to deferred issuance
+     * @param documentName Optional new name for the document
      */
-    private fun Data.toCbor(): ByteArray {
-        return Cbor.encode(toDataItem())
-    }
+    suspend fun issueDeferred(
+        deferredRelatedData: ByteString,
+        documentName: String? = null
+    )
 
     /**
-     * Converts Data to a CBOR DataItem for serialization.
-     * Uses a builder pattern to construct the CBOR map.
+     * Updates the key attestation data for the document.
      *
-     * @return CBOR DataItem representation of this Data
+     * @param keyAttestation Key attestation data in JSON format
      */
-    private fun Data.toDataItem(): DataItem {
-        val builder = CborMap.builder()
-        fun <T> putIfNotNull(key: String, value: T?, transform: (T) -> DataItem) {
-            if (value != null) {
-                builder.put(key, transform(value))
-            }
-        }
-        builder.put("provisioned", this.provisioned.toDataItem())
-        putIfNotNull("format", this.format) { it.toDataItem() }
-        putIfNotNull("displayName", this.displayName) { Tstr(it) }
-        putIfNotNull("typeDisplayName", this.typeDisplayName) { Tstr(it) }
-        putIfNotNull("cardArt", this.cardArt) { Bstr(it.toByteArray()) }
-        putIfNotNull("issuerLogo", this.issuerLogo) { Bstr(it.toByteArray()) }
-        putIfNotNull("documentName", this.documentName) { Tstr(it) }
-        putIfNotNull("documentManagerId", this.documentManagerId) { Tstr(it) }
-        putIfNotNull("issuerMetadata", this.issuerMetadata) { Tstr(it.toJson()) }
-        putIfNotNull("issuerProvidedData", this.issuerProvidedData) { Bstr(it) }
-        putIfNotNull("createdAt", this.createdAt) { it.toDataItemDateTimeString() }
-        putIfNotNull("issuedAt", this.issuedAt) { it.toDataItemDateTimeString() }
-        putIfNotNull("nameSpacedData", this.nameSpacedData) { it.toDataItem() }
-        putIfNotNull("deferredRelatedData", this.deferredRelatedData) { Bstr(it) }
-        putIfNotNull("credentialPolicy", this.credentialPolicy) { it.toDataItem() }
-        putIfNotNull("initialCredentialsCount", this.initialCredentialsCount) { it.toDataItem() }
-        return builder.end().build()
-    }
+    suspend fun setKeyAttestation(keyAttestation: JsonObject)
 
-    /**
-     * Deserializes a Data instance from a CBOR DataItem.
-     * Extracts each field using appropriate conversions.
-     *
-     * @param dataItem CBOR DataItem to deserialize
-     * @return Deserialized Data instance
-     */
-    private fun Data.Companion.fromDataItem(dataItem: DataItem): Data {
-        fun <T> getValue(key: String, extractor: (DataItem) -> T?): T? =
-            if (dataItem.hasKey(key)) extractor(dataItem[key]) else null
-
-        return Data(
-            format = getValue("format") {
-                DocumentFormat.fromDataItem(it)
-            },
-            provisioned = dataItem["provisioned"].asBoolean,
-            displayName = getValue("displayName") { it.asTstr },
-            typeDisplayName = getValue("typeDisplayName") { it.asTstr },
-            cardArt = getValue("cardArt") { ByteString(it.asBstr) },
-            issuerLogo = getValue("issuerLogo") { ByteString(it.asBstr) },
-            documentName = getValue("documentName") { it.asTstr },
-            issuerMetadata = getValue("issuerMetadata") { item ->
-                IssuerMetadata.fromJson(item.asTstr).getOrNull()
-            },
-            issuerProvidedData = getValue("issuerProvidedData") { it.asBstr },
-            documentManagerId = getValue("documentManagerId") { it.asTstr },
-            createdAt = getValue("createdAt") { it.asDateTimeString },
-            issuedAt = getValue("issuedAt") { it.asDateTimeString },
-            nameSpacedData = getValue("nameSpacedData") { NameSpacedData.fromDataItem(it) },
-            deferredRelatedData = getValue("deferredRelatedData") { it.asBstr },
-            initialCredentialsCount = getValue("initialCredentialsCount") { it.asNumber.toInt() },
-            credentialPolicy = getValue("credentialPolicy") {
-                CreateDocumentSettings.CredentialPolicy.fromDataItem(it)
-            },
-        )
-    }
 
     companion object {
         /**
-         * Factory method to create an ApplicationMetaData instance.
+         * The factory for [ApplicationMetadata].
          *
-         * @param documentId The document identifier
-         * @param serializedData Existing serialized data, if available
-         * @param saveFn Function to save serialized data
-         * @return A new ApplicationMetaData instance
+         * @param documentId the document to create metadata for.
+         * @param serializedData the serialized metadata.
+         * @param saveFn a function to serialize the instance into serialized metadata.
+         * @return the created [ApplicationMetadata]
          */
         suspend fun create(
             documentId: String,
             serializedData: ByteString?,
             saveFn: suspend (data: ByteString) -> Unit
-        ): ApplicationMetadata {
-            return ApplicationMetadata(serializedData, saveFn)
+        ): ApplicationMetadata = ApplicationMetadataImpl.create(documentId, serializedData, saveFn)
+    }
+
+}
+
+
+/**
+ * Implementation of [ApplicationMetadata] that delegates core functionality to [AbstractDocumentMetadata].
+ *
+ * This class manages application-specific document metadata by storing it in a serializable
+ * [Data] object and handling the document lifecycle.
+ *
+ * @property delegate The underlying document metadata implementation
+ */
+internal class ApplicationMetadataImpl private constructor(
+    private val delegate: AbstractDocumentMetadata
+) : ApplicationMetadata, AbstractDocumentMetadata by delegate {
+
+    private var data: Data =
+        delegate.other?.let { Data.fromCbor(it) } ?: Data()
+
+    override val documentManagerId: String
+        get() = data.documentManagerId ?: throw IllegalStateException("Document manager ID not set")
+    override val format: DocumentFormat
+        get() = data.format ?: throw IllegalStateException("Document format not set")
+    override val initialCredentialsCount: Int
+        get() = data.initialCredentialsCount.also {
+            if (it == 0) throw IllegalStateException(
+                "Initial credentials count not set"
+            )
+        }
+    override val credentialPolicy: CreateDocumentSettings.CredentialPolicy
+        get() = data.credentialPolicy ?: throw IllegalStateException("Credential policy not set")
+    override val documentName: String
+        get() = displayName ?: when (format) {
+            is MsoMdocFormat -> (format as MsoMdocFormat).docType
+            is SdJwtVcFormat -> (format as SdJwtVcFormat).vct
+        }
+    override val keyAttestation: JsonObject?
+        get() = data.keyAttestation
+    override val issuerMetadata: IssuerMetadata? get() = data.issuerMetadata
+    override val issuerProvidedData: ByteArray? get() = data.issuerProvidedData?.toByteArray()
+    override val createdAt: Instant
+        get() = data.createdAt ?: throw IllegalStateException("Created at not set")
+    override val issuedAt: Instant? get() = data.issuedAt
+    override val deferredRelatedData: ByteArray? get() = data.deferredRelatedData?.toByteArray()
+
+
+    /**
+     * Internal data class for storing metadata fields in a serializable format.
+     *
+     * This class provides methods for CBOR serialization and deserialization of metadata.
+     */
+    internal data class Data(
+        val documentManagerId: String? = null,
+        val format: DocumentFormat? = null,
+        val initialCredentialsCount: Int = 0,
+        val credentialPolicy: CreateDocumentSettings.CredentialPolicy? = null,
+        val keyAttestation: JsonObject? = null,
+        val issuerMetadata: IssuerMetadata? = null,
+        val issuerProvidedData: ByteString? = null,
+        val createdAt: Instant? = null,
+        val issuedAt: Instant? = null,
+        val deferredRelatedData: ByteString? = null,
+    ) {
+
+        /**
+         * Converts this Data object to a CBOR encoded ByteString.
+         *
+         * @return CBOR representation of the metadata
+         */
+        fun toCbor(): ByteString {
+            val builder = CborMap.Companion.builder()
+
+            builder.putIfNotNull("documentManagerId", documentManagerId) { Tstr(it) }
+            builder.putIfNotNull("format", format) { it.toDataItem() }
+            builder.putIfNotNull(
+                "initialCredentialsCount",
+                initialCredentialsCount
+            ) { it.toDataItem() }
+            builder.putIfNotNull("credentialPolicy", credentialPolicy) { it.toDataItem() }
+            builder.putIfNotNull("createdAt", createdAt) { it.toDataItemDateTimeString() }
+            builder.putIfNotNull("keyAttestation", keyAttestation) { Tstr(it.toString()) }
+            builder.putIfNotNull("issuerMetadata", issuerMetadata) { Tstr(it.toJson()) }
+            builder.putIfNotNull(
+                "issuerProvidedData",
+                issuerProvidedData
+            ) { Bstr(it.toByteArray()) }
+            builder.putIfNotNull("issuedAt", issuedAt) { it.toDataItemDateTimeString() }
+            builder.putIfNotNull(
+                "deferredRelatedData",
+                deferredRelatedData
+            ) { Bstr(it.toByteArray()) }
+
+            val dataItem = builder.end().build()
+            return ByteString(Cbor.encode(dataItem))
+        }
+
+        companion object {
+            /**
+             * Creates a Data object from CBOR encoded ByteString.
+             *
+             * @param cbor The CBOR encoded metadata
+             * @return Deserialized Data object
+             */
+            fun fromCbor(cbor: ByteString): Data {
+                val dataItem = Cbor.decode(cbor.toByteArray())
+
+
+                return Data(
+                    format = DocumentFormat.Companion.fromDataItem(dataItem["format"]),
+                    documentManagerId = dataItem["documentManagerId"].asTstr,
+                    initialCredentialsCount = dataItem["initialCredentialsCount"].asNumber.toInt(),
+                    credentialPolicy = CreateDocumentSettings.CredentialPolicy.fromDataItem(dataItem["credentialPolicy"]),
+                    createdAt = dataItem.getValue("createdAt") { it.asDateTimeString },
+                    keyAttestation = dataItem.getValue("keyAttestation") { Json.decodeFromString(it.asTstr) },
+                    issuerMetadata = dataItem.getValue("issuerMetadata") {
+                        fromJson(
+                            it.asTstr
+                        ).getOrNull()
+                    },
+                    issuerProvidedData = dataItem.getValue("issuerProvidedData") { ByteString(it.asBstr) },
+                    issuedAt = dataItem.getValue("issuedAt") { it.asDateTimeString },
+                    deferredRelatedData = dataItem.getValue("deferredRelatedData") { ByteString(it.asBstr) },
+                )
+            }
+        }
+    }
+
+    /**
+     * Initializes document metadata with the provided information.
+     *
+     * This method sets up the basic metadata required for a document and stores it
+     * in serialized form.
+     */
+    override suspend fun initialize(
+        documentManagerId: String,
+        format: DocumentFormat,
+        initialCredentialsCount: Int,
+        credentialPolicy: CreateDocumentSettings.CredentialPolicy,
+        createdAt: Instant,
+        documentName: String,
+        issuerMetadata: IssuerMetadata?,
+        keyAttestation: JsonObject?
+    ) {
+        data = Data(
+            documentManagerId = documentManagerId,
+            format = format,
+            createdAt = createdAt,
+            initialCredentialsCount = initialCredentialsCount,
+            credentialPolicy = credentialPolicy,
+            issuerMetadata = issuerMetadata,
+            keyAttestation = keyAttestation
+        )
+
+        setMetadata(
+            displayName = documentName,
+            typeDisplayName = typeDisplayName,
+            cardArt = cardArt,
+            issuerLogo = issuerLogo,
+            other = data.toCbor()
+        )
+    }
+
+    /**
+     * Issues the document with provided issuer data.
+     *
+     * This method:
+     * 1. Updates the metadata with issuer-provided data
+     * 2. Clears any deferred issuance data
+     * 3. Sets the issuance timestamp
+     * 4. Marks the document as provisioned
+     *
+     * If the document is already provisioned, this method does nothing.
+     */
+    override suspend fun issue(
+        issuerProvidedData: ByteString,
+        documentName: String?,
+    ) {
+        if (provisioned) return
+        data = data.copy(
+            issuerProvidedData = issuerProvidedData,
+            deferredRelatedData = null,
+            issuedAt = Clock.System.now()
+        )
+        setMetadata(
+            displayName = documentName ?: displayName,
+            typeDisplayName = typeDisplayName,
+            cardArt = cardArt,
+            issuerLogo = issuerLogo,
+            other = data.toCbor()
+        )
+        markAsProvisioned()
+    }
+
+
+    /**
+     * Sets up the document for deferred issuance.
+     *
+     * This stores related data needed for completing the issuance process later.
+     * If the document is already provisioned, this method does nothing.
+     */
+    override suspend fun issueDeferred(deferredRelatedData: ByteString, documentName: String?) {
+        if (provisioned) return
+
+        data = data.copy(
+            deferredRelatedData = deferredRelatedData
+        )
+
+        setMetadata(
+            displayName = documentName ?: displayName,
+            typeDisplayName = typeDisplayName,
+            cardArt = cardArt,
+            issuerLogo = issuerLogo,
+            other = data.toCbor()
+        )
+    }
+
+    /**
+     * Updates the key attestation data for the document.
+     *
+     * If the document is already provisioned, this method does nothing.
+     */
+    override suspend fun setKeyAttestation(keyAttestation: JsonObject) {
+        if (provisioned) return
+        data = data.copy(
+            keyAttestation = keyAttestation
+        )
+        setMetadata(
+            displayName = displayName,
+            typeDisplayName = typeDisplayName,
+            cardArt = cardArt,
+            issuerLogo = issuerLogo,
+            other = data.toCbor()
+        )
+    }
+
+
+    companion object {
+        /**
+         * Factory method for creating [ApplicationMetadataImpl] instances.
+         *
+         * @param documentId The document ID to associate with this metadata
+         * @param serializedData Optional previously serialized metadata
+         * @param saveFn A function to call when the metadata needs to be saved
+         * @return A new or restored [ApplicationMetadataImpl] instance
+         */
+        suspend fun create(
+            documentId: String,
+            serializedData: ByteString?,
+            saveFn: suspend (data: ByteString) -> Unit
+        ): ApplicationMetadataImpl {
+            val delegate = DocumentMetadata.Companion.create(documentId, serializedData, saveFn)
+            return ApplicationMetadataImpl(delegate)
         }
     }
 }
 
+/**
+ * Utility extension function to add a key-value pair to a CBOR map builder only if the value is not null.
+ *
+ * @param key The key for the map entry
+ * @param value The value to add if not null
+ * @param transform Function to transform the value to a CBOR DataItem
+ */
+private inline fun <T> MapBuilder<CborBuilder>.putIfNotNull(
+    key: String,
+    value: T?,
+    transform: (T) -> DataItem
+) {
+    if (value != null) {
+        put(key, transform(value))
+    }
+}
 
+/**
+ * Utility extension function to safely extract a value from a CBOR DataItem by key.
+ *
+ * @param key The key to look up in the CBOR map
+ * @param extractor Function to extract and convert the value from the DataItem
+ * @return The extracted value, or null if the key is not present
+ */
+private inline fun <T> DataItem.getValue(key: String, extractor: (DataItem) -> T?): T? =
+    if (hasKey(key)) extractor(this[key]) else null

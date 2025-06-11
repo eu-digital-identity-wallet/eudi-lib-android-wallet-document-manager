@@ -22,7 +22,9 @@ import eu.europa.ec.eudi.sdjwt.vc.SelectPath.Default.select
 import eu.europa.ec.eudi.wallet.document.NameSpace
 import eu.europa.ec.eudi.wallet.document.NameSpacedValues
 import eu.europa.ec.eudi.wallet.document.NameSpaces
+import eu.europa.ec.eudi.wallet.document.credential.fromIssuerProvidedData
 import eu.europa.ec.eudi.wallet.document.internal.parse
+import eu.europa.ec.eudi.wallet.document.internal.sdJwtVcString
 import eu.europa.ec.eudi.wallet.document.internal.toObject
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import org.multipaz.cbor.Cbor
@@ -38,6 +40,28 @@ sealed interface DocumentData {
     val format: DocumentFormat
     val claims: List<DocumentClaim>
     val issuerMetadata: IssuerMetadata?
+
+    companion object {
+        fun make(
+            format: DocumentFormat,
+            issuerProvidedData: ByteArray,
+            issuerMetadata: IssuerMetadata?
+        ): DocumentData {
+            return when (format) {
+                is MsoMdocFormat -> MsoMdocData(
+                    format = format,
+                    nameSpacedData = NameSpacedData.fromIssuerProvidedData(issuerProvidedData),
+                    issuerMetadata = issuerMetadata
+                )
+
+                is SdJwtVcFormat -> SdJwtVcData(
+                    format = format,
+                    sdJwtVc = issuerProvidedData.sdJwtVcString,
+                    issuerMetadata = issuerMetadata
+                )
+            }
+        }
+    }
 }
 
 /**

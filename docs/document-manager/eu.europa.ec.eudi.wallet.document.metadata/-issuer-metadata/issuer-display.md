@@ -3,4 +3,5 @@
 # issuerDisplay
 
 [androidJvm]\
-val [issuerDisplay](issuer-display.md): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin.collections/-list/index.html)&lt;[IssuerMetadata.IssuerDisplay](-issuer-display/index.md)&gt;?
+val [issuerDisplay](issuer-display.md): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin.collections/-list/index.html)
+&lt;[IssuerMetadata.IssuerDisplay](-issuer-display/index.md)&gt;?

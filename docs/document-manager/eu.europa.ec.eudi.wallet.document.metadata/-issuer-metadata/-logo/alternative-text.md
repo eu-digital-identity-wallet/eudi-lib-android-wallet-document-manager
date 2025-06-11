@@ -3,4 +3,5 @@
 # alternativeText
 
 [androidJvm]\
-val [alternativeText](alternative-text.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)? = null
+val [alternativeText](alternative-text.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)? =
+null

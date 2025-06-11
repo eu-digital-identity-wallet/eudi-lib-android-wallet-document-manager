@@ -3,4 +3,5 @@
 # claims
 
 [androidJvm]\
-val [claims](claims.md): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin.collections/-list/index.html)&lt;[IssuerMetadata.Claim](-claim/index.md)&gt;?
+val [claims](claims.md): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin.collections/-list/index.html)
+&lt;[IssuerMetadata.Claim](-claim/index.md)&gt;?

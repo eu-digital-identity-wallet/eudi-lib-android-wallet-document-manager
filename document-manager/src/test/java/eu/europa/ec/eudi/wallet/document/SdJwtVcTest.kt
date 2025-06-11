@@ -16,6 +16,7 @@
 
 package eu.europa.ec.eudi.wallet.document
 
+import android.util.Log
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps.recreateClaimsAndDisclosuresPerClaim
 import eu.europa.ec.eudi.sdjwt.vc.SelectPath.Default.select
@@ -24,7 +25,12 @@ import eu.europa.ec.eudi.wallet.document.format.MutableSdJwtClaim
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcData
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
 import eu.europa.ec.eudi.wallet.document.internal.parse
+import io.mockk.clearAllMocks
+import io.mockk.clearMocks
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.mockkStatic
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.multipaz.securearea.SecureArea
@@ -43,6 +49,26 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class SdJwtVcTest {
+
+    @BeforeTest
+    fun setup() {
+        mockkStatic(Log::class)
+        every { Log.v(any(), any()) } returns 0
+        every { Log.v(any(), any(), any()) } returns 0
+        every { Log.d(any(), any()) } returns 0
+        every { Log.d(any(), any(), any()) } returns 0
+        every { Log.i(any(), any()) } returns 0
+        every { Log.i(any(), any(), any()) } returns 0
+        every { Log.e(any(), any()) } returns 0
+        every { Log.e(any(), any(), any()) } returns 0
+        every { Log.w(any(), any(), any()) } returns 0
+    }
+
+    @AfterTest
+    fun tearDown() {
+        clearAllMocks()
+        documentManager.getDocuments().forEach { documentManager.deleteDocumentById(it.id) }
+    }
 
     @Test
     @Ignore("This test is failing because of invalid sd jwt vc, need to fix the test")
@@ -122,9 +148,9 @@ class SdJwtVcTest {
     fun setUp() {
         storage = EphemeralStorage()
         secureArea = runBlocking { SoftwareSecureArea.create(storage) }
-        secureAreaRepository = SecureAreaRepository.build {
-            add(secureArea)
-        }
+        secureAreaRepository = SecureAreaRepository.Builder()
+            .add(secureArea)
+            .build()
         documentManager = DocumentManagerImpl(
             identifier = "document_manager_1",
             storage = EphemeralStorage(),
@@ -134,12 +160,6 @@ class SdJwtVcTest {
             checkDevicePublicKey = false
         }
     }
-
-    @AfterTest
-    fun tearDown() {
-        documentManager.getDocuments().forEach { documentManager.deleteDocumentById(it.id) }
-    }
-
 
     @Test
     fun `store sd-jwt vc`() = runTest {

@@ -19,6 +19,7 @@ package eu.europa.ec.eudi.wallet.document.credential
 import eu.europa.ec.eudi.wallet.document.CreateDocumentSettings
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
@@ -29,6 +30,7 @@ import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.multipaz.document.Document
+import org.multipaz.sdjwt.credential.KeyBoundSdJwtVcCredential
 import org.multipaz.securearea.CreateKeySettings
 import org.multipaz.securearea.SecureArea
 
@@ -70,9 +72,35 @@ class CredentialFactoryTest {
             every { this@mockk.numberOfCredentials } returns 2
         }
 
+        // Mock SecureArea to return key info
+        val keyInfo1 = mockk<org.multipaz.securearea.KeyInfo> {
+            every { alias } returns "key1"
+        }
+        val keyInfo2 = mockk<org.multipaz.securearea.KeyInfo> {
+            every { alias } returns "key2"
+        }
+        val batchResult = mockk<org.multipaz.securearea.BatchCreateKeyResult> {
+            every { keyInfos } returns listOf(keyInfo1, keyInfo2)
+            every { openid4vciKeyAttestation } returns null
+        }
+        val secureArea = mockk<SecureArea> {
+            coEvery {
+                batchCreateKey(
+                    numKeys = 2,
+                    createKeySettings = createKeySettings
+                )
+            } returns batchResult
+
+            // Mock getKeyInfo for each key alias
+            coEvery { getKeyInfo("key1") } returns keyInfo1
+            coEvery { getKeyInfo("key2") } returns keyInfo2
+
+            // Mock getIdentifier
+            every { identifier } returns "mock-secure-area-id"
+        }
+
         // When creating credentials
-        val secureArea = mockk<SecureArea>(relaxed = true)
-        val credentials = factoryToTest.createCredentials(
+        val (credentials, keyAttestation) = factoryToTest.createCredentials(
             format = format,
             document = document,
             createDocumentSettings = createDocumentSettings,
@@ -100,18 +128,42 @@ class CredentialFactoryTest {
             every { this@mockk.numberOfCredentials } returns 2
         }
 
+        // Mock SecureArea to return key info
+        val keyInfo1 = mockk<org.multipaz.securearea.KeyInfo> {
+            every { alias } returns "key1"
+        }
+        val keyInfo2 = mockk<org.multipaz.securearea.KeyInfo> {
+            every { alias } returns "key2"
+        }
+        val batchResult = mockk<org.multipaz.securearea.BatchCreateKeyResult> {
+            every { keyInfos } returns listOf(keyInfo1, keyInfo2)
+            every { openid4vciKeyAttestation } returns null
+        }
+        val secureArea = mockk<SecureArea> {
+            coEvery {
+                batchCreateKey(
+                    numKeys = 2,
+                    createKeySettings = createKeySettings
+                )
+            } returns batchResult
+
+            // Mock getKeyInfo for each key alias
+            coEvery { getKeyInfo("key1") } returns keyInfo1
+            coEvery { getKeyInfo("key2") } returns keyInfo2
+
+            // Mock getIdentifier
+            every { identifier } returns "mock-secure-area-id"
+        }
+
         // When creating credentials
-        val secureArea = mockk<SecureArea>(relaxed = true)
-        val credentials = factoryToTest.createCredentials(
+        val (credentials, keyAttestation) = factoryToTest.createCredentials(
             format = format,
             document = document,
             createDocumentSettings = createDocumentSettings,
             secureArea = secureArea
         )
 
-        // Then correct number of credentials is created
-        assertEquals(2, credentials.size)
-
+        // Then correct number of credentials is created and properties are set correctly
         assertEquals(2, credentials.size)
         assertTrue(credentials.all { it.vct == testVct })
         assertTrue(credentials.all { it.domain == testDomain })

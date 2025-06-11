@@ -3,7 +3,9 @@
 # getDocuments
 
 [androidJvm]\
-inline fun &lt;[T](get-documents.md) : [Document](-document/index.md)&gt; [DocumentManager](-document-manager/index.md).[getDocuments](get-documents.md)(): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin.collections/-list/index.html)&lt;[T](get-documents.md)&gt;
+inline fun &lt;[T](get-documents.md) : [Document](-document/index.md)
+&gt; [DocumentManager](-document-manager/index.md).[getDocuments](get-documents.md)(): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin.collections/-list/index.html)
+&lt;[T](get-documents.md)&gt;
 
 DocumentManager Extension function that returns a list of documents of type [T](get-documents.md). If [T](get-documents.md) is [IssuedDocument](-issued-document/index.md), then only [IssuedDocument](-issued-document/index.md) will be returned. If [T](get-documents.md) is [UnsignedDocument](-unsigned-document/index.md), then only [UnsignedDocument](-unsigned-document/index.md) will be returned, excluding [DeferredDocument](-deferred-document/index.md). If [T](get-documents.md) is [DeferredDocument](-deferred-document/index.md), then only [DeferredDocument](-deferred-document/index.md) will be returned.
 

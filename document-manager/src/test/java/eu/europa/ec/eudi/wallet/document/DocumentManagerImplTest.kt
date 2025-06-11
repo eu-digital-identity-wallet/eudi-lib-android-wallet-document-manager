@@ -53,8 +53,10 @@ class DocumentManagerImplTest {
     fun setUp() {
         storage = EphemeralStorage()
         secureArea = runBlocking { SoftwareSecureArea.create(storage) }
-        secureAreaRepository = SecureAreaRepository.build {
-            add(SoftwareSecureArea.create(storage))
+        secureAreaRepository = runBlocking {
+            SecureAreaRepository.Builder().apply {
+                add(SoftwareSecureArea.create(storage))
+            }.build()
         }
         documentManager = DocumentManagerImpl(
             identifier = "document_manager",

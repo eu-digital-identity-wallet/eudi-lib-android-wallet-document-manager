@@ -3,7 +3,9 @@
 # signPoP
 
 [androidJvm]\
-abstract suspend fun [signPoP](sign-po-p.md)(dataToSign: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html), keyUnlockData: KeyUnlockData?): EcSignature
+abstract suspend fun [signPoP](sign-po-p.md)(
+dataToSign: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html),
+keyUnlockData: KeyUnlockData?): EcSignature
 
 Signs the provided data to create a Proof of Possession signature.
 

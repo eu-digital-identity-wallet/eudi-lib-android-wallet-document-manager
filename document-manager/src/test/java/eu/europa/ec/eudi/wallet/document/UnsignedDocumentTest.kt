@@ -42,9 +42,9 @@ class UnsignedDocumentTest {
     fun setUp() {
         val storage = EphemeralStorage()
         secureArea = runBlocking { SoftwareSecureArea.create(storage) }
-        secureAreaRepository = SecureAreaRepository.build {
-            add(secureArea)
-        }
+        secureAreaRepository = SecureAreaRepository.Builder()
+            .add(secureArea)
+            .build()
         documentManager = DocumentManagerImpl(
             identifier = "test_document_manager",
             storage = storage,
