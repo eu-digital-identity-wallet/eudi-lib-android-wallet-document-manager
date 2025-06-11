@@ -27,6 +27,21 @@ import kotlinx.serialization.json.float
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.long
 
+/**
+ * Extension function to parse a [JsonElement] into native Kotlin types.
+ *
+ * This function recursively converts JSON structures into equivalent Kotlin types:
+ * - [JsonArray] is converted to a [List] of parsed elements
+ * - [JsonObject] is converted to a [Map] with parsed values
+ * - [JsonNull] is converted to `null`
+ * - [JsonPrimitive] is converted to the most appropriate Kotlin type:
+ *   - String values remain as strings
+ *   - Numeric values are converted to Int, Long, Float, or Double based on the content
+ *   - Boolean values are converted to Boolean
+ *   - If conversion fails, falls back to the original string content
+ *
+ * @return The parsed value as a Kotlin type, or null if parsing fails
+ */
 internal fun JsonElement.parse(): Any? {
     return when (this) {
         is JsonArray -> map { it.parse() }

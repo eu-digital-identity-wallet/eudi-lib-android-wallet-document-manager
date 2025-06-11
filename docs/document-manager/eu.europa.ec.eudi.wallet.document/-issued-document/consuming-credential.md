@@ -3,7 +3,10 @@
 # consumingCredential
 
 [androidJvm]\
-suspend fun &lt;[T](consuming-credential.md)&gt; [consumingCredential](consuming-credential.md)(credentialContext: suspend SecureAreaBoundCredential.() -&gt; [T](consuming-credential.md)): [Result](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-result/index.html)&lt;[T](consuming-credential.md)&gt;
+suspend fun &lt;[T](consuming-credential.md)&gt; [consumingCredential](consuming-credential.md)(
+credentialContext: suspend SecureAreaBoundCredential.()
+-&gt; [T](consuming-credential.md)): [Result](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-result/index.html)
+&lt;[T](consuming-credential.md)&gt;
 
 Performs an operation with a valid credential and handles usage policy enforcement.
 
@@ -11,7 +14,8 @@ This method finds a valid credential, executes the provided block with it, and t
 
 #### Return
 
-A [Result](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-result/index.html) containing the operation result or an exception if the operation failed
+A [Result](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-result/index.html)
+containing the operation result or an exception if the operation failed
 
 #### Parameters
 

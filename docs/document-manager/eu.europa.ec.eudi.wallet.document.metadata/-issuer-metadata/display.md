@@ -3,4 +3,5 @@
 # display
 
 [androidJvm]\
-val [display](display.md): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin.collections/-list/index.html)&lt;[IssuerMetadata.Display](-display/index.md)&gt;
+val [display](display.md): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin.collections/-list/index.html)
+&lt;[IssuerMetadata.Display](-display/index.md)&gt;

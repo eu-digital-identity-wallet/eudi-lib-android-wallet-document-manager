@@ -13,6 +13,6 @@ the document manager
 
 #### Throws
 
-| | |
-|---|---|
+|                                                                                                                    |                                                 |
+|--------------------------------------------------------------------------------------------------------------------|-------------------------------------------------|
 | [IllegalArgumentException](https://developer.android.com/reference/kotlin/java/lang/IllegalArgumentException.html) | if the storage engine or secure area is not set |

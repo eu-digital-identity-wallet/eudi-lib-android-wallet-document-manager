@@ -18,10 +18,6 @@ package eu.europa.ec.eudi.wallet.document
 
 import eu.europa.ec.eudi.wallet.document.format.DocumentData
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
-import eu.europa.ec.eudi.wallet.document.format.MsoMdocData
-import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
-import eu.europa.ec.eudi.wallet.document.format.SdJwtVcData
-import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
 import eu.europa.ec.eudi.wallet.document.internal.CredentialPolicyApplier
 import eu.europa.ec.eudi.wallet.document.internal.applicationMetadata
 import eu.europa.ec.eudi.wallet.document.internal.createdAt
@@ -30,7 +26,6 @@ import eu.europa.ec.eudi.wallet.document.internal.documentName
 import eu.europa.ec.eudi.wallet.document.internal.format
 import eu.europa.ec.eudi.wallet.document.internal.issuedAt
 import eu.europa.ec.eudi.wallet.document.internal.issuerMetaData
-import eu.europa.ec.eudi.wallet.document.internal.sdJwtVcString
 import eu.europa.ec.eudi.wallet.document.internal.toCoseBytes
 import eu.europa.ec.eudi.wallet.document.internal.toEcPublicKey
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
@@ -40,7 +35,6 @@ import kotlinx.datetime.toJavaInstant
 import kotlinx.datetime.toKotlinInstant
 import org.multipaz.credential.SecureAreaBoundCredential
 import org.multipaz.crypto.EcSignature
-import org.multipaz.document.NameSpacedData
 import org.multipaz.securearea.KeyInfo
 import org.multipaz.securearea.KeyUnlockData
 import org.multipaz.securearea.SecureArea
@@ -92,19 +86,11 @@ class IssuedDocument(
             val issuerProvidedData = baseDocument.applicationMetadata.issuerProvidedData
             requireNotNull(issuerProvidedData) { "Issuer provided data not found" }
 
-            return when (val currentFormat = format) {
-                is MsoMdocFormat -> MsoMdocData(
-                    format = currentFormat,
-                    nameSpacedData = NameSpacedData.fromIssuerProvidedData(issuerProvidedData),
-                    issuerMetadata = issuerMetadata
-                )
-
-                is SdJwtVcFormat -> SdJwtVcData(
-                    format = currentFormat,
-                    sdJwtVc = issuerProvidedData.sdJwtVcString,
-                    issuerMetadata = issuerMetadata
-                )
-            }
+            return DocumentData.make(
+                format = format,
+                issuerProvidedData = issuerProvidedData,
+                issuerMetadata = issuerMetadata
+            )
         }
 
     /**

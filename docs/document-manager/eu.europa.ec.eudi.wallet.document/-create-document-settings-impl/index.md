@@ -2,7 +2,13 @@
 
 # CreateDocumentSettingsImpl
 
-data class [CreateDocumentSettingsImpl](index.md)(val secureAreaIdentifier: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html), val createKeySettings: CreateKeySettings, val numberOfCredentials: [Int](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-int/index.html) = 1, val credentialPolicy: [CreateDocumentSettings.CredentialPolicy](../-create-document-settings/-credential-policy/index.md) = CredentialPolicy.RotateUse) : [CreateDocumentSettings](../-create-document-settings/index.md)
+data class [CreateDocumentSettingsImpl](index.md)(val
+secureAreaIdentifier: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html),
+val createKeySettings: CreateKeySettings, val
+numberOfCredentials: [Int](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-int/index.html) =
+1, val
+credentialPolicy: [CreateDocumentSettings.CredentialPolicy](../-create-document-settings/-credential-policy/index.md) =
+CredentialPolicy.RotateUse) : [CreateDocumentSettings](../-create-document-settings/index.md)
 
 Implementation of [CreateDocumentSettings](../-create-document-settings/index.md) interface that provides configuration for document creation.
 
@@ -18,15 +24,15 @@ This class encapsulates all necessary parameters required when creating digital 
 
 ## Constructors
 
-| | |
-|---|---|
+|                                                                 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+|-----------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [CreateDocumentSettingsImpl](-create-document-settings-impl.md) | [androidJvm]<br>constructor(secureAreaIdentifier: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html), createKeySettings: CreateKeySettings, numberOfCredentials: [Int](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-int/index.html) = 1, credentialPolicy: [CreateDocumentSettings.CredentialPolicy](../-create-document-settings/-credential-policy/index.md) = CredentialPolicy.RotateUse) |
 
 ## Properties
 
-| Name | Summary |
-|---|---|
-| [createKeySettings](create-key-settings.md) | [androidJvm]<br>open override val [createKeySettings](create-key-settings.md): CreateKeySettings<br>The configuration settings for key creation within the specified secure area.     These settings control properties such as key algorithms, sizes, and other     security parameters required by the secure area implementation. |
-| [credentialPolicy](credential-policy.md) | [androidJvm]<br>open override val [credentialPolicy](credential-policy.md): [CreateDocumentSettings.CredentialPolicy](../-create-document-settings/-credential-policy/index.md)<br>Defines how credentials are managed after use. Controls whether credentials are     used once and deleted or rotated through multiple uses.     Defaults to [CredentialPolicy.RotateUse](../-create-document-settings/-credential-policy/-rotate-use/index.md). |
-| [numberOfCredentials](number-of-credentials.md) | [androidJvm]<br>open override val [numberOfCredentials](number-of-credentials.md): [Int](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-int/index.html) = 1<br>The number of credentials to create for this document. Multiple credentials     can be used for load balancing or redundancy. Defaults to 1 if not specified.     Must be greater than 0. |
-| [secureAreaIdentifier](secure-area-identifier.md) | [androidJvm]<br>open override val [secureAreaIdentifier](secure-area-identifier.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)<br>The secure area identifier where the document's keys should be stored.     This identifier must reference an existing secure area in the system. |
+| Name                                              | Summary                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+|---------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [createKeySettings](create-key-settings.md)       | [androidJvm]<br>open override val [createKeySettings](create-key-settings.md): CreateKeySettings<br>The configuration settings for key creation within the specified secure area.     These settings control properties such as key algorithms, sizes, and other     security parameters required by the secure area implementation.                                                                                                               |
+| [credentialPolicy](credential-policy.md)          | [androidJvm]<br>open override val [credentialPolicy](credential-policy.md): [CreateDocumentSettings.CredentialPolicy](../-create-document-settings/-credential-policy/index.md)<br>Defines how credentials are managed after use. Controls whether credentials are     used once and deleted or rotated through multiple uses.     Defaults to [CredentialPolicy.RotateUse](../-create-document-settings/-credential-policy/-rotate-use/index.md). |
+| [numberOfCredentials](number-of-credentials.md)   | [androidJvm]<br>open override val [numberOfCredentials](number-of-credentials.md): [Int](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-int/index.html) = 1<br>The number of credentials to create for this document. Multiple credentials     can be used for load balancing or redundancy. Defaults to 1 if not specified.     Must be greater than 0.                                                                       |
+| [secureAreaIdentifier](secure-area-identifier.md) | [androidJvm]<br>open override val [secureAreaIdentifier](secure-area-identifier.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)<br>The secure area identifier where the document's keys should be stored.     This identifier must reference an existing secure area in the system.                                                                                                            |

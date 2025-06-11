@@ -16,12 +16,16 @@
 
 package eu.europa.ec.eudi.wallet.document.sample
 
+import android.util.Log
 import eu.europa.ec.eudi.wallet.document.CreateDocumentSettings
 import eu.europa.ec.eudi.wallet.document.DocumentManagerImpl
 import eu.europa.ec.eudi.wallet.document.IssuedDocument
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocData
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.getResourceAsText
+import io.mockk.clearAllMocks
+import io.mockk.every
+import io.mockk.mockkStatic
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.AfterClass
@@ -56,11 +60,25 @@ class SampleDocumentManagerImplTest {
         @BeforeClass
         @JvmStatic
         fun setUp() {
+
+            mockkStatic(Log::class)
+            every { Log.v(any(), any()) } returns 0
+            every { Log.v(any(), any(), any()) } returns 0
+            every { Log.d(any(), any()) } returns 0
+            every { Log.d(any(), any(), any()) } returns 0
+            every { Log.i(any(), any()) } returns 0
+            every { Log.i(any(), any(), any()) } returns 0
+            every { Log.e(any(), any()) } returns 0
+            every { Log.e(any(), any(), any()) } returns 0
+            every { Log.w(any(), any<Throwable>()) } returns 0
+            every { Log.w(any(), any<String>()) } returns 0
+            every { Log.w(any(), any(), any()) } returns 0
+
             storage = EphemeralStorage()
             secureArea = runBlocking { SoftwareSecureArea.create(storage) }
-            val secureAreaRepository = SecureAreaRepository.build {
+            val secureAreaRepository = SecureAreaRepository.Builder().apply {
                 add(secureArea)
-            }
+            }.build()
             documentManager = SampleDocumentManagerImpl(
                 DocumentManagerImpl(
                     identifier = SampleDocumentManagerImpl::class.simpleName!!,
@@ -87,6 +105,7 @@ class SampleDocumentManagerImplTest {
         @AfterClass
         @JvmStatic
         fun tearDown() {
+            clearAllMocks()
             documentManager.getDocuments().forEach { documentManager.deleteDocumentById(it.id) }
         }
     }
@@ -118,9 +137,9 @@ class SampleDocumentManagerImplTest {
     fun `deleteDocumentById should delete the document`() {
         val storage = EphemeralStorage()
         val secureArea = runBlocking { SoftwareSecureArea.create(storage) }
-        val secureAreaRepository = SecureAreaRepository.build {
+        val secureAreaRepository = SecureAreaRepository.Builder().apply {
             add(secureArea)
-        }
+        }.build()
         val documentManager = SampleDocumentManagerImpl(
             DocumentManagerImpl(
                 identifier = SampleDocumentManagerImpl::class.simpleName!!,
