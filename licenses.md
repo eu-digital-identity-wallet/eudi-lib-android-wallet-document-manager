@@ -2,7 +2,7 @@
 # EUDI wallet library for managing documents
 ## Dependency License Report
 
-_2025-06-26 17:10:52 EEST_
+_2025-07-07 09:53:13 EEST_
 ## Apache License, Version 2.0
 
 **1** **Group:** `com.nimbusds` **Name:** `nimbus-jose-jwt` **Version:** `9.47` 
@@ -36,15 +36,12 @@ _2025-06-26 17:10:52 EEST_
 > - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
 **8** **Group:** `org.jetbrains.kotlinx` **Name:** `kotlinx-datetime` **Version:** `0.6.2`
-> - **POM Project URL
-    **: [https://github.com/Kotlin/kotlinx-datetime](https://github.com/Kotlin/kotlinx-datetime)
+> - **POM Project URL**: [https://github.com/Kotlin/kotlinx-datetime](https://github.com/Kotlin/kotlinx-datetime)
 > - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
 **9** **Group:** `org.jetbrains.kotlinx` **Name:** `kotlinx-serialization-json` **Version:** `1.7.3`
-> - **POM Project URL
-    **: [https://github.com/Kotlin/kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization)
-> - **POM License**: Apache License, Version
-    2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
+> - **POM Project URL**: [https://github.com/Kotlin/kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization)
+> - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
 **10** **Group:** `org.jetbrains.kotlinx` **Name:** `kotlinx-io-bytestring` **Version:** `0.5.4`
 > - **POM Project URL**: [https://github.com/Kotlin/kotlinx-io](https://github.com/Kotlin/kotlinx-io)
