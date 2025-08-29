@@ -28,15 +28,26 @@ import eu.europa.ec.eudi.wallet.document.internal.documentManagerId
 import eu.europa.ec.eudi.wallet.document.internal.toDocument
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import io.ktor.client.HttpClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.Clock
 import kotlinx.io.bytestring.ByteString
 import org.jetbrains.annotations.VisibleForTesting
 import org.multipaz.credential.SecureAreaBoundCredential
 import org.multipaz.document.buildDocumentStore
+import org.multipaz.documenttype.DocumentTypeRepository
+import org.multipaz.documenttype.knowntypes.DrivingLicense
+import org.multipaz.documenttype.knowntypes.EUPersonalID
+import org.multipaz.documenttype.knowntypes.IDPass
+import org.multipaz.documenttype.knowntypes.PhotoID
+import org.multipaz.documenttype.knowntypes.UtopiaMovieTicket
+import org.multipaz.models.digitalcredentials.DigitalCredentials
 import org.multipaz.securearea.SecureAreaRepository
 import org.multipaz.storage.Storage
 import org.multipaz.util.Logger
+import kotlin.time.ExperimentalTime
 
 /**
  * Default implementation of the [DocumentManager] interface for the EUDI Wallet.
@@ -70,6 +81,12 @@ class DocumentManagerImpl(
     val ktorHttpClientFactory: (() -> HttpClient)? = null
     // TODO: list trusted certificates
 ) : DocumentManager {
+
+    private val dcApiProtocols = MutableStateFlow<Set<String>>(DigitalCredentials.Default.supportedProtocols)
+
+    init {
+        startExportDocumentsToDigitalCredentials()
+    }
 
     /**
      * Flag to control device public key verification during credential certification.
@@ -178,6 +195,7 @@ class DocumentManagerImpl(
      * @param issuerMetadata the [IssuerMetadata] data regarding document display
      * @return the result of the creation. If successful, it will return the document. If not, it will return an error.
      */
+    @OptIn(ExperimentalTime::class)
     override fun createDocument(
         format: DocumentFormat,
         createSettings: CreateDocumentSettings,
@@ -198,7 +216,7 @@ class DocumentManagerImpl(
                             is MsoMdocFormat -> format.docType
                             is SdJwtVcFormat -> format.vct
                         },
-                        createdAt = Clock.System.now(),
+                        createdAt = kotlin.time.Clock.System.now(),
                         issuerMetadata = issuerMetadata,
                         initialCredentialsCount = createSettings.numberOfCredentials,
                         credentialPolicy = createSettings.credentialPolicy,
@@ -297,6 +315,38 @@ class DocumentManagerImpl(
                 Outcome.success(identityDocument.toDocument())
             } catch (e: Exception) {
                 Outcome.failure(e)
+            }
+        }
+    }
+
+    /**
+     * Starts export documents via the W3C Digital Credentials API on the platform, if available.
+     *
+     * This should be called when the main wallet application UI is running.
+     */
+    private fun startExportDocumentsToDigitalCredentials() {
+        // Example. Inject properly.
+        val documentTypeRepository = DocumentTypeRepository()
+        documentTypeRepository.addDocumentType(DrivingLicense.getDocumentType())
+        documentTypeRepository.addDocumentType(PhotoID.getDocumentType())
+        documentTypeRepository.addDocumentType(EUPersonalID.getDocumentType())
+        documentTypeRepository.addDocumentType(UtopiaMovieTicket.getDocumentType())
+        documentTypeRepository.addDocumentType(IDPass.getDocumentType())
+
+        if (DigitalCredentials.Default.available) {
+            val dc = DigitalCredentials.Default
+            CoroutineScope(Dispatchers.IO).launch {
+                dc.setSelectedProtocols(dcApiProtocols.value)
+                dc.startExportingCredentials(
+                    documentStore = documentStore,
+                    documentTypeRepository = documentTypeRepository,
+                )
+            }
+
+            CoroutineScope(Dispatchers.IO).launch {
+                dcApiProtocols.collect {
+                    dc.setSelectedProtocols(it)
+                }
             }
         }
     }

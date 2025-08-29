@@ -16,7 +16,7 @@ kotlinx-serialization-json = "1.7.3"
 kotlinx-coroutines = "1.9.0"
 mavenPublish = "0.33.0"
 mockk = "1.14.4"
-multipaz = "0.92.0"
+multipaz = "0.93.0"
 sonarqube = "6.2.0.5505"
 eudi-sd-jwt-vc-kt = "0.10.0"
 nimbus = "9.47"
@@ -42,6 +42,8 @@ ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negoti
 ktor-client-serialization = { module = "io.ktor:ktor-client-serialization", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 multipaz = { module = "org.multipaz:multipaz", version.ref = "multipaz" }
+multipaz-models = { module = "org.multipaz:multipaz-models", version.ref = "multipaz" }
+multipaz-doctypes = { module = "org.multipaz:multipaz-doctypes", version.ref = "multipaz" }
 
 [plugins]
 android-library = { id = "com.android.library", version.ref = "agp" }

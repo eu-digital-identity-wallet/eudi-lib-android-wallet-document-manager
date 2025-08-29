@@ -107,6 +107,8 @@ dependencies {
         exclude(group = "org.bouncycastle")
         exclude(group = "io.ktor")
     }
+    api(libs.multipaz.models)
+    api(libs.multipaz.doctypes)
 
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.io.core)
