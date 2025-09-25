@@ -20,8 +20,6 @@ import COSE.HeaderKeys.Algorithm
 import COSE.OneKey
 import COSE.Sign1Message
 import com.upokecenter.cbor.CBORObject
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.util.io.pem.PemReader
 import org.multipaz.crypto.EcPublicKey
@@ -32,6 +30,7 @@ import java.security.PrivateKey
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import java.security.spec.PKCS8EncodedKeySpec
+import kotlin.time.Instant
 
 private val SAMPLE_ISSUER_PRIVATE_KEY = """
 -----BEGIN PRIVATE KEY-----
@@ -84,6 +83,7 @@ internal val issuerCertificate: X509Certificate = PemReader(SAMPLE_ISSUER_DS.rea
 internal val PrivateKey.oneKey
     get() = OneKey(null, this)
 
+
 @JvmSynthetic
 internal fun generateMso(
     digestAlg: String,
@@ -93,7 +93,7 @@ internal fun generateMso(
 ) =
     MobileSecurityObjectGenerator(org.multipaz.crypto.Algorithm.fromHashAlgorithmIdentifier(digestAlg), docType, authKey)
         .apply {
-            val now = Clock.System.now()
+            val now = kotlin.time.Clock.System.now()
             val validUntil =
                 Instant.fromEpochMilliseconds(now.toEpochMilliseconds() + 1000L * 60L * 60L * 24L * 365L)
             setValidityInfo(now, now, validUntil, null)

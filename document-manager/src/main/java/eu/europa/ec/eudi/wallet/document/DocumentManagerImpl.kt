@@ -29,7 +29,6 @@ import eu.europa.ec.eudi.wallet.document.internal.toDocument
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.Clock
 import kotlinx.io.bytestring.ByteString
 import org.jetbrains.annotations.VisibleForTesting
 import org.multipaz.credential.SecureAreaBoundCredential
@@ -37,7 +36,7 @@ import org.multipaz.document.buildDocumentStore
 import org.multipaz.securearea.SecureAreaRepository
 import org.multipaz.storage.Storage
 import org.multipaz.util.Logger
-
+import java.time.Instant
 /**
  * Default implementation of the [DocumentManager] interface for the EUDI Wallet.
  *
@@ -198,7 +197,7 @@ class DocumentManagerImpl(
                             is MsoMdocFormat -> format.docType
                             is SdJwtVcFormat -> format.vct
                         },
-                        createdAt = Clock.System.now(),
+                        createdAt = Instant.now(),
                         issuerMetadata = issuerMetadata,
                         initialCredentialsCount = createSettings.numberOfCredentials,
                         credentialPolicy = createSettings.credentialPolicy,

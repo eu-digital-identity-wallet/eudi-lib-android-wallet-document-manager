@@ -22,8 +22,6 @@ import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
 import eu.europa.ec.eudi.sdjwt.vc.KtorHttpClientFactory
 import eu.europa.ec.eudi.wallet.document.internal.sdJwtVcString
 import io.ktor.client.HttpClient
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -31,7 +29,9 @@ import kotlinx.serialization.json.longOrNull
 import org.multipaz.credential.SecureAreaBoundCredential
 import org.multipaz.crypto.javaPublicKey
 import org.multipaz.util.Logger
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
+import kotlin.time.Instant
 
 class SdJwtVcCredentialCertifier(
     var ktorHttpClientFactory: KtorHttpClientFactory = { HttpClient() }
@@ -73,9 +73,9 @@ class SdJwtVcCredentialCertifier(
         // TODO what to do with validFrom and validUntil if they are not present in the SD-JWT VC
         //  in nbf (or iat if no nbf) and exp claims that are optional
 
-        val nbf = claims["nbf"]?.jsonPrimitive?.longOrNull?.let { Instant.Companion.fromEpochSeconds(it) }
-        val iat = claims["iat"]?.jsonPrimitive?.longOrNull?.let { Instant.Companion.fromEpochSeconds(it) }
-        val exp = claims["exp"]?.jsonPrimitive?.longOrNull?.let { Instant.Companion.fromEpochSeconds(it) }
+        val nbf = claims["nbf"]?.jsonPrimitive?.longOrNull?.let { Instant.fromEpochSeconds(it) }
+        val iat = claims["iat"]?.jsonPrimitive?.longOrNull?.let { Instant.fromEpochSeconds(it) }
+        val exp = claims["exp"]?.jsonPrimitive?.longOrNull?.let { Instant.fromEpochSeconds(it) }
         val validFrom = nbf ?: iat ?: Clock.System.now()
         val validUntil = exp ?: validFrom.plus(30.days)
 

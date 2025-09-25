@@ -25,7 +25,6 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.Clock
 import kotlinx.io.bytestring.ByteString
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -36,13 +35,14 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import java.time.Instant
 
 class ApplicationMetadataTest {
 
     private val testDocumentId = "test-document-id"
     private val testDocumentName = "test-document"
     private val testDocumentManagerId = "test-manager-id"
-    private val testCreatedAt = Clock.System.now()
+    private val testCreatedAt = Instant.now()
     private val testFormat = MsoMdocFormat("test-doc-type")
     private val testSdJwtVcFormat = SdJwtVcFormat("test-vct")
     private val testKeyAttestation = buildJsonObject { put("test", JsonPrimitive("value")) }
@@ -134,6 +134,7 @@ class ApplicationMetadataTest {
         }
     }
 
+    
     @Test
     fun `createdAt property throws exception when not set`() = runTest {
         val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
