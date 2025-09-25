@@ -30,15 +30,15 @@ import eu.europa.ec.eudi.wallet.document.internal.toCoseBytes
 import eu.europa.ec.eudi.wallet.document.internal.toEcPublicKey
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.Clock
-import kotlinx.datetime.toJavaInstant
-import kotlinx.datetime.toKotlinInstant
 import org.multipaz.credential.SecureAreaBoundCredential
 import org.multipaz.crypto.EcSignature
 import org.multipaz.securearea.KeyInfo
 import org.multipaz.securearea.KeyUnlockData
 import org.multipaz.securearea.SecureArea
+import kotlin.time.toJavaInstant
+import kotlin.time.Clock
 import java.time.Instant
+import kotlin.time.toKotlinInstant
 
 /**
  * Represents an Issued Document in the EUDI Wallet.
@@ -75,11 +75,11 @@ class IssuedDocument(
     override val documentManagerId: String
         get() = baseDocument.documentManagerId
     override val createdAt: Instant
-        get() = baseDocument.createdAt.toJavaInstant()
+        get() = baseDocument.createdAt
     override val issuerMetadata: IssuerMetadata?
         get() = baseDocument.issuerMetaData
     val issuedAt: Instant
-        get() = baseDocument.issuedAt.toJavaInstant()
+        get() = baseDocument.issuedAt
 
     val data: DocumentData
         get() {
@@ -187,7 +187,7 @@ class IssuedDocument(
      *         or an exception if no valid credential is found
      */
     suspend fun getValidFrom() = runCatching {
-        findCredential()?.validFrom?.toJavaInstant()
+        findCredential()?.validFrom
             ?: throw IllegalStateException("No valid credential found")
     }
 
@@ -229,6 +229,7 @@ class IssuedDocument(
      * @param credentialContext The suspend function to execute with the credential as receiver
      * @return A [Result] containing the operation result or an exception if the operation failed
      */
+    
     suspend fun <T> consumingCredential(credentialContext: suspend SecureAreaBoundCredential.() -> T): Result<T> {
         return runCatching {
             val credential = findCredential() ?: throw IllegalStateException("Credential not found")

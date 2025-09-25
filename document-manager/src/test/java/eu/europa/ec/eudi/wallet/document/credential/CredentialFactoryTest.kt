@@ -30,9 +30,9 @@ import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.multipaz.document.Document
-import org.multipaz.sdjwt.credential.KeyBoundSdJwtVcCredential
 import org.multipaz.securearea.CreateKeySettings
 import org.multipaz.securearea.SecureArea
+
 
 class CredentialFactoryTest {
 
@@ -81,7 +81,7 @@ class CredentialFactoryTest {
         }
         val batchResult = mockk<org.multipaz.securearea.BatchCreateKeyResult> {
             every { keyInfos } returns listOf(keyInfo1, keyInfo2)
-            every { openid4vciKeyAttestation } returns null
+            every { openid4vciKeyAttestationJws } returns null
         }
         val secureArea = mockk<SecureArea> {
             coEvery {
@@ -137,7 +137,7 @@ class CredentialFactoryTest {
         }
         val batchResult = mockk<org.multipaz.securearea.BatchCreateKeyResult> {
             every { keyInfos } returns listOf(keyInfo1, keyInfo2)
-            every { openid4vciKeyAttestation } returns null
+            every { openid4vciKeyAttestationJws } returns null
         }
         val secureArea = mockk<SecureArea> {
             coEvery {

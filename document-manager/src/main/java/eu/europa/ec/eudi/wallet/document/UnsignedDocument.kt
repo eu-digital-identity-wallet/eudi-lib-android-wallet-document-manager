@@ -27,7 +27,6 @@ import eu.europa.ec.eudi.wallet.document.internal.issuerMetaData
 import eu.europa.ec.eudi.wallet.document.internal.toCoseBytes
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.toJavaInstant
 import org.multipaz.credential.SecureAreaBoundCredential
 import org.multipaz.securearea.KeyInfo
 import org.multipaz.securearea.SecureArea
@@ -64,7 +63,7 @@ open class UnsignedDocument(
         get() = baseDocument.documentManagerId
 
     override val createdAt: Instant
-        get() = baseDocument.createdAt.toJavaInstant()
+        get() = baseDocument.createdAt
 
     override val issuerMetadata: IssuerMetadata?
         get() = baseDocument.issuerMetaData
