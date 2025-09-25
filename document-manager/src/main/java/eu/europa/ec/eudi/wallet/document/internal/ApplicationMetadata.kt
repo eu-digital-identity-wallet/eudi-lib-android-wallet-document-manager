@@ -22,8 +22,6 @@ import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata.Companion.fromJson
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import kotlinx.io.bytestring.ByteString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -38,6 +36,9 @@ import org.multipaz.cbor.toDataItem
 import org.multipaz.cbor.toDataItemDateTimeString
 import org.multipaz.document.AbstractDocumentMetadata
 import org.multipaz.document.DocumentMetadata
+import java.time.Instant
+import kotlin.time.toJavaInstant
+import kotlin.time.toKotlinInstant
 
 /**
  * Interface for application-specific document metadata management.
@@ -102,6 +103,7 @@ internal interface ApplicationMetadata : AbstractDocumentMetadata {
     /**
      * Optional timestamp when the document was issued.
      */
+    
     val issuedAt: Instant?
 
     /**
@@ -248,6 +250,7 @@ internal class ApplicationMetadataImpl private constructor(
          *
          * @return CBOR representation of the metadata
          */
+
         fun toCbor(): ByteString {
             val builder = CborMap.Companion.builder()
 
@@ -258,14 +261,14 @@ internal class ApplicationMetadataImpl private constructor(
                 initialCredentialsCount
             ) { it.toDataItem() }
             builder.putIfNotNull("credentialPolicy", credentialPolicy) { it.toDataItem() }
-            builder.putIfNotNull("createdAt", createdAt) { it.toDataItemDateTimeString() }
+            builder.putIfNotNull("createdAt", createdAt) { it.toKotlinInstant().toDataItemDateTimeString() }
             builder.putIfNotNull("keyAttestation", keyAttestation) { Tstr(it.toString()) }
             builder.putIfNotNull("issuerMetadata", issuerMetadata) { Tstr(it.toJson()) }
             builder.putIfNotNull(
                 "issuerProvidedData",
                 issuerProvidedData
             ) { Bstr(it.toByteArray()) }
-            builder.putIfNotNull("issuedAt", issuedAt) { it.toDataItemDateTimeString() }
+            builder.putIfNotNull("issuedAt", issuedAt) { it.toKotlinInstant().toDataItemDateTimeString() }
             builder.putIfNotNull(
                 "deferredRelatedData",
                 deferredRelatedData
@@ -291,7 +294,7 @@ internal class ApplicationMetadataImpl private constructor(
                     documentManagerId = dataItem["documentManagerId"].asTstr,
                     initialCredentialsCount = dataItem["initialCredentialsCount"].asNumber.toInt(),
                     credentialPolicy = CreateDocumentSettings.CredentialPolicy.fromDataItem(dataItem["credentialPolicy"]),
-                    createdAt = dataItem.getValue("createdAt") { it.asDateTimeString },
+                    createdAt = dataItem.getValue("createdAt") { it.asDateTimeString }?.toJavaInstant(),
                     keyAttestation = dataItem.getValue("keyAttestation") { Json.decodeFromString(it.asTstr) },
                     issuerMetadata = dataItem.getValue("issuerMetadata") {
                         fromJson(
@@ -299,7 +302,7 @@ internal class ApplicationMetadataImpl private constructor(
                         ).getOrNull()
                     },
                     issuerProvidedData = dataItem.getValue("issuerProvidedData") { ByteString(it.asBstr) },
-                    issuedAt = dataItem.getValue("issuedAt") { it.asDateTimeString },
+                    issuedAt = dataItem.getValue("issuedAt") { it.asDateTimeString }?.toJavaInstant(),
                     deferredRelatedData = dataItem.getValue("deferredRelatedData") { ByteString(it.asBstr) },
                 )
             }
@@ -360,7 +363,7 @@ internal class ApplicationMetadataImpl private constructor(
         data = data.copy(
             issuerProvidedData = issuerProvidedData,
             deferredRelatedData = null,
-            issuedAt = Clock.System.now()
+            issuedAt = Instant.now()
         )
         setMetadata(
             displayName = documentName ?: displayName,

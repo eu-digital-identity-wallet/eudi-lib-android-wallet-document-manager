@@ -22,7 +22,7 @@ import eu.europa.ec.eudi.wallet.document.IssuedDocument
 import eu.europa.ec.eudi.wallet.document.UnsignedDocument
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
-import kotlinx.datetime.Instant
+import java.time.Instant
 import org.multipaz.document.Document as IdentityDocument
 
 /**

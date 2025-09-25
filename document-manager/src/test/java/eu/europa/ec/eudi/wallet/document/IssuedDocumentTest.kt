@@ -27,9 +27,6 @@ import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkObject
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.Clock
-import kotlinx.datetime.toJavaInstant
-import kotlinx.datetime.toKotlinInstant
 import org.multipaz.cbor.Cbor
 import org.multipaz.cbor.DataItem
 import org.multipaz.credential.SecureAreaBoundCredential
@@ -38,11 +35,13 @@ import org.multipaz.crypto.EcSignature
 import org.multipaz.document.Document
 import org.multipaz.securearea.KeyUnlockData
 import org.multipaz.securearea.SecureArea
-import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertNull
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
+import kotlin.time.Instant
+import kotlin.time.toJavaInstant
 
 class IssuedDocumentTest {
 
@@ -65,10 +64,10 @@ class IssuedDocumentTest {
         domain: String = "test-document-manager-id",
         isCertified: Boolean = true,
         usageCount: Int = 0,
-        now: kotlinx.datetime.Instant = Clock.System.now(),
+        now: Instant = Clock.System.now(),
         isInvalidated: Boolean = false,
-        validFrom: kotlinx.datetime.Instant = now.minus(1.days),
-        validUntil: kotlinx.datetime.Instant = now.plus(1.days),
+        validFrom: Instant = now.minus(1.days),
+        validUntil: Instant = now.plus(1.days),
     ): SecureAreaBoundCredential {
         val mockSecureArea = createMockSecureArea(isInvalidated)
 
@@ -91,8 +90,8 @@ class IssuedDocumentTest {
         id: String = "test-document-id",
         name: String = "test-document-name",
         documentManagerId: String = "test-document-manager-id",
-        createdAt: Instant = Instant.now(),
-        issuedAt: Instant = Instant.now(),
+        createdAt: Instant = Clock.System.now(),
+        issuedAt: Instant = Clock.System.now(),
         credentialPolicy: CreateDocumentSettings.CredentialPolicy = CreateDocumentSettings.CredentialPolicy.RotateUse,
         issuerMetaData: IssuerMetadata? = mockk(),
         initialCredentialsCount: Int = 1,
@@ -108,8 +107,8 @@ class IssuedDocumentTest {
                 every { this@mockk.format } returns format
                 every { documentName } returns name
                 every { this@mockk.documentManagerId } returns documentManagerId
-                every { this@mockk.createdAt } returns createdAt.toKotlinInstant()
-                every { this@mockk.issuedAt } returns issuedAt.toKotlinInstant()
+                every { this@mockk.createdAt } returns createdAt.toJavaInstant()
+                every { this@mockk.issuedAt } returns issuedAt.toJavaInstant()
                 every { this@mockk.credentialPolicy } returns credentialPolicy
                 every { this@mockk.issuerMetadata } returns issuerMetaData
                 every { this@mockk.initialCredentialsCount } returns initialCredentialsCount
@@ -164,20 +163,20 @@ class IssuedDocumentTest {
 
     @Test
     fun `test createdAt property returns expected value`() {
-        val expectedCreatedAt = Instant.now()
+        val expectedCreatedAt = Clock.System.now()
         val issuedDocument = createMockIssuedDocument(
             baseDocument = createMockBaseDocument(createdAt = expectedCreatedAt)
         )
-        assert(issuedDocument.createdAt == expectedCreatedAt)
+        assert(issuedDocument.createdAt == expectedCreatedAt.toJavaInstant())
     }
 
     @Test
     fun `test issuedAt property returns expected value`() {
-        val expectedIssuedAt = Instant.now()
+        val expectedIssuedAt = Clock.System.now()
         val issuedDocument = createMockIssuedDocument(
             baseDocument = createMockBaseDocument(issuedAt = expectedIssuedAt)
         )
-        assert(issuedDocument.issuedAt == expectedIssuedAt)
+        assert(issuedDocument.issuedAt == expectedIssuedAt.toJavaInstant())
     }
 
     @Test
@@ -377,14 +376,13 @@ class IssuedDocumentTest {
 
     @Test
     fun `test isValidAt returns false when no valid credential exists at given time`() = runTest {
-        val now = Instant.now()
+        val now = Clock.System.now()
         val javaInstantNow = now
-        val kotlinInstantNow = now.toKotlinInstant()
 
         val credential = createMockCredential(
             alias = "test-alias",
-            validFrom = kotlinInstantNow.plus(1.days),
-            validUntil = kotlinInstantNow.plus(2.days)
+            validFrom = now.plus(1.days),
+            validUntil = now.plus(2.days)
         )
 
         val issuedDocument = createMockIssuedDocument(
@@ -393,7 +391,7 @@ class IssuedDocumentTest {
             )
         )
 
-        assert(!issuedDocument.isValidAt(now))
+        assert(!issuedDocument.isValidAt(now.toJavaInstant()))
     }
 
     @Test

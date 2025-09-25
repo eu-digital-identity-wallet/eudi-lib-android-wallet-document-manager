@@ -1,5 +1,5 @@
 [versions]
-agp = "8.11.0"
+agp = "8.13.0"
 bouncy-castle = "1.78.1"
 cbor = "4.5.6"
 cose = "1.1.0"
@@ -10,17 +10,17 @@ jacoco = "0.8.12"
 java = "17"
 json = "20250517"
 kotlin = "2.1.21"
-kotlinx-datetime = "0.6.2"
+kotlinx-datetime = "0.7.1"
 kotlinx-io = "0.5.4"
 kotlinx-serialization-json = "1.7.3"
 kotlinx-coroutines = "1.9.0"
 mavenPublish = "0.33.0"
 mockk = "1.14.4"
-multipaz = "0.92.0"
+multipaz = "0.93.0"
 sonarqube = "6.2.0.5505"
 eudi-sd-jwt-vc-kt = "0.10.0"
 nimbus = "9.47"
-ktor = "3.0.1"
+ktor = "3.3.0"
 
 [libraries]
 bouncy-castle-pkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncy-castle" }
