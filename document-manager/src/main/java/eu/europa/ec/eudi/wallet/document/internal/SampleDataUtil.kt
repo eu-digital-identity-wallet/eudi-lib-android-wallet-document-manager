@@ -20,8 +20,6 @@ import COSE.HeaderKeys.Algorithm
 import COSE.OneKey
 import COSE.Sign1Message
 import com.upokecenter.cbor.CBORObject
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.util.io.pem.PemReader
 import org.multipaz.crypto.EcPublicKey
@@ -32,6 +30,8 @@ import java.security.PrivateKey
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import java.security.spec.PKCS8EncodedKeySpec
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 private val SAMPLE_ISSUER_PRIVATE_KEY = """
 -----BEGIN PRIVATE KEY-----

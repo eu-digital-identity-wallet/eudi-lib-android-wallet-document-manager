@@ -22,11 +22,8 @@ import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata.Companion.fromJson
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import kotlinx.io.bytestring.ByteString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
 import org.multipaz.cbor.Bstr
 import org.multipaz.cbor.Cbor
 import org.multipaz.cbor.CborBuilder
@@ -38,6 +35,8 @@ import org.multipaz.cbor.toDataItem
 import org.multipaz.cbor.toDataItemDateTimeString
 import org.multipaz.document.AbstractDocumentMetadata
 import org.multipaz.document.DocumentMetadata
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 /**
  * Interface for application-specific document metadata management.
@@ -85,9 +84,9 @@ internal interface ApplicationMetadata : AbstractDocumentMetadata {
     val documentName: String
 
     /**
-     * Optional key attestation data in JSON format.
+     * Optional OpenID4VCI key attestation data in JWS compact serialization format.
      */
-    val keyAttestation: JsonObject?
+    val keyAttestation: String?
 
     /**
      * Optional metadata about the issuer of the document.
@@ -129,7 +128,7 @@ internal interface ApplicationMetadata : AbstractDocumentMetadata {
         createdAt: Instant,
         documentName: String,
         issuerMetadata: IssuerMetadata?,
-        keyAttestation: JsonObject?
+        keyAttestation: String?
     )
 
     /**
@@ -159,9 +158,9 @@ internal interface ApplicationMetadata : AbstractDocumentMetadata {
     /**
      * Updates the key attestation data for the document.
      *
-     * @param keyAttestation Key attestation data in JSON format
+     * @param keyAttestation OpenID4VCI key attestation data in JWS compact serialization format.
      */
-    suspend fun setKeyAttestation(keyAttestation: JsonObject)
+    suspend fun setKeyAttestation(keyAttestation: String)
 
 
     companion object {
@@ -215,7 +214,7 @@ internal class ApplicationMetadataImpl private constructor(
             is MsoMdocFormat -> (format as MsoMdocFormat).docType
             is SdJwtVcFormat -> (format as SdJwtVcFormat).vct
         }
-    override val keyAttestation: JsonObject?
+    override val keyAttestation: String?
         get() = data.keyAttestation
     override val issuerMetadata: IssuerMetadata? get() = data.issuerMetadata
     override val issuerProvidedData: ByteArray? get() = data.issuerProvidedData?.toByteArray()
@@ -235,7 +234,7 @@ internal class ApplicationMetadataImpl private constructor(
         val format: DocumentFormat? = null,
         val initialCredentialsCount: Int = 0,
         val credentialPolicy: CreateDocumentSettings.CredentialPolicy? = null,
-        val keyAttestation: JsonObject? = null,
+        val keyAttestation: String? = null,
         val issuerMetadata: IssuerMetadata? = null,
         val issuerProvidedData: ByteString? = null,
         val createdAt: Instant? = null,
@@ -320,7 +319,7 @@ internal class ApplicationMetadataImpl private constructor(
         createdAt: Instant,
         documentName: String,
         issuerMetadata: IssuerMetadata?,
-        keyAttestation: JsonObject?
+        keyAttestation: String?
     ) {
         data = Data(
             documentManagerId = documentManagerId,
@@ -400,7 +399,7 @@ internal class ApplicationMetadataImpl private constructor(
      *
      * If the document is already provisioned, this method does nothing.
      */
-    override suspend fun setKeyAttestation(keyAttestation: JsonObject) {
+    override suspend fun setKeyAttestation(keyAttestation: String) {
         if (provisioned) return
         data = data.copy(
             keyAttestation = keyAttestation

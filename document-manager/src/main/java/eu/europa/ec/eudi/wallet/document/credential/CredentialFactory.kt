@@ -20,7 +20,6 @@ import eu.europa.ec.eudi.wallet.document.CreateDocumentSettings
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
-import kotlinx.serialization.json.JsonObject
 import org.multipaz.credential.SecureAreaBoundCredential
 import org.multipaz.document.Document
 import org.multipaz.mdoc.credential.MdocCredential
@@ -46,7 +45,7 @@ interface CredentialFactory {
         document: Document,
         createDocumentSettings: CreateDocumentSettings,
         secureArea: SecureArea,
-    ): Pair<List<SecureAreaBoundCredential>, JsonObject?>
+    ): Pair<List<SecureAreaBoundCredential>, String?>
 
     companion object {
         /**
@@ -88,7 +87,7 @@ class MdocCredentialFactory(
         document: Document,
         createDocumentSettings: CreateDocumentSettings,
         secureArea: SecureArea
-    ): Pair<List<MdocCredential>, JsonObject?> {
+    ): Pair<List<MdocCredential>, String?> {
         require(format is MsoMdocFormat) {
             "Expected ${MsoMdocFormat::class}"
         }
@@ -126,7 +125,7 @@ class SdJwtVcCredentialFactory(val domain: String) :
         document: Document,
         createDocumentSettings: CreateDocumentSettings,
         secureArea: SecureArea
-    ): Pair<List<KeyBoundSdJwtVcCredential>, JsonObject?> {
+    ): Pair<List<KeyBoundSdJwtVcCredential>, String?> {
         require(format is SdJwtVcFormat) {
             "Expected ${SdJwtVcFormat::class}"
         }

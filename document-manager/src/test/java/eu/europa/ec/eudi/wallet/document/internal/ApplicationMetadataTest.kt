@@ -25,10 +25,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.Clock
 import kotlinx.io.bytestring.ByteString
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -36,6 +33,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Clock
 
 class ApplicationMetadataTest {
 
@@ -45,7 +43,7 @@ class ApplicationMetadataTest {
     private val testCreatedAt = Clock.System.now()
     private val testFormat = MsoMdocFormat("test-doc-type")
     private val testSdJwtVcFormat = SdJwtVcFormat("test-vct")
-    private val testKeyAttestation = buildJsonObject { put("test", JsonPrimitive("value")) }
+    private val testKeyAttestation = "test-jws"
 
     @Test
     fun `create factory method returns ApplicationMetaData instance`() = runTest {
@@ -460,9 +458,7 @@ class ApplicationMetadataTest {
     @Test
     fun `setKeyAttestation updates keyAttestation and saves`() = runTest {
         val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
-        val keyAttestationJson = kotlinx.serialization.json.buildJsonObject {
-            put("attestation", kotlinx.serialization.json.JsonPrimitive("test-attestation"))
-        }
+        val keyAttestationJws = "test-jws"
 
         val metadata = ApplicationMetadata.create(
             documentId = testDocumentId,
@@ -481,18 +477,16 @@ class ApplicationMetadataTest {
             keyAttestation = null
         )
 
-        metadata.setKeyAttestation(keyAttestationJson)
+        metadata.setKeyAttestation(keyAttestationJws)
 
-        assertEquals(keyAttestationJson, metadata.keyAttestation)
+        assertEquals(keyAttestationJws, metadata.keyAttestation)
         coVerify(exactly = 2) { saveFn(any()) }
     }
 
     @Test
     fun `setKeyAttestation does nothing when already provisioned`() = runTest {
         val saveFn: suspend (ByteString) -> Unit = mockk(relaxed = true)
-        val keyAttestationJson = kotlinx.serialization.json.buildJsonObject {
-            put("attestation", kotlinx.serialization.json.JsonPrimitive("test-attestation"))
-        }
+        val keyAttestationJws = "test-jws"
 
         val metadata = ApplicationMetadata.create(
             documentId = testDocumentId,
@@ -516,7 +510,7 @@ class ApplicationMetadataTest {
         // Clear verification history to ensure exact count in next verification
         io.mockk.clearMocks(saveFn)
 
-        metadata.setKeyAttestation(keyAttestationJson)
+        metadata.setKeyAttestation(keyAttestationJws)
 
         assertNull(metadata.keyAttestation)
         coVerify(exactly = 0) { saveFn(any()) }

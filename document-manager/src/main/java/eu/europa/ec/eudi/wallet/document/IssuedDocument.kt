@@ -30,15 +30,15 @@ import eu.europa.ec.eudi.wallet.document.internal.toCoseBytes
 import eu.europa.ec.eudi.wallet.document.internal.toEcPublicKey
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.Clock
-import kotlinx.datetime.toJavaInstant
-import kotlinx.datetime.toKotlinInstant
 import org.multipaz.credential.SecureAreaBoundCredential
 import org.multipaz.crypto.EcSignature
 import org.multipaz.securearea.KeyInfo
 import org.multipaz.securearea.KeyUnlockData
 import org.multipaz.securearea.SecureArea
 import java.time.Instant
+import kotlin.time.Clock
+import kotlin.time.toJavaInstant
+import kotlin.time.toKotlinInstant
 
 /**
  * Represents an Issued Document in the EUDI Wallet.

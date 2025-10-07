@@ -27,11 +27,11 @@ import eu.europa.ec.eudi.wallet.document.internal.issuerMetaData
 import eu.europa.ec.eudi.wallet.document.internal.toCoseBytes
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.toJavaInstant
 import org.multipaz.credential.SecureAreaBoundCredential
 import org.multipaz.securearea.KeyInfo
 import org.multipaz.securearea.SecureArea
 import java.time.Instant
+import kotlin.time.toJavaInstant
 
 /**
  * Represents a document that has been created but not yet fully issued.

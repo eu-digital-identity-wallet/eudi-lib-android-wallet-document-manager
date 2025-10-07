@@ -27,9 +27,6 @@ import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkObject
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.Clock
-import kotlinx.datetime.toJavaInstant
-import kotlinx.datetime.toKotlinInstant
 import org.multipaz.cbor.Cbor
 import org.multipaz.cbor.DataItem
 import org.multipaz.credential.SecureAreaBoundCredential
@@ -42,7 +39,10 @@ import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertNull
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
+import kotlin.time.toJavaInstant
+import kotlin.time.toKotlinInstant
 
 class IssuedDocumentTest {
 
@@ -65,10 +65,10 @@ class IssuedDocumentTest {
         domain: String = "test-document-manager-id",
         isCertified: Boolean = true,
         usageCount: Int = 0,
-        now: kotlinx.datetime.Instant = Clock.System.now(),
+        now: kotlin.time.Instant = Clock.System.now(),
         isInvalidated: Boolean = false,
-        validFrom: kotlinx.datetime.Instant = now.minus(1.days),
-        validUntil: kotlinx.datetime.Instant = now.plus(1.days),
+        validFrom: kotlin.time.Instant = now.minus(1.days),
+        validUntil: kotlin.time.Instant = now.plus(1.days),
     ): SecureAreaBoundCredential {
         val mockSecureArea = createMockSecureArea(isInvalidated)
 
@@ -378,7 +378,6 @@ class IssuedDocumentTest {
     @Test
     fun `test isValidAt returns false when no valid credential exists at given time`() = runTest {
         val now = Instant.now()
-        val javaInstantNow = now
         val kotlinInstantNow = now.toKotlinInstant()
 
         val credential = createMockCredential(
