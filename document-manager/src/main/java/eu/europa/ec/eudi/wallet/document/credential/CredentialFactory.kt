@@ -20,9 +20,6 @@ import eu.europa.ec.eudi.wallet.document.CreateDocumentSettings
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonObject
 import org.multipaz.credential.SecureAreaBoundCredential
 import org.multipaz.document.Document
 import org.multipaz.mdoc.credential.MdocCredential
@@ -48,7 +45,7 @@ interface CredentialFactory {
         document: Document,
         createDocumentSettings: CreateDocumentSettings,
         secureArea: SecureArea,
-    ): Pair<List<SecureAreaBoundCredential>, JsonObject?>
+    ): Pair<List<SecureAreaBoundCredential>, String?>
 
     companion object {
         /**
@@ -90,12 +87,12 @@ class MdocCredentialFactory(
         document: Document,
         createDocumentSettings: CreateDocumentSettings,
         secureArea: SecureArea
-    ): Pair<List<MdocCredential>, JsonObject?> {
+    ): Pair<List<MdocCredential>, String?> {
         require(format is MsoMdocFormat) {
             "Expected ${MsoMdocFormat::class}"
         }
 
-     val (first, second)=  MdocCredential.createBatch(
+        return MdocCredential.createBatch(
             numberOfCredentials = createDocumentSettings.numberOfCredentials,
             document = document,
             domain = domain,
@@ -103,12 +100,6 @@ class MdocCredentialFactory(
             docType = format.docType,
             createKeySettings = createDocumentSettings.createKeySettings
         )
-
-        val jsonObject: JsonObject? = second?.let {
-            Json.parseToJsonElement(it).jsonObject
-        }
-
-        return Pair(first, jsonObject)
     }
 }
 
@@ -134,12 +125,12 @@ class SdJwtVcCredentialFactory(val domain: String) :
         document: Document,
         createDocumentSettings: CreateDocumentSettings,
         secureArea: SecureArea
-    ): Pair<List<KeyBoundSdJwtVcCredential>, JsonObject?> {
+    ): Pair<List<KeyBoundSdJwtVcCredential>, String?> {
         require(format is SdJwtVcFormat) {
             "Expected ${SdJwtVcFormat::class}"
         }
 
-        val (first, second) =  KeyBoundSdJwtVcCredential.createBatch(
+        return KeyBoundSdJwtVcCredential.createBatch(
             numberOfCredentials = createDocumentSettings.numberOfCredentials,
             document = document,
             domain = domain,
@@ -147,11 +138,7 @@ class SdJwtVcCredentialFactory(val domain: String) :
             vct = format.vct,
             createKeySettings = createDocumentSettings.createKeySettings
         )
-        val jsonObject: JsonObject? = second?.let {
-            Json.parseToJsonElement(it).jsonObject
-        }
 
-        return Pair(first, jsonObject)
     }
 }
 
