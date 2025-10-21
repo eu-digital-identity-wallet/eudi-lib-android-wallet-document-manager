@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 European Commission
+ * Copyright (c) 2023-2025 European Commission
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.security.PrivateKey
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import java.security.spec.PKCS8EncodedKeySpec
+import kotlin.time.Clock
 import kotlin.time.Instant
 
 private val SAMPLE_ISSUER_PRIVATE_KEY = """
@@ -83,7 +84,6 @@ internal val issuerCertificate: X509Certificate = PemReader(SAMPLE_ISSUER_DS.rea
 internal val PrivateKey.oneKey
     get() = OneKey(null, this)
 
-
 @JvmSynthetic
 internal fun generateMso(
     digestAlg: String,
@@ -93,7 +93,7 @@ internal fun generateMso(
 ) =
     MobileSecurityObjectGenerator(org.multipaz.crypto.Algorithm.fromHashAlgorithmIdentifier(digestAlg), docType, authKey)
         .apply {
-            val now = kotlin.time.Clock.System.now()
+            val now = Clock.System.now()
             val validUntil =
                 Instant.fromEpochMilliseconds(now.toEpochMilliseconds() + 1000L * 60L * 60L * 24L * 365L)
             setValidityInfo(now, now, validUntil, null)

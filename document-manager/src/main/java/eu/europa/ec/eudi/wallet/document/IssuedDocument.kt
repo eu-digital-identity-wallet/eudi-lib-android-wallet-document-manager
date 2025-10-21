@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2024-2025 European Commission
- *  
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -35,9 +35,9 @@ import org.multipaz.crypto.EcSignature
 import org.multipaz.securearea.KeyInfo
 import org.multipaz.securearea.KeyUnlockData
 import org.multipaz.securearea.SecureArea
-import kotlin.time.toJavaInstant
-import kotlin.time.Clock
 import java.time.Instant
+import kotlin.time.Clock
+import kotlin.time.toJavaInstant
 import kotlin.time.toKotlinInstant
 
 /**
@@ -75,11 +75,11 @@ class IssuedDocument(
     override val documentManagerId: String
         get() = baseDocument.documentManagerId
     override val createdAt: Instant
-        get() = baseDocument.createdAt
+        get() = baseDocument.createdAt.toJavaInstant()
     override val issuerMetadata: IssuerMetadata?
         get() = baseDocument.issuerMetaData
     val issuedAt: Instant
-        get() = baseDocument.issuedAt
+        get() = baseDocument.issuedAt.toJavaInstant()
 
     val data: DocumentData
         get() {
@@ -187,7 +187,7 @@ class IssuedDocument(
      *         or an exception if no valid credential is found
      */
     suspend fun getValidFrom() = runCatching {
-        findCredential()?.validFrom
+        findCredential()?.validFrom?.toJavaInstant()
             ?: throw IllegalStateException("No valid credential found")
     }
 
@@ -229,7 +229,6 @@ class IssuedDocument(
      * @param credentialContext The suspend function to execute with the credential as receiver
      * @return A [Result] containing the operation result or an exception if the operation failed
      */
-    
     suspend fun <T> consumingCredential(credentialContext: suspend SecureAreaBoundCredential.() -> T): Result<T> {
         return runCatching {
             val credential = findCredential() ?: throw IllegalStateException("Credential not found")

@@ -23,8 +23,6 @@ import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata.Companion.fromJson
 import kotlinx.io.bytestring.ByteString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
 import org.multipaz.cbor.Bstr
 import org.multipaz.cbor.Cbor
 import org.multipaz.cbor.CborBuilder
@@ -36,9 +34,8 @@ import org.multipaz.cbor.toDataItem
 import org.multipaz.cbor.toDataItemDateTimeString
 import org.multipaz.document.AbstractDocumentMetadata
 import org.multipaz.document.DocumentMetadata
-import java.time.Instant
-import kotlin.time.toJavaInstant
-import kotlin.time.toKotlinInstant
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 /**
  * Interface for application-specific document metadata management.
@@ -88,7 +85,7 @@ internal interface ApplicationMetadata : AbstractDocumentMetadata {
     /**
      * Optional key attestation data in JSON format.
      */
-    val keyAttestation: JsonObject?
+    val keyAttestation: String?
 
     /**
      * Optional metadata about the issuer of the document.
@@ -103,7 +100,6 @@ internal interface ApplicationMetadata : AbstractDocumentMetadata {
     /**
      * Optional timestamp when the document was issued.
      */
-    
     val issuedAt: Instant?
 
     /**
@@ -131,7 +127,7 @@ internal interface ApplicationMetadata : AbstractDocumentMetadata {
         createdAt: Instant,
         documentName: String,
         issuerMetadata: IssuerMetadata?,
-        keyAttestation: JsonObject?
+        keyAttestation: String?
     )
 
     /**
@@ -163,7 +159,7 @@ internal interface ApplicationMetadata : AbstractDocumentMetadata {
      *
      * @param keyAttestation Key attestation data in JSON format
      */
-    suspend fun setKeyAttestation(keyAttestation: JsonObject)
+    suspend fun setKeyAttestation(keyAttestation: String)
 
 
     companion object {
@@ -217,7 +213,7 @@ internal class ApplicationMetadataImpl private constructor(
             is MsoMdocFormat -> (format as MsoMdocFormat).docType
             is SdJwtVcFormat -> (format as SdJwtVcFormat).vct
         }
-    override val keyAttestation: JsonObject?
+    override val keyAttestation: String?
         get() = data.keyAttestation
     override val issuerMetadata: IssuerMetadata? get() = data.issuerMetadata
     override val issuerProvidedData: ByteArray? get() = data.issuerProvidedData?.toByteArray()
@@ -237,7 +233,7 @@ internal class ApplicationMetadataImpl private constructor(
         val format: DocumentFormat? = null,
         val initialCredentialsCount: Int = 0,
         val credentialPolicy: CreateDocumentSettings.CredentialPolicy? = null,
-        val keyAttestation: JsonObject? = null,
+        val keyAttestation: String? = null,
         val issuerMetadata: IssuerMetadata? = null,
         val issuerProvidedData: ByteString? = null,
         val createdAt: Instant? = null,
@@ -250,7 +246,6 @@ internal class ApplicationMetadataImpl private constructor(
          *
          * @return CBOR representation of the metadata
          */
-
         fun toCbor(): ByteString {
             val builder = CborMap.Companion.builder()
 
@@ -261,14 +256,14 @@ internal class ApplicationMetadataImpl private constructor(
                 initialCredentialsCount
             ) { it.toDataItem() }
             builder.putIfNotNull("credentialPolicy", credentialPolicy) { it.toDataItem() }
-            builder.putIfNotNull("createdAt", createdAt) { it.toKotlinInstant().toDataItemDateTimeString() }
-            builder.putIfNotNull("keyAttestation", keyAttestation) { Tstr(it.toString()) }
+            builder.putIfNotNull("createdAt", createdAt) { it.toDataItemDateTimeString() }
+            builder.putIfNotNull("keyAttestation", keyAttestation) { Tstr(it) }
             builder.putIfNotNull("issuerMetadata", issuerMetadata) { Tstr(it.toJson()) }
             builder.putIfNotNull(
                 "issuerProvidedData",
                 issuerProvidedData
             ) { Bstr(it.toByteArray()) }
-            builder.putIfNotNull("issuedAt", issuedAt) { it.toKotlinInstant().toDataItemDateTimeString() }
+            builder.putIfNotNull("issuedAt", issuedAt) { it.toDataItemDateTimeString() }
             builder.putIfNotNull(
                 "deferredRelatedData",
                 deferredRelatedData
@@ -294,15 +289,15 @@ internal class ApplicationMetadataImpl private constructor(
                     documentManagerId = dataItem["documentManagerId"].asTstr,
                     initialCredentialsCount = dataItem["initialCredentialsCount"].asNumber.toInt(),
                     credentialPolicy = CreateDocumentSettings.CredentialPolicy.fromDataItem(dataItem["credentialPolicy"]),
-                    createdAt = dataItem.getValue("createdAt") { it.asDateTimeString }?.toJavaInstant(),
-                    keyAttestation = dataItem.getValue("keyAttestation") { Json.decodeFromString(it.asTstr) },
+                    createdAt = dataItem.getValue("createdAt") { it.asDateTimeString },
+                    keyAttestation = dataItem.getValue("keyAttestation") { it.asTstr },
                     issuerMetadata = dataItem.getValue("issuerMetadata") {
                         fromJson(
                             it.asTstr
                         ).getOrNull()
                     },
                     issuerProvidedData = dataItem.getValue("issuerProvidedData") { ByteString(it.asBstr) },
-                    issuedAt = dataItem.getValue("issuedAt") { it.asDateTimeString }?.toJavaInstant(),
+                    issuedAt = dataItem.getValue("issuedAt") { it.asDateTimeString },
                     deferredRelatedData = dataItem.getValue("deferredRelatedData") { ByteString(it.asBstr) },
                 )
             }
@@ -323,7 +318,7 @@ internal class ApplicationMetadataImpl private constructor(
         createdAt: Instant,
         documentName: String,
         issuerMetadata: IssuerMetadata?,
-        keyAttestation: JsonObject?
+        keyAttestation: String?
     ) {
         data = Data(
             documentManagerId = documentManagerId,
@@ -363,7 +358,7 @@ internal class ApplicationMetadataImpl private constructor(
         data = data.copy(
             issuerProvidedData = issuerProvidedData,
             deferredRelatedData = null,
-            issuedAt = Instant.now()
+            issuedAt = Clock.System.now()
         )
         setMetadata(
             displayName = documentName ?: displayName,
@@ -403,7 +398,7 @@ internal class ApplicationMetadataImpl private constructor(
      *
      * If the document is already provisioned, this method does nothing.
      */
-    override suspend fun setKeyAttestation(keyAttestation: JsonObject) {
+    override suspend fun setKeyAttestation(keyAttestation: String) {
         if (provisioned) return
         data = data.copy(
             keyAttestation = keyAttestation
