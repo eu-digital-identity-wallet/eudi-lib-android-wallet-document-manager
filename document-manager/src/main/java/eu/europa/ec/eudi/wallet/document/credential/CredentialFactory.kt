@@ -30,7 +30,7 @@ import org.multipaz.securearea.SecureArea
  * Factory interface for creating credentials based on document format.
  * Provides functionality to create appropriate credential types for different document formats.
  */
-interface CredentialFactory {
+fun interface CredentialFactory {
     /**
      * Creates a list of credentials for a document based on the given format and settings.
      *

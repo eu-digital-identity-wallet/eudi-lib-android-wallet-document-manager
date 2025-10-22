@@ -105,6 +105,10 @@ class IssuedDocument(
     val credentialPolicy: CreateDocumentSettings.CredentialPolicy
         get() = baseDocument.applicationMetadata.credentialPolicy
 
+    companion object {
+        const val NO_CREDENTIALS = "Credential not found"
+    }
+
     /**
      * Retrieves all valid credentials associated with this document.
      *
@@ -231,7 +235,7 @@ class IssuedDocument(
      */
     suspend fun <T> consumingCredential(credentialContext: suspend SecureAreaBoundCredential.() -> T): Result<T> {
         return runCatching {
-            val credential = findCredential() ?: throw IllegalStateException("Credential not found")
+            val credential = findCredential() ?: throw IllegalStateException(NO_CREDENTIALS)
             val result = credentialContext.invoke(credential)
 
             // Use the internal policy applier to apply the policy
@@ -300,19 +304,19 @@ class IssuedDocument(
     @Deprecated("Use findCredential()?.secureArea instead")
     override val secureArea: SecureArea
         get() = runBlocking {
-            findCredential()?.secureArea ?: throw IllegalStateException("Credential not found")
+            findCredential()?.secureArea ?: throw IllegalStateException(NO_CREDENTIALS)
         }
 
     @Deprecated("Use findCredential()?.alias instead")
     override val keyAlias: String
         get() = runBlocking {
-            findCredential()?.alias ?: throw IllegalStateException("Credential not found")
+            findCredential()?.alias ?: throw IllegalStateException(NO_CREDENTIALS)
         }
 
     @Deprecated("Use findCredential()?.isKeyInvalidated instead")
     override val isKeyInvalidated: Boolean
         get() = runBlocking {
-            findCredential()?.isInvalidated() ?: throw IllegalStateException("Credential not found")
+            findCredential()?.isInvalidated() ?: throw IllegalStateException(NO_CREDENTIALS)
         }
 
     @Deprecated("Use findCredential()?.secureArea instead to get KeyInfo")
@@ -320,7 +324,7 @@ class IssuedDocument(
         get() = runBlocking {
             findCredential()?.let { credential ->
                 credential.secureArea.getKeyInfo(credential.alias)
-            } ?: throw IllegalStateException("Credential not found")
+            } ?: throw IllegalStateException(NO_CREDENTIALS)
         }
 
     @Deprecated("Use findCredential()?.secureArea instead to get KeyInfo")
@@ -331,14 +335,14 @@ class IssuedDocument(
     val issuerProvidedData: ByteArray
         get() = runBlocking {
             findCredential()?.issuerProvidedData
-                ?: throw IllegalStateException("Credential not found")
+                ?: throw IllegalStateException(NO_CREDENTIALS)
         }
 
     @Deprecated("Use getValidFrom() instead")
     val validFrom: Instant
         get() = runBlocking {
             findCredential()?.validFrom?.toJavaInstant()
-                ?: throw IllegalStateException("Credential not found")
+                ?: throw IllegalStateException(NO_CREDENTIALS)
 
         }
 
@@ -346,7 +350,7 @@ class IssuedDocument(
     val validUntil: Instant
         get() = runBlocking {
             findCredential()?.validUntil?.toJavaInstant()
-                ?: throw IllegalStateException("Credential not found")
+                ?: throw IllegalStateException(NO_CREDENTIALS)
         }
 
     /**
