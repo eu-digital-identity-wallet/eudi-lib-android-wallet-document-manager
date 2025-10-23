@@ -44,13 +44,12 @@ class SdJwtVcCredentialCertifier(
         val data = issuedCredential.data
         DefaultSdJwtOps.SdJwtVcVerifier.usingX5cOrIssuerMetadata(
             httpClientFactory = ktorHttpClientFactory,
-            x509CertificateTrust = { certificateChain ->
+            x509CertificateTrust = { _ ->
                 // TODO Check the certificate path
                 true
             }
         ).verify(data.sdJwtVcString).onFailure {
             Logger.w("SdJwtVcVerifier", "Invalid SD-JWT VC with error: ${it.message}", it)
-            // throw IllegalArgumentException("Invalid SD-JWT VC with error: ${it.message}", it)
         }
 
         val sdJwt = DefaultSdJwtOps.unverifiedIssuanceFrom(data.sdJwtVcString).getOrElse {
@@ -63,10 +62,8 @@ class SdJwtVcCredentialCertifier(
             val jwk = JWK.parse(Json.Default.decodeFromString<JsonObject>(it.toString())["jwk"].toString())
             val sdjwtVcPk = KeyConverter.toJavaKeys(listOf(jwk)).first()
                 ?: throw IllegalArgumentException("Invalid SD-JWT VC")
-            if (credential.secureArea.getKeyInfo(credential.alias).publicKey.javaPublicKey != sdjwtVcPk) {
-                if (forceKeyCheck) {
-                    throw IllegalArgumentException("Public key in SD-JWT VC does not match the one in the request")
-                }
+            if (credential.secureArea.getKeyInfo(credential.alias).publicKey.javaPublicKey != sdjwtVcPk && forceKeyCheck) {
+                throw IllegalArgumentException("Public key in SD-JWT VC does not match the one in the request")
             }
         }
 

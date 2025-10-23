@@ -54,7 +54,7 @@ class SampleDocumentManagerImpl(
         try {
             val documentIds = mutableListOf<DocumentId>()
             val cbor = CBORObject.DecodeFromBytes(sampleData)
-            val documents = cbor.get("documents")
+            val documents = cbor["documents"]
             documents.values.forEach { documentCbor ->
                 val docType = documentCbor["docType"].AsString()
                 val issuerSigned = documentCbor["issuerSigned"]

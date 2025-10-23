@@ -57,6 +57,6 @@ internal fun JsonElement.parse(): Any? {
                 .recoverCatching { boolean }
                 .recoverCatching { content }
 
-        }.getOrNull() ?: this
+        }.getOrNull()
     }
 }

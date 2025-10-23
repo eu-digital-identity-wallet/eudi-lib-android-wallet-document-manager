@@ -202,9 +202,7 @@ internal class ApplicationMetadataImpl private constructor(
         get() = data.format ?: throw IllegalStateException("Document format not set")
     override val initialCredentialsCount: Int
         get() = data.initialCredentialsCount.also {
-            if (it == 0) throw IllegalStateException(
-                "Initial credentials count not set"
-            )
+            check(it != 0) { "Initial credentials count not set" }
         }
     override val credentialPolicy: CreateDocumentSettings.CredentialPolicy
         get() = data.credentialPolicy ?: throw IllegalStateException("Credential policy not set")
