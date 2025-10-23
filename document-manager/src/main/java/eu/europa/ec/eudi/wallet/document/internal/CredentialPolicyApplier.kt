@@ -24,7 +24,7 @@ import org.multipaz.document.Document
  * Internal interface for implementing credential policy application.
  * This interface encapsulates the logic for applying different credential policies.
  */
-internal interface CredentialPolicyApplier {
+internal fun interface CredentialPolicyApplier {
     /**
      * Applies the credential policy after a credential is used.
      *

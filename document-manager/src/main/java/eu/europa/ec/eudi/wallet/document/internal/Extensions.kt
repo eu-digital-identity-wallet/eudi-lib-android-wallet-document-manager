@@ -137,8 +137,8 @@ internal fun DocumentFormat.Companion.fromDataItem(dataItem: DataItem): Document
     }
 
     return when {
-        dataItem.hasKey("docType") -> MsoMdocFormat(docType = dataItem.get("docType").asTstr)
-        dataItem.hasKey("vct") -> SdJwtVcFormat(vct = dataItem.get("vct").asTstr)
+        dataItem.hasKey("docType") -> MsoMdocFormat(docType = dataItem["docType"].asTstr)
+        dataItem.hasKey("vct") -> SdJwtVcFormat(vct = dataItem["vct"].asTstr)
         else -> throw IllegalArgumentException("Unknown DocumentFormat type")
     }
 }
