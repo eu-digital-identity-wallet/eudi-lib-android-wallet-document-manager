@@ -3,9 +3,7 @@
 # fromIssuerProvidedData
 
 [androidJvm]\
-fun NameSpacedData.Companion.[fromIssuerProvidedData](from-issuer-provided-data.md)(
-issuerProvidedData: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html)):
-NameSpacedData
+fun NameSpacedData.Companion.[fromIssuerProvidedData](from-issuer-provided-data.md)(issuerProvidedData: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html)): NameSpacedData
 
 Creates a NameSpacedData object from raw issuer provided data in CBOR format.
 

@@ -11,11 +11,7 @@ This method attempts to delete a document with the specified ID from the documen
 
 #### Return
 
-An [Outcome](../-outcome/index.md) containing either:     - A success result with an
-optional [ProofOfDeletion](../-proof-of-deletion/index.md) object - A failure result with an
-exception (
-typically [IllegalArgumentException](https://developer.android.com/reference/kotlin/java/lang/IllegalArgumentException.html)
-if document not found)
+An [Outcome](../-outcome/index.md) containing either:     - A success result with an optional [ProofOfDeletion](../-proof-of-deletion/index.md) object     - A failure result with an exception (typically [IllegalArgumentException](https://developer.android.com/reference/kotlin/java/lang/IllegalArgumentException.html) if document not found)
 
 #### Parameters
 

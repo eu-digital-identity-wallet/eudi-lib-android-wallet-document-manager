@@ -3,6 +3,4 @@
 # ProofOfPossessionSigners
 
 [androidJvm]\
-constructor(
-list: [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin.collections/-list/index.html)
-&lt;[ProofOfPossessionSigner](../-proof-of-possession-signer/index.md)&gt;)
+constructor(list: [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin.collections/-list/index.html)&lt;[ProofOfPossessionSigner](../-proof-of-possession-signer/index.md)&gt;)
