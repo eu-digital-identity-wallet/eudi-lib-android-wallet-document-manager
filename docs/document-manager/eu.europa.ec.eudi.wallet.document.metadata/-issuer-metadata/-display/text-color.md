@@ -3,5 +3,4 @@
 # textColor
 
 [androidJvm]\
-val [textColor](text-color.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)? =
-null
+val [textColor](text-color.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)? = null

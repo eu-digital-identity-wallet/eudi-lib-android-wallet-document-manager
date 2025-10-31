@@ -3,9 +3,7 @@
 # getCredentials
 
 [androidJvm]\
-suspend
-fun [getCredentials](get-credentials.md)(): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin.collections/-list/index.html)
-&lt;SecureAreaBoundCredential&gt;
+suspend fun [getCredentials](get-credentials.md)(): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin.collections/-list/index.html)&lt;SecureAreaBoundCredential&gt;
 
 Retrieves all valid credentials associated with this document.
 

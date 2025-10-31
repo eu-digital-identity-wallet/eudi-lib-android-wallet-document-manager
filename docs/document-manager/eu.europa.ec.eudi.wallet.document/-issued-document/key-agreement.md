@@ -3,10 +3,7 @@
 # keyAgreement
 
 [androidJvm]\
-fun [~~keyAgreement~~](key-agreement.md)(
-otherPublicKey: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html),
-keyUnlockData: KeyUnlockData? = null): [Outcome](../-outcome/index.md)
-&lt;[SharedSecret](../-shared-secret/index.md)&gt;
+fun [~~keyAgreement~~](key-agreement.md)(otherPublicKey: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html), keyUnlockData: KeyUnlockData? = null): [Outcome](../-outcome/index.md)&lt;[SharedSecret](../-shared-secret/index.md)&gt;
 
 ---
 

@@ -11,7 +11,4 @@ This method safely retrieves the validity start date from the document's current
 
 #### Return
 
-A [Result](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-result/index.html)
-containing the validity start date as
-an [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html) if successful,
-or an exception if no valid credential is found
+A [Result](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-result/index.html) containing the validity start date as an [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html) if successful,     or an exception if no valid credential is found

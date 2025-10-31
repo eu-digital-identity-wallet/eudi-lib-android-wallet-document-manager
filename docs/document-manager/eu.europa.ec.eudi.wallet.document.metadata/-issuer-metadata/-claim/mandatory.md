@@ -6,5 +6,4 @@
 
 @SerialName(value = &quot;mandatory&quot;)
 
-val [mandatory](mandatory.md): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-boolean/index.html)? =
-false
+val [mandatory](mandatory.md): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-boolean/index.html)? = false

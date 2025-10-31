@@ -3,6 +3,4 @@
 # build
 
 [androidJvm]\
-fun [build](build.md)(
-configure: [DocumentManager.Builder](../../../eu.europa.ec.eudi.wallet.document/-document-manager/-builder/index.md).()
--&gt; [Unit](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-unit/index.html)): [SampleDocumentManager](../index.md)
+fun [build](build.md)(configure: [DocumentManager.Builder](../../../eu.europa.ec.eudi.wallet.document/-document-manager/-builder/index.md).() -&gt; [Unit](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-unit/index.html)): [SampleDocumentManager](../index.md)
