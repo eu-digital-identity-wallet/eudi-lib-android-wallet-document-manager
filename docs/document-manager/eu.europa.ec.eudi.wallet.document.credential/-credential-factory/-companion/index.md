@@ -7,6 +7,6 @@ object [Companion](index.md)
 
 ## Functions
 
-| Name                | Summary                                                                                                                                                                                                                                                                                                                                                                                     |
-|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Name | Summary |
+|---|---|
 | [invoke](invoke.md) | [androidJvm]<br>operator fun [invoke](invoke.md)(domain: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html), format: [DocumentFormat](../../../eu.europa.ec.eudi.wallet.document.format/-document-format/index.md)): [CredentialFactory](../index.md)<br>Creates an appropriate credential factory implementation based on the document format. |

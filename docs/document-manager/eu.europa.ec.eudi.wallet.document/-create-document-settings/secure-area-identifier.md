@@ -3,7 +3,6 @@
 # secureAreaIdentifier
 
 [androidJvm]\
-abstract
-val [secureAreaIdentifier](secure-area-identifier.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)
+abstract val [secureAreaIdentifier](secure-area-identifier.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)
 
 Identifier for the secure area where document keys will be stored. This should match an existing secure area in the system.

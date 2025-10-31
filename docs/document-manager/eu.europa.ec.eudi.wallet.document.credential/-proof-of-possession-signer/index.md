@@ -22,14 +22,14 @@ Implementations of this interface are responsible for generating cryptographic s
 
 ## Properties
 
-| Name                         | Summary                                                                                                                                                                                         |
-|------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [keyAlias](key-alias.md)     | [androidJvm]<br>abstract val [keyAlias](key-alias.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)<br>The alias of the key used for signing. |
-| [secureArea](secure-area.md) | [androidJvm]<br>abstract val [secureArea](secure-area.md): SecureArea<br>The secure area associated with the key.                                                                               |
+| Name | Summary |
+|---|---|
+| [keyAlias](key-alias.md) | [androidJvm]<br>abstract val [keyAlias](key-alias.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)<br>The alias of the key used for signing. |
+| [secureArea](secure-area.md) | [androidJvm]<br>abstract val [secureArea](secure-area.md): SecureArea<br>The secure area associated with the key. |
 
 ## Functions
 
-| Name                          | Summary                                                                                                                                                                                                                                                                                           |
-|-------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [getKeyInfo](get-key-info.md) | [androidJvm]<br>abstract suspend fun [getKeyInfo](get-key-info.md)(): KeyInfo<br>The alias of the key used for signing.                                                                                                                                                                           |
-| [signPoP](sign-po-p.md)       | [androidJvm]<br>abstract suspend fun [signPoP](sign-po-p.md)(dataToSign: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html), keyUnlockData: KeyUnlockData?): EcSignature<br>Signs the provided data to create a Proof of Possession signature. |
+| Name | Summary |
+|---|---|
+| [getKeyInfo](get-key-info.md) | [androidJvm]<br>abstract suspend fun [getKeyInfo](get-key-info.md)(): KeyInfo<br>The alias of the key used for signing. |
+| [signPoP](sign-po-p.md) | [androidJvm]<br>abstract suspend fun [signPoP](sign-po-p.md)(dataToSign: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html), keyUnlockData: KeyUnlockData?): EcSignature<br>Signs the provided data to create a Proof of Possession signature. |

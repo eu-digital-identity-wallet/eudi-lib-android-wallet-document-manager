@@ -3,6 +3,4 @@
 # claims
 
 [androidJvm]\
-abstract
-val [claims](claims.md): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin.collections/-list/index.html)
-&lt;[DocumentClaim](../-document-claim/index.md)&gt;
+abstract val [claims](claims.md): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin.collections/-list/index.html)&lt;[DocumentClaim](../-document-claim/index.md)&gt;

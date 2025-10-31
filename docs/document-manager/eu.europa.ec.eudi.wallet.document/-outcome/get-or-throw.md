@@ -13,6 +13,6 @@ the encapsulated value if this instance represents a successful outcome
 
 #### Throws
 
-|                                                                                                      |                                                                          |
-|------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------|
+| | |
+|---|---|
 | [Throwable](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-throwable/index.html) | the encapsulated exception if this instance represents a failure outcome |
