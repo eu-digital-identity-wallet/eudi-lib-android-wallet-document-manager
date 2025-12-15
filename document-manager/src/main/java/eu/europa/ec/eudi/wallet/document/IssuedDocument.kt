@@ -26,15 +26,18 @@ import eu.europa.ec.eudi.wallet.document.internal.documentName
 import eu.europa.ec.eudi.wallet.document.internal.format
 import eu.europa.ec.eudi.wallet.document.internal.issuedAt
 import eu.europa.ec.eudi.wallet.document.internal.issuerMetaData
+import eu.europa.ec.eudi.wallet.document.internal.asProvider
 import eu.europa.ec.eudi.wallet.document.internal.toCoseBytes
 import eu.europa.ec.eudi.wallet.document.internal.toEcPublicKey
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.multipaz.credential.SecureAreaBoundCredential
 import org.multipaz.crypto.EcSignature
 import org.multipaz.securearea.KeyInfo
 import org.multipaz.securearea.KeyUnlockData
 import org.multipaz.securearea.SecureArea
+import org.multipaz.securearea.UnlockReason
 import java.time.Instant
 import kotlin.time.Clock
 import kotlin.time.toJavaInstant
@@ -260,12 +263,15 @@ class IssuedDocument(
         dataToSign: ByteArray,
         keyUnlockData: KeyUnlockData? = null
     ): Result<EcSignature> {
-        return consumingCredential {
-            secureArea.sign(
-                alias = alias,
-                dataToSign = dataToSign,
-                keyUnlockData = keyUnlockData
-            )
+        val provider = keyUnlockData.asProvider()
+        return withContext(provider) {
+            consumingCredential {
+                secureArea.sign(
+                    alias = alias,
+                    dataToSign = dataToSign,
+                    unlockReason = UnlockReason.Unspecified
+                )
+            }
         }
     }
 
@@ -286,12 +292,15 @@ class IssuedDocument(
         otherPublicKey: ByteArray,
         keyUnlockData: KeyUnlockData? = null
     ): Result<SharedSecret> {
-        return consumingCredential {
-            secureArea.keyAgreement(
-                alias = alias,
-                otherKey = otherPublicKey.toEcPublicKey,
-                keyUnlockData = keyUnlockData
-            )
+        val provider = keyUnlockData.asProvider()
+        return withContext(provider) {
+            consumingCredential {
+                secureArea.keyAgreement(
+                    alias = alias,
+                    otherKey = otherPublicKey.toEcPublicKey,
+                    unlockReason = UnlockReason.Unspecified
+                )
+            }
         }
     }
 

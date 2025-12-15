@@ -16,11 +16,14 @@
 
 package eu.europa.ec.eudi.wallet.document.credential
 
+import eu.europa.ec.eudi.wallet.document.internal.asProvider
+import kotlinx.coroutines.withContext
 import org.multipaz.credential.SecureAreaBoundCredential
 import org.multipaz.crypto.EcSignature
 import org.multipaz.securearea.KeyInfo
 import org.multipaz.securearea.KeyUnlockData
 import org.multipaz.securearea.SecureArea
+import org.multipaz.securearea.UnlockReason
 
 /**
  * A collection of [ProofOfPossessionSigner] instances.
@@ -103,10 +106,13 @@ class ProofOfPossessionSignerImpl(
         dataToSign: ByteArray,
         keyUnlockData: KeyUnlockData?
     ): EcSignature {
-        return secureArea.sign(
-            alias = keyAlias,
-            dataToSign = dataToSign,
-            keyUnlockData = keyUnlockData
-        )
+        val provider = keyUnlockData.asProvider()
+        return withContext(provider) {
+            secureArea.sign(
+                alias = keyAlias,
+                dataToSign = dataToSign,
+                unlockReason = UnlockReason.Unspecified
+            )
+        }
     }
 }

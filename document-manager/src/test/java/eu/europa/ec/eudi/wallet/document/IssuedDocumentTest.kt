@@ -35,6 +35,7 @@ import org.multipaz.crypto.EcSignature
 import org.multipaz.document.Document
 import org.multipaz.securearea.KeyUnlockData
 import org.multipaz.securearea.SecureArea
+import org.multipaz.securearea.UnlockReason
 import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
@@ -614,7 +615,7 @@ class IssuedDocumentTest {
             secureArea.sign(
                 alias = eq(alias),
                 dataToSign = eq(dataToSign),
-                keyUnlockData = null
+                unlockReason = any()
             )
         }
 
@@ -632,7 +633,7 @@ class IssuedDocumentTest {
 
         val secureArea = mockk<SecureArea> {
             coEvery {
-                sign(eq(alias), eq(dataToSign), eq(mockUnlockData))
+                sign(eq(alias), eq(dataToSign), any<UnlockReason>())
             } returns expectedSignature
             coEvery { getKeyInvalidated(any()) } returns false
         }
@@ -658,12 +659,12 @@ class IssuedDocumentTest {
         assert(result.isSuccess)
         assert(result.getOrNull() == expectedSignature)
 
-        // Verify the unlock data was passed correctly
+        // Verify the signing was called (unlock data is now handled via provider)
         coVerify {
             secureArea.sign(
                 alias = eq(alias),
                 dataToSign = eq(dataToSign),
-                keyUnlockData = eq(mockUnlockData)
+                unlockReason = any()
             )
         }
     }
@@ -761,7 +762,7 @@ class IssuedDocumentTest {
             secureArea.keyAgreement(
                 alias = eq(alias),
                 otherKey = any(), // Can't directly compare the converted key
-                keyUnlockData = null
+                unlockReason = any()
             )
         }
 
@@ -787,7 +788,7 @@ class IssuedDocumentTest {
 
         val secureArea = mockk<SecureArea> {
             coEvery {
-                keyAgreement(eq(alias), any(), eq(mockUnlockData))
+                keyAgreement(eq(alias), any(), any<UnlockReason>())
             } returns expectedSharedSecret
             coEvery { getKeyInvalidated(any()) } returns false
         }
@@ -815,12 +816,12 @@ class IssuedDocumentTest {
             result.getOrNull()?.contentEquals(expectedSharedSecret) == true
         ) { "Expected shared secret doesn't match" }
 
-        // Verify unlock data was passed correctly
+        // Verify key agreement was called (unlock data is now handled via provider)
         coVerify {
             secureArea.keyAgreement(
                 alias = eq(alias),
                 otherKey = any(), // Can't directly compare the converted key
-                keyUnlockData = eq(mockUnlockData)
+                unlockReason = any()
             )
         }
 
