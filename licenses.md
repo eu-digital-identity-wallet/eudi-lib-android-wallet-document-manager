@@ -1,7 +1,7 @@
 
 # EUDI wallet library for managing documents
 ## Dependency License Report
-_2025-10-31 10:24:03 EET_
+_2025-12-17 10:56:47 EET_
 ## Apache License, Version 2.0
 
 **1** **Group:** `com.nimbusds` **Name:** `nimbus-jose-jwt` **Version:** `9.47` 
@@ -46,7 +46,7 @@ _2025-10-31 10:24:03 EET_
 > - **POM Project URL**: [https://github.com/Kotlin/kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization)
 > - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-**11** **Group:** `org.multipaz` **Name:** `multipaz` **Version:** `0.94.0` 
+**11** **Group:** `org.multipaz` **Name:** `multipaz` **Version:** `0.95.0` 
 > - **POM License**: Apache License, Version 2.0 - [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
 ## BSD3
