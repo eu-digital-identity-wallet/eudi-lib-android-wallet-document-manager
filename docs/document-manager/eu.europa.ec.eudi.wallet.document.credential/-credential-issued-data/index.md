@@ -18,4 +18,4 @@ Sealed interface representing different types of credential data provided by iss
 | Name | Summary |
 |---|---|
 | [MsoMdoc](-mso-mdoc/index.md) | [androidJvm]<br>data class [MsoMdoc](-mso-mdoc/index.md)(val nameSpacedData: NameSpacedData, val staticAuthData: StaticAuthDataParser.StaticAuthData) : [CredentialIssuedData](index.md)<br>Represents Mobile Security Object (MSO) data for Mobile Driving License (mDL) credential format. |
-| [SdJwtVc](-sd-jwt-vc/index.md) | [androidJvm]<br>data class [SdJwtVc](-sd-jwt-vc/index.md)(val issuedSdJwt: SdJwt&lt;JwtAndClaims&gt;) : [CredentialIssuedData](index.md)<br>Represents a Selective Disclosure JWT Verifiable Credential format. |
+| [SdJwtVc](-sd-jwt-vc/index.md) | [androidJvm]<br>data class [SdJwtVc](-sd-jwt-vc/index.md)(val issuedSdJwt: SdJwt&lt;&lt;Error class: unknown class&gt;&gt;) : [CredentialIssuedData](index.md)<br>Represents a Selective Disclosure JWT Verifiable Credential format. |

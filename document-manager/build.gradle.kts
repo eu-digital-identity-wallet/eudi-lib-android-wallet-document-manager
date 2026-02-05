@@ -131,6 +131,7 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.json)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.ktor.client.cio)
 }
 
 // Dependency check

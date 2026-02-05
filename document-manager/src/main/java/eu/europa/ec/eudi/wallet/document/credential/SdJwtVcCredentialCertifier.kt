@@ -19,7 +19,10 @@ package eu.europa.ec.eudi.wallet.document.credential
 import com.nimbusds.jose.jwk.JWK
 import com.nimbusds.jose.jwk.KeyConverter
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
-import eu.europa.ec.eudi.sdjwt.vc.KtorHttpClientFactory
+import eu.europa.ec.eudi.sdjwt.NimbusSdJwtOps
+import eu.europa.ec.eudi.sdjwt.vc.IssuerVerificationMethod
+import eu.europa.ec.eudi.sdjwt.vc.TypeMetadataPolicy
+import eu.europa.ec.eudi.sdjwt.vc.X509CertificateTrust
 import eu.europa.ec.eudi.wallet.document.internal.sdJwtVcString
 import io.ktor.client.HttpClient
 import kotlinx.serialization.json.Json
@@ -29,12 +32,13 @@ import kotlinx.serialization.json.longOrNull
 import org.multipaz.credential.SecureAreaBoundCredential
 import org.multipaz.crypto.javaPublicKey
 import org.multipaz.util.Logger
+import java.security.cert.X509Certificate
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
 
 class SdJwtVcCredentialCertifier(
-    var ktorHttpClientFactory: KtorHttpClientFactory = { HttpClient() }
+    private val httpClient: HttpClient = HttpClient()
 ) : CredentialCertification {
     override suspend fun certifyCredential(
         credential: SecureAreaBoundCredential,
@@ -42,13 +46,21 @@ class SdJwtVcCredentialCertifier(
         forceKeyCheck: Boolean
     ) {
         val data = issuedCredential.data
-        DefaultSdJwtOps.SdJwtVcVerifier.usingX5cOrIssuerMetadata(
-            httpClientFactory = ktorHttpClientFactory,
-            x509CertificateTrust = { _ ->
+
+        val issuerVerificationMethod = IssuerVerificationMethod.usingX5cOrIssuerMetadata<List<X509Certificate>>(
+            httpClient = httpClient,
+            x509CertificateTrust = X509CertificateTrust { chain, _ ->
                 // TODO Check the certificate path
                 true
             }
-        ).verify(data.sdJwtVcString).onFailure {
+        )
+
+        val verifier = NimbusSdJwtOps.SdJwtVcVerifier(
+            issuerVerificationMethod = issuerVerificationMethod,
+            typeMetadataPolicy = TypeMetadataPolicy.NotUsed
+        )
+
+        verifier.verify(data.sdJwtVcString).onFailure {
             Logger.w("SdJwtVcVerifier", "Invalid SD-JWT VC with error: ${it.message}", it)
         }
 

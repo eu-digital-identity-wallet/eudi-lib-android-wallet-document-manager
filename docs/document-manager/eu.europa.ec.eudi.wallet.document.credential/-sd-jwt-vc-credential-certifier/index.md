@@ -3,19 +3,13 @@
 # SdJwtVcCredentialCertifier
 
 [androidJvm]\
-class [SdJwtVcCredentialCertifier](index.md)(var ktorHttpClientFactory: KtorHttpClientFactory = { HttpClient() }) : [CredentialCertification](../-credential-certification/index.md)
+class [SdJwtVcCredentialCertifier](index.md)(httpClient: HttpClient = HttpClient()) : [CredentialCertification](../-credential-certification/index.md)
 
 ## Constructors
 
 | | |
 |---|---|
-| [SdJwtVcCredentialCertifier](-sd-jwt-vc-credential-certifier.md) | [androidJvm]<br>constructor(ktorHttpClientFactory: KtorHttpClientFactory = { HttpClient() }) |
-
-## Properties
-
-| Name | Summary |
-|---|---|
-| [ktorHttpClientFactory](ktor-http-client-factory.md) | [androidJvm]<br>var [ktorHttpClientFactory](ktor-http-client-factory.md): KtorHttpClientFactory |
+| [SdJwtVcCredentialCertifier](-sd-jwt-vc-credential-certifier.md) | [androidJvm]<br>constructor(httpClient: HttpClient = HttpClient()) |
 
 ## Functions
 

@@ -19,7 +19,7 @@ package eu.europa.ec.eudi.wallet.document
 import android.util.Log
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps.recreateClaimsAndDisclosuresPerClaim
-import eu.europa.ec.eudi.sdjwt.vc.SelectPath.Default.select
+import eu.europa.ec.eudi.sdjwt.vc.SelectPath.Default.query
 import eu.europa.ec.eudi.wallet.document.credential.IssuerProvidedCredential
 import eu.europa.ec.eudi.wallet.document.format.MutableSdJwtClaim
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcData
@@ -29,7 +29,10 @@ import io.mockk.clearAllMocks
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkObject
+import eu.europa.ec.eudi.sdjwt.NimbusSdJwtOps
+import eu.europa.ec.eudi.sdjwt.vc.IssuerVerificationMethod
+import eu.europa.ec.eudi.sdjwt.vc.TypeMetadataPolicy
+import eu.europa.ec.eudi.sdjwt.vc.X509CertificateTrust
 import io.mockk.mockkStatic
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -39,6 +42,7 @@ import org.multipaz.securearea.software.SoftwareCreateKeySettings
 import org.multipaz.securearea.software.SoftwareSecureArea
 import org.multipaz.storage.Storage
 import org.multipaz.storage.ephemeral.EphemeralStorage
+import java.security.cert.X509Certificate
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Ignore
@@ -77,10 +81,19 @@ class SdJwtVcTest {
             val sdJwtVcString = getResourceAsText("sample_sd_jwt_vc.txt")
                 .replace("\n", "")
                 .replace("\r", "")
-            val verifier = DefaultSdJwtOps.SdJwtVcVerifier.usingX5cOrIssuerMetadata(
-                httpClientFactory = { mockk(relaxed = true) },
-                x509CertificateTrust = { _ -> true },
+
+            val issuerVerificationMethod = IssuerVerificationMethod.usingX5cOrIssuerMetadata<List<X509Certificate>>(
+                httpClient = mockk(relaxed = true), // Pass the mock instance directly, not a factory
+                x509CertificateTrust = X509CertificateTrust { chain, claimSet ->
+                    true
+                }
             )
+
+            val verifier = NimbusSdJwtOps.SdJwtVcVerifier(
+                issuerVerificationMethod = issuerVerificationMethod,
+                typeMetadataPolicy = TypeMetadataPolicy.NotUsed
+            )
+
             val result = verifier.verify(sdJwtVcString)
             assertTrue(result.isSuccess)
         }
@@ -103,10 +116,10 @@ class SdJwtVcTest {
         val claimValueList = disclosuresPerClaim.map {
             println(
                 "Path: ${it.key}, Value: ${
-                    claims.select(it.key).getOrNull()
+                    claims.query(it.key).getOrNull()?.toJsonElement()
                 }, SelectivelyDisclosable: ${it.value.isNotEmpty()}"
             )
-            Triple(it.key, claims.select(it.key).getOrNull(), it.value.isNotEmpty())
+            Triple(it.key, claims.query(it.key).getOrNull()?.toJsonElement(), it.value.isNotEmpty())
         }.filterNot { it.first.head().toString() in excluded }
 
         val sdJwtVcClaims = mutableListOf<MutableSdJwtClaim>()
@@ -204,6 +217,7 @@ class SdJwtVcTest {
             unsignedDocument,
             issuerData
         )
+
         assertTrue(storeDocumentResult.isSuccess)
         val issuedDocument = storeDocumentResult.getOrThrow()
 

@@ -16,7 +16,7 @@ mavenPublish = "0.33.0"
 mockk = "1.14.4"
 multipaz = "0.95.0"
 sonarqube = "6.2.0.5505"
-eudi-sd-jwt-vc-kt = "0.10.0"
+eudi-sd-jwt-vc-kt = "0.18.0"
 nimbus = "9.47"
 ktor = "3.3.0"
 kover = "0.9.1"
@@ -39,6 +39,7 @@ ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-client-serialization = { module = "io.ktor:ktor-client-serialization", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 multipaz = { module = "org.multipaz:multipaz", version.ref = "multipaz" }
 
 [plugins]

@@ -3,4 +3,4 @@
 # SdJwtVcCredentialCertifier
 
 [androidJvm]\
-constructor(ktorHttpClientFactory: KtorHttpClientFactory = { HttpClient() })
+constructor(httpClient: HttpClient = HttpClient())

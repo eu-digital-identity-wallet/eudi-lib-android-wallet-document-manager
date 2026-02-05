@@ -18,7 +18,7 @@ package eu.europa.ec.eudi.wallet.document.format
 
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps.recreateClaimsAndDisclosuresPerClaim
-import eu.europa.ec.eudi.sdjwt.vc.SelectPath.Default.select
+import eu.europa.ec.eudi.sdjwt.vc.SelectPath.Default.query
 import eu.europa.ec.eudi.wallet.document.NameSpace
 import eu.europa.ec.eudi.wallet.document.NameSpacedValues
 import eu.europa.ec.eudi.wallet.document.NameSpaces
@@ -208,7 +208,7 @@ data class SdJwtVcData(
         mutableListOf<MutableSdJwtClaim>().also { sdJwtVcClaims ->
 
             for ((path, disclosures) in filteredDisclosuresPerClaim) {
-                val value = claims.select(path).getOrNull()
+                val value = claims.query(path).getOrNull()?.toJsonElement()
                 val selectivelyDisclosable = disclosures.isNotEmpty()
 
                 // start from the root of the list of claims
