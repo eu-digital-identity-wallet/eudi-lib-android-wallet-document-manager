@@ -183,7 +183,7 @@ internal object LocaleSerializer : KSerializer<Locale> {
         Locale.forLanguageTag(decoder.decodeString())
 
     override fun serialize(encoder: Encoder, value: Locale) =
-        encoder.encodeString(value.toString())
+        encoder.encodeString(value.toLanguageTag())
 }
 
 /**
