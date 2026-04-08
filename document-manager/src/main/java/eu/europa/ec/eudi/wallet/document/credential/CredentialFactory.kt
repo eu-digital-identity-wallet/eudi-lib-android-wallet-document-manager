@@ -104,7 +104,7 @@ class MdocCredentialFactory(
 }
 
 /**
- * Implementation of CredentialFactory for creating SD-JWT VC (Selective Disclosure JWT Verifiable Credentials) according to RFC 9401.
+ * Implementation of CredentialFactory for creating SD-JWT VC (Selective Disclosure JWT Verifiable Credentials) according to RFC 9901.
  *
  * @property domain the domain for the credentials
  */
