@@ -81,14 +81,6 @@ class DocumentManagerImpl(
     internal var checkDevicePublicKey: Boolean = true
 
     /**
-     * Storage prefix used to isolate documents managed by this instance.
-     * Constructed from the identifier to ensure uniqueness.
-     */
-    @VisibleForTesting
-    @get:JvmSynthetic
-    internal val prefix = "Document_${identifier}_"
-
-    /**
      * Document storage and retrieval system, lazily initialized with configured
      * credential implementations and metadata factory.
      *
