@@ -72,15 +72,6 @@ class DocumentManagerImpl(
 ) : DocumentManager {
 
     /**
-     * Flag to control device public key verification during credential certification.
-     * When true (default), ensures that the public key from the issuer matches the device key.
-     * May be disabled for testing purposes only.
-     */
-    @VisibleForTesting
-    @get:JvmSynthetic
-    internal var checkDevicePublicKey: Boolean = true
-
-    /**
      * Document storage and retrieval system, lazily initialized with configured
      * credential implementations and metadata factory.
      *
@@ -251,7 +242,6 @@ class DocumentManagerImpl(
                     credentialCertifier.certifyCredential(
                         credential = credential,
                         issuedCredential = issuerProvidedData.first { it.publicKeyAlias == credential.alias },
-                        forceKeyCheck = checkDevicePublicKey
                     )
                 }
                 identityDocument.applicationMetadata.issue(

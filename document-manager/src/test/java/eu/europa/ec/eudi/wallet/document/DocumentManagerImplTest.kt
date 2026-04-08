@@ -16,16 +16,25 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-// Added imports
+import COSE.Message
+import COSE.MessageTag
+import COSE.Sign1Message
+import com.upokecenter.cbor.CBORObject
 import eu.europa.ec.eudi.wallet.document.credential.IssuerProvidedCredential
+import eu.europa.ec.eudi.wallet.document.credential.MsoMdocCredentialCertifier
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocData
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
+import eu.europa.ec.eudi.wallet.document.internal.getEmbeddedCBORObject
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
+import io.mockk.clearConstructorMockk
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkConstructor
 import kotlinx.coroutines.runBlocking
 import org.multipaz.cbor.Cbor
 import org.multipaz.credential.SecureAreaBoundCredential
+import org.multipaz.mdoc.mso.MobileSecurityObjectParser
 import org.multipaz.securearea.SecureArea
 import org.multipaz.securearea.SecureAreaRepository
 import org.multipaz.securearea.software.SoftwareCreateKeySettings
@@ -68,6 +77,7 @@ class DocumentManagerImplTest {
     @AfterTest
     fun tearDown() {
         documentManager.getDocuments().forEach { documentManager.deleteDocumentById(it.id) }
+        clearConstructorMockk(MsoMdocCredentialCertifier::class)
     }
 
     @OptIn(ExperimentalStdlibApi::class)
@@ -78,12 +88,33 @@ class DocumentManagerImplTest {
         Cbor.decode(issuerData)
     }
 
+    /**
+     * Mocks the [MsoMdocCredentialCertifier] to certify credentials without performing the
+     * device public key check. This is needed for tests that use fixed issuer data whose embedded
+     * key does not match the dynamically generated document key.
+     */
+    private fun mockMsoMdocCertifierWithoutKeyCheck() {
+        mockkConstructor(MsoMdocCredentialCertifier::class)
+        coEvery {
+            anyConstructed<MsoMdocCredentialCertifier>().certifyCredential(any(), any())
+        } coAnswers {
+            val credential = firstArg<SecureAreaBoundCredential>()
+            val issuedCredential = secondArg<IssuerProvidedCredential>()
+            val data = issuedCredential.data
+            val issuerSigned = CBORObject.DecodeFromBytes(data)
+            val issuerAuthBytes = issuerSigned["issuerAuth"].EncodeToBytes()
+            val issuerAuth =
+                Message.DecodeFromBytes(issuerAuthBytes, MessageTag.Sign1) as Sign1Message
+            val msoBytes = issuerAuth.GetContent().getEmbeddedCBORObject().EncodeToBytes()
+            val mso = MobileSecurityObjectParser(msoBytes).parse()
+            credential.certify(data, mso.validFrom, mso.validUntil)
+        }
+    }
+
     @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun `should create document and store issued document`() {
-        // set checkDevicePublicKey to false to avoid checking the MSO key
-        // since we are using fixed issuer data
-        documentManager.checkDevicePublicKey = false
+        mockMsoMdocCertifierWithoutKeyCheck()
         val createKeySettings = SoftwareCreateKeySettings.Builder().build()
         val createDocumentSettings = CreateDocumentSettings(
             secureAreaIdentifier = secureArea.identifier,
@@ -172,8 +203,6 @@ class DocumentManagerImplTest {
     @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun `should return failure result when public keys of document and mso don't match`() {
-        documentManager.checkDevicePublicKey = true // Ensure this is enabled for the test
-
         val createKeySettings = SoftwareCreateKeySettings.Builder().build()
         val createDocumentSettings = CreateDocumentSettings(
             secureAreaIdentifier = secureArea.identifier,
@@ -252,6 +281,8 @@ class DocumentManagerImplTest {
             issuerDisplay = emptyList() // Placeholder: Provide actual List<IssuerDisplay>? if needed
         )
 
+        mockMsoMdocCertifierWithoutKeyCheck()
+
         // Use a local DocumentManager for test isolation if preferred, or the class-level one.
         // The original test created a new one.
         val localDocumentManager = DocumentManagerImpl(
@@ -259,8 +290,6 @@ class DocumentManagerImplTest {
             storage = EphemeralStorage(), // Fresh storage for isolation
             secureAreaRepository = secureAreaRepository
         )
-        // Disable public key check if using dummy MSO data to simplify issuance for this metadata test
-        localDocumentManager.checkDevicePublicKey = false
 
         val createKeySettings = SoftwareCreateKeySettings.Builder().build()
         val createSettings = CreateDocumentSettings(
@@ -323,7 +352,6 @@ class DocumentManagerImplTest {
     @Test
     fun `should store deferred document successfully`() {
         // Prepare an unsigned document first
-        documentManager.checkDevicePublicKey = false
         val createKeySettings = SoftwareCreateKeySettings.Builder().build()
         val createDocumentSettings = CreateDocumentSettings(
             secureAreaIdentifier = secureArea.identifier,

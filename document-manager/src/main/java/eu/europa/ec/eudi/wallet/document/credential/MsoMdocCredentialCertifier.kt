@@ -28,7 +28,6 @@ class MsoMdocCredentialCertifier() : CredentialCertification {
     override suspend fun certifyCredential(
         credential: SecureAreaBoundCredential,
         issuedCredential: IssuerProvidedCredential,
-        forceKeyCheck: Boolean
     ) {
         val data = issuedCredential.data
         val issuerSigned = CBORObject.DecodeFromBytes(data)
@@ -37,7 +36,7 @@ class MsoMdocCredentialCertifier() : CredentialCertification {
             Message.DecodeFromBytes(issuerAuthBytes, MessageTag.Sign1) as Sign1Message
         val msoBytes = issuerAuth.GetContent().getEmbeddedCBORObject().EncodeToBytes()
         val mso = MobileSecurityObjectParser(msoBytes).parse()
-        if (forceKeyCheck && mso.deviceKey != credential.secureArea.getKeyInfo(credential.alias).publicKey) {
+        if (mso.deviceKey != credential.secureArea.getKeyInfo(credential.alias).publicKey) {
             val msg = "Public key in MSO does not match the one in the request"
             throw IllegalArgumentException(msg)
         }
