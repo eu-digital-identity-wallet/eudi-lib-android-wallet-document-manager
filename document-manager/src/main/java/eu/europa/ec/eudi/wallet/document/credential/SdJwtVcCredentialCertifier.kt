@@ -49,7 +49,6 @@ class SdJwtVcCredentialCertifier : CredentialCertification {
     override suspend fun certifyCredential(
         credential: SecureAreaBoundCredential,
         issuedCredential: IssuerProvidedCredential,
-        forceKeyCheck: Boolean
     ) {
         val data = issuedCredential.data
 
@@ -66,7 +65,7 @@ class SdJwtVcCredentialCertifier : CredentialCertification {
         val sdjwtVcPk = KeyConverter.toJavaKeys(listOf(jwk)).first()
             ?: throw IllegalArgumentException("Invalid public key in SD-JWT VC 'cnf' claim")
 
-        if (credential.secureArea.getKeyInfo(credential.alias).publicKey.javaPublicKey != sdjwtVcPk && forceKeyCheck) {
+        if (credential.secureArea.getKeyInfo(credential.alias).publicKey.javaPublicKey != sdjwtVcPk) {
             throw IllegalArgumentException("Public key in SD-JWT VC does not match the one in the request")
         }
 

@@ -57,8 +57,6 @@ class UnsignedDocumentTest {
     }
 
     private fun setupWithRealDocument() {
-        // Disable device public key check for testing purposes
-        documentManager.checkDevicePublicKey = false
         val createKeySettings = SoftwareCreateKeySettings.Builder().build()
 
         val createDocumentResult = documentManager.createDocument(

@@ -25,7 +25,6 @@ fun interface CredentialCertification {
     suspend fun certifyCredential(
         credential: SecureAreaBoundCredential,
         issuedCredential: IssuerProvidedCredential,
-        forceKeyCheck: Boolean
     )
 
     companion object {

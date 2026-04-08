@@ -21,21 +21,31 @@ import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps.recreateClaimsAndDisclosuresPerClaim
 import eu.europa.ec.eudi.sdjwt.vc.SelectPath.Default.query
 import eu.europa.ec.eudi.wallet.document.credential.IssuerProvidedCredential
+import eu.europa.ec.eudi.wallet.document.credential.SdJwtVcCredentialCertifier
 import eu.europa.ec.eudi.wallet.document.format.MutableSdJwtClaim
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcData
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
 import eu.europa.ec.eudi.wallet.document.internal.parse
+import eu.europa.ec.eudi.wallet.document.internal.sdJwtVcString
 import io.mockk.clearAllMocks
+import io.mockk.clearConstructorMockk
 import io.mockk.clearMocks
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import eu.europa.ec.eudi.sdjwt.NimbusSdJwtOps
 import eu.europa.ec.eudi.sdjwt.vc.IssuerVerificationMethod
 import eu.europa.ec.eudi.sdjwt.vc.TypeMetadataPolicy
 import eu.europa.ec.eudi.sdjwt.vc.X509CertificateTrust
+import io.mockk.mockkConstructor
 import io.mockk.mockkStatic
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.longOrNull
+import org.multipaz.credential.SecureAreaBoundCredential
 import org.multipaz.securearea.SecureArea
 import org.multipaz.securearea.SecureAreaRepository
 import org.multipaz.securearea.software.SoftwareCreateKeySettings
@@ -51,6 +61,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Instant
 
 class SdJwtVcTest {
 
@@ -71,6 +84,7 @@ class SdJwtVcTest {
     @AfterTest
     fun tearDown() {
         clearAllMocks()
+        clearConstructorMockk(SdJwtVcCredentialCertifier::class)
         documentManager.getDocuments().forEach { documentManager.deleteDocumentById(it.id) }
     }
 
@@ -169,16 +183,42 @@ class SdJwtVcTest {
             storage = EphemeralStorage(),
             secureAreaRepository = secureAreaRepository,
             ktorHttpClientFactory = { mockk(relaxed = true) }
-        ).apply {
-            checkDevicePublicKey = false
+        )
+    }
+
+    /**
+     * Mocks the [SdJwtVcCredentialCertifier] to certify credentials without performing the
+     * device public key check. This is needed for tests that use fixed issuer data whose embedded
+     * key does not match the dynamically generated document key.
+     */
+    private fun mockSdJwtVcCertifierWithoutKeyCheck() {
+        mockkConstructor(SdJwtVcCredentialCertifier::class)
+        coEvery {
+            anyConstructed<SdJwtVcCredentialCertifier>().certifyCredential(any(), any())
+        } coAnswers {
+            val credential = firstArg<SecureAreaBoundCredential>()
+            val issuedCredential = secondArg<IssuerProvidedCredential>()
+            val data = issuedCredential.data
+
+            val sdJwt = DefaultSdJwtOps.unverifiedIssuanceFrom(data.sdJwtVcString).getOrElse {
+                throw IllegalArgumentException("Invalid SD-JWT VC", it)
+            }
+
+            val (_, claims) = sdJwt.jwt
+
+            val nbf = claims["nbf"]?.jsonPrimitive?.longOrNull?.let { Instant.fromEpochSeconds(it) }
+            val iat = claims["iat"]?.jsonPrimitive?.longOrNull?.let { Instant.fromEpochSeconds(it) }
+            val exp = claims["exp"]?.jsonPrimitive?.longOrNull?.let { Instant.fromEpochSeconds(it) }
+            val validFrom = nbf ?: iat ?: Clock.System.now()
+            val validUntil = exp ?: validFrom.plus(30.days)
+
+            credential.certify(data, validFrom, validUntil)
         }
     }
 
     @Test
     fun `store sd-jwt vc`() = runTest {
-        // set checkDevicePublicKey to false to avoid checking the MSO key
-        // since we are using fixed issuer data
-        documentManager.checkDevicePublicKey = false
+        mockSdJwtVcCertifierWithoutKeyCheck()
 
         val createKeySettings = SoftwareCreateKeySettings.Builder().build()
 
