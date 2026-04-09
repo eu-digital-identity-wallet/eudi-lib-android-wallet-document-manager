@@ -23,9 +23,6 @@ import eu.europa.ec.eudi.wallet.document.DocumentManager
 import eu.europa.ec.eudi.wallet.document.Outcome
 import eu.europa.ec.eudi.wallet.document.credential.IssuerProvidedCredential
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
-import eu.europa.ec.eudi.wallet.document.internal.generateData
-import eu.europa.ec.eudi.wallet.document.internal.generateMso
-import eu.europa.ec.eudi.wallet.document.internal.signMso
 import kotlinx.coroutines.runBlocking
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.jetbrains.annotations.VisibleForTesting

@@ -523,69 +523,6 @@ val givenNameDisplay = givenNameClaim.issuerMetadata?.display
   ?.find { it.locale == Locale.getDefault() }
 ```
 
-### Working with sample documents
-
-The library also provides a `SampleDocumentManager` implementation that can be used to load sample
-documents and test the library easily. Currently, the library supports loading sample documents in
-MsoMdoc format.
-
-The following code snippet shows how to create an instance of the `SampleDocumentManager` class and
-load sample documents:
-
-```kotlin
-val sampleDocumentManager = SampleDocumentManager.Builder()
-    .setDocumentManager(documentManager)
-    .build()
-
-val sampleMdocDocuments: ByteArray = readFileWithSampleData()
-
-val createSettings = CreateDocumentSettings(
-    secureAreaIdentifier = SoftwareSecureArea.IDENTIFIER,
-    createKeySettings = SoftwareCreateKeySettings.Builder().build(),
-    numberOfCredentials = 3, // Create multiple credentials for sample documents
-    credentialPolicy = CredentialPolicy.RotateUse
-)
-val loadResult = sampleDocumentManager.loadMdocSampleDocuments(
-    sampleData = sampleMdocDocuments,
-    createSettings = createSettings,
-    documentNamesMap = mapOf(
-        "eu.europa.ec.eudi.pid.1" to "EU PID",
-        "org.iso.18013.5.1.mDL" to "mDL"
-    )
-)
-
-val documentIds: List<DocumentId> = loadResult.getOrThrow()
-
-// ...
-
-fun readFileWithSampleData(): ByteArray = TODO("Reads the bytes from file with sample documents")
-```
-
-Method `SampleDocumentManager.loadMdocSampleDocuments()` expects sampleData to be in CBOR format
-with the following structure:
-
-```cddl
-SampleData = {
- "documents" : [+Document], ; Returned documents
-}
-Document = {
- "docType" : DocType, ; Document type returned
- "issuerSigned" : IssuerSigned, ; Returned data elements signed by the issuer
-}
-IssuerSigned = {
- "nameSpaces" : IssuerNameSpaces, ; Returned data elements
-}
-IssuerNameSpaces = { ; Returned data elements for each namespace
- + NameSpace => [ + IssuerSignedItemBytes ]
-}
-IssuerSignedItem = {
- "digestID" : uint, ; Digest ID for issuer data authentication
- "random" : bstr, ; Random value for issuer data authentication
- "elementIdentifier" : DataElementIdentifier, ; Data element identifier
- "elementValue" : DataElementValue ; Data element value
-}
-```
-
 ### Other features
 
 ```kotlin
