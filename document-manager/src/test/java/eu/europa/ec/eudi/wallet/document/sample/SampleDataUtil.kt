@@ -13,13 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package eu.europa.ec.eudi.wallet.document.internal
+package eu.europa.ec.eudi.wallet.document.sample
 
 import COSE.AlgorithmID.ECDSA_256
 import COSE.HeaderKeys.Algorithm
 import COSE.OneKey
 import COSE.Sign1Message
 import com.upokecenter.cbor.CBORObject
+import eu.europa.ec.eudi.wallet.document.internal.getEmbeddedCBORObject
+import eu.europa.ec.eudi.wallet.document.internal.withTag24
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.util.io.pem.PemReader
 import org.multipaz.crypto.EcPublicKey
@@ -64,28 +66,24 @@ wibtidg8cLtZ7sCW59rUvdnz5wvo3VXndZi3sj0jf8CAKZZZNTE=
 
 private val bc = BouncyCastleProvider()
 
-@JvmSynthetic
-internal val issuerPrivateKey: PrivateKey = PemReader(SAMPLE_ISSUER_PRIVATE_KEY.reader())
+val issuerPrivateKey: PrivateKey = PemReader(SAMPLE_ISSUER_PRIVATE_KEY.reader())
     .use { reader -> reader.readPemObject().content }
     .let { privateKeyBytes ->
         KeyFactory.getInstance("EC", bc)
             .generatePrivate(PKCS8EncodedKeySpec(privateKeyBytes))
     }
 
-@JvmSynthetic
-internal val issuerCertificate: X509Certificate = PemReader(SAMPLE_ISSUER_DS.reader())
+val issuerCertificate: X509Certificate = PemReader(SAMPLE_ISSUER_DS.reader())
     .use { reader -> reader.readPemObject().content }
     .let { certificateBytes ->
         CertificateFactory.getInstance("X.509", bc)
             .generateCertificate(certificateBytes.inputStream())
     } as X509Certificate
 
-@get:JvmSynthetic
-internal val PrivateKey.oneKey
+val PrivateKey.oneKey
     get() = OneKey(null, this)
 
-@JvmSynthetic
-internal fun generateMso(
+fun generateMso(
     digestAlg: String,
     docType: String,
     authKey: EcPublicKey,
@@ -107,8 +105,7 @@ internal fun generateMso(
         }
         .generate()
 
-@JvmSynthetic
-internal fun calculateDigests(
+fun calculateDigests(
     digestAlg: String,
     issuerSignedItems: CBORObject
 ): Map<Long, ByteArray> {
@@ -120,16 +117,14 @@ internal fun calculateDigests(
     }
 }
 
-@JvmSynthetic
-internal fun signMso(mso: ByteArray) = Sign1Message(false, true).apply {
+fun signMso(mso: ByteArray) = Sign1Message(false, true).apply {
     protectedAttributes.Add(Algorithm.AsCBOR(), ECDSA_256.AsCBOR())
     unprotectedAttributes.Add(33L, issuerCertificate.encoded)
     SetContent(mso.withTag24())
     sign(issuerPrivateKey.oneKey)
 }.EncodeToCBORObject()
 
-@JvmSynthetic
-internal fun generateData(
+fun generateData(
     issuerNameSpaces: CBORObject,
     issuerAuth: CBORObject,
 ): ByteArray {

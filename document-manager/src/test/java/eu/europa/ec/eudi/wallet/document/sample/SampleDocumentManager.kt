@@ -139,4 +139,3 @@ interface SampleDocumentManager : DocumentManager {
         }
     }
 }
-
