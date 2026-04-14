@@ -21,6 +21,13 @@ Key features include:
 - **Enhanced Security**: Advanced key management and secure credential storage
 - **Metadata Support**: Rich display information and claim metadata for improved user experience
 
+**Note on credential trust and verification:** This library is responsible for document storage,
+key management, and device public key binding verification. It does **not** perform issuer trust
+verification (e.g., X.509 certificate path validation, issuer metadata resolution, or SD-JWT VC
+signature verification against trusted issuer lists). Issuer trust verification is the
+responsibility of the integrating layer, which has access to trusted issuer
+lists and certificate trust stores.
+
 The library is written in Kotlin.
 
 ## Disclaimer

@@ -19,27 +19,33 @@ package eu.europa.ec.eudi.wallet.document.credential
 import com.nimbusds.jose.jwk.JWK
 import com.nimbusds.jose.jwk.KeyConverter
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
-import eu.europa.ec.eudi.sdjwt.NimbusSdJwtOps
-import eu.europa.ec.eudi.sdjwt.vc.IssuerVerificationMethod
-import eu.europa.ec.eudi.sdjwt.vc.TypeMetadataPolicy
-import eu.europa.ec.eudi.sdjwt.vc.X509CertificateTrust
 import eu.europa.ec.eudi.wallet.document.internal.sdJwtVcString
-import io.ktor.client.HttpClient
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import org.multipaz.credential.SecureAreaBoundCredential
 import org.multipaz.crypto.javaPublicKey
-import org.multipaz.util.Logger
-import java.security.cert.X509Certificate
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
 
-class SdJwtVcCredentialCertifier(
-    private val httpClient: HttpClient = HttpClient()
-) : CredentialCertification {
+/**
+ * Certifies SD-JWT VC credentials by parsing the SD-JWT, verifying the device public key binding,
+ * and extracting validity periods.
+ *
+ * **Important:** This certifier does **not** perform issuer trust verification (e.g., X.509
+ * certificate path validation or issuer metadata resolution). Issuer trust verification is the
+ * responsibility of the integrating layer which has access to trusted issuer
+ * lists and certificate trust stores.
+ *
+ * This certifier enforces:
+ * - Valid SD-JWT VC structure (parseable by the SD-JWT library)
+ * - Presence of the `cnf` (confirmation) claim with a `jwk` key
+ * - Device public key binding: the key in the `cnf` claim must match the credential's key
+ * - Extraction of validity period from `nbf`/`iat` and `exp` claims
+ */
+class SdJwtVcCredentialCertifier : CredentialCertification {
     override suspend fun certifyCredential(
         credential: SecureAreaBoundCredential,
         issuedCredential: IssuerProvidedCredential,
@@ -47,40 +53,22 @@ class SdJwtVcCredentialCertifier(
     ) {
         val data = issuedCredential.data
 
-        val issuerVerificationMethod = IssuerVerificationMethod.usingX5cOrIssuerMetadata<List<X509Certificate>>(
-            httpClient = httpClient,
-            x509CertificateTrust = X509CertificateTrust { chain, _ ->
-                // TODO Check the certificate path
-                true
-            }
-        )
-
-        val verifier = NimbusSdJwtOps.SdJwtVcVerifier(
-            issuerVerificationMethod = issuerVerificationMethod,
-            typeMetadataPolicy = TypeMetadataPolicy.NotUsed
-        )
-
-        verifier.verify(data.sdJwtVcString).onFailure {
-            Logger.w("SdJwtVcVerifier", "Invalid SD-JWT VC with error: ${it.message}", it)
-        }
-
         val sdJwt = DefaultSdJwtOps.unverifiedIssuanceFrom(data.sdJwtVcString).getOrElse {
             throw IllegalArgumentException("Invalid SD-JWT VC", it)
         }
 
         val (_, claims) = sdJwt.jwt
 
-        claims["cnf"]?.let {
-            val jwk = JWK.parse(Json.Default.decodeFromString<JsonObject>(it.toString())["jwk"].toString())
-            val sdjwtVcPk = KeyConverter.toJavaKeys(listOf(jwk)).first()
-                ?: throw IllegalArgumentException("Invalid SD-JWT VC")
-            if (credential.secureArea.getKeyInfo(credential.alias).publicKey.javaPublicKey != sdjwtVcPk && forceKeyCheck) {
-                throw IllegalArgumentException("Public key in SD-JWT VC does not match the one in the request")
-            }
-        }
+        val cnf = claims["cnf"]
+            ?: throw IllegalArgumentException("SD-JWT VC is missing required 'cnf' claim for key binding")
 
-        // TODO what to do with validFrom and validUntil if they are not present in the SD-JWT VC
-        //  in nbf (or iat if no nbf) and exp claims that are optional
+        val jwk = JWK.parse(Json.Default.decodeFromString<JsonObject>(cnf.toString())["jwk"].toString())
+        val sdjwtVcPk = KeyConverter.toJavaKeys(listOf(jwk)).first()
+            ?: throw IllegalArgumentException("Invalid public key in SD-JWT VC 'cnf' claim")
+
+        if (credential.secureArea.getKeyInfo(credential.alias).publicKey.javaPublicKey != sdjwtVcPk && forceKeyCheck) {
+            throw IllegalArgumentException("Public key in SD-JWT VC does not match the one in the request")
+        }
 
         val nbf = claims["nbf"]?.jsonPrimitive?.longOrNull?.let { Instant.fromEpochSeconds(it) }
         val iat = claims["iat"]?.jsonPrimitive?.longOrNull?.let { Instant.fromEpochSeconds(it) }
