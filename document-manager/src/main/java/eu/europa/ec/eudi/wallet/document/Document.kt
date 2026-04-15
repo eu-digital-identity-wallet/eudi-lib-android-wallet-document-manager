@@ -63,12 +63,16 @@ sealed interface Document {
     val isKeyInvalidated: Boolean
 
     /**
-     * Returns the number of valid credentials associated with this document.
+     * Returns the number of credentials associated with this document that pass structural
+     * validity checks.
      *
-     * For UnsignedDocument, this counts credentials that can be used for proof of possession.
-     * For IssuedDocument, this counts valid credentials according to the credential policy.
+     * For [UnsignedDocument], this counts credentials that can be used for proof of possession.
+     * For [IssuedDocument], this counts credentials according to the credential policy but
+     * does **not** filter by temporal validity (`validFrom`/`validUntil`). The count may include
+     * expired or not-yet-valid credentials. Use [IssuedDocument.findCredential] to check if a
+     * credential is valid at a specific point in time.
      *
-     * @return The number of valid credentials available for this document
+     * @return The number of credentials that pass structural validity checks
      */
     suspend fun credentialsCount(): Int
 }
