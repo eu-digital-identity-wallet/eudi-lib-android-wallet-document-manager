@@ -284,14 +284,14 @@ Issued documents provide methods to work with individual credentials:
 val issuedDocument = documentManager.getDocumentById("document_id") as? IssuedDocument
 requireNotNull(issuedDocument)
 
-// Get the number of valid credentials for the document
-val numberOfValidCredentials = issuedDocument.credentialsCount()
+// Get the number of credentials (does not filter by temporal validity)
+val numberOfCredentials = issuedDocument.credentialsCount()
 
 // Get the initial number of credentials for the document
 val initialNumberOfCredentials = issuedDocument.initialCredentialsCount()
 
-// Get a list of all valid credentials for the document
-val validCredentials = issuedDocument.getCredentials()
+// Get all credentials (does not filter by temporal validity — may include expired credentials)
+val credentials = issuedDocument.getCredentials()
 
 // Find an available credential (automatically selects the best one based on policy)
 val credential = issuedDocument?.findCredential()
@@ -503,7 +503,8 @@ Documents can be certified to verify their authenticity:
 val issuedDocument = documentManager.getDocumentById("document_id") as? IssuedDocument
 val isCertified = issuedDocument?.isCertified() == true
 
-// Check if any of the document's key has been invalidated
+// Check if any of the document's credentials have been invalidated
+// Note: getCredentials() does not filter by temporal validity (validFrom/validUntil)
 val invalidatedKeys: Map<String, Boolean> = issuedDocument?.getCredentials()
     ?.associate { it.alias to it.isInvalidated() }
     ?: emptyMap()
