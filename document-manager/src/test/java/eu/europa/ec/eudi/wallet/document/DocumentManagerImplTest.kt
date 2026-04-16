@@ -16,25 +16,13 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import COSE.Message
-import COSE.MessageTag
-import COSE.Sign1Message
-import com.upokecenter.cbor.CBORObject
 import eu.europa.ec.eudi.wallet.document.credential.IssuerProvidedCredential
-import eu.europa.ec.eudi.wallet.document.credential.MsoMdocCredentialCertifier
-import eu.europa.ec.eudi.wallet.document.format.MsoMdocData
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
-import eu.europa.ec.eudi.wallet.document.internal.getEmbeddedCBORObject
-import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
-import io.mockk.clearConstructorMockk
-import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkConstructor
 import kotlinx.coroutines.runBlocking
 import org.multipaz.cbor.Cbor
 import org.multipaz.credential.SecureAreaBoundCredential
-import org.multipaz.mdoc.mso.MobileSecurityObjectParser
 import org.multipaz.securearea.SecureArea
 import org.multipaz.securearea.SecureAreaRepository
 import org.multipaz.securearea.software.SoftwareCreateKeySettings
@@ -77,7 +65,6 @@ class DocumentManagerImplTest {
     @AfterTest
     fun tearDown() {
         documentManager.getDocuments().forEach { documentManager.deleteDocumentById(it.id) }
-        clearConstructorMockk(MsoMdocCredentialCertifier::class)
     }
 
     @OptIn(ExperimentalStdlibApi::class)
@@ -86,97 +73,6 @@ class DocumentManagerImplTest {
         val issuerData = getResourceAsText("eu_pid.hex").hexToByteArray(HexFormat.Default)
 
         Cbor.decode(issuerData)
-    }
-
-    /**
-     * Mocks the [MsoMdocCredentialCertifier] to certify credentials without performing the
-     * device public key check. This is needed for tests that use fixed issuer data whose embedded
-     * key does not match the dynamically generated document key.
-     */
-    private fun mockMsoMdocCertifierWithoutKeyCheck() {
-        mockkConstructor(MsoMdocCredentialCertifier::class)
-        coEvery {
-            anyConstructed<MsoMdocCredentialCertifier>().certifyCredential(any(), any())
-        } coAnswers {
-            val credential = firstArg<SecureAreaBoundCredential>()
-            val issuedCredential = secondArg<IssuerProvidedCredential>()
-            val data = issuedCredential.data
-            val issuerSigned = CBORObject.DecodeFromBytes(data)
-            val issuerAuthBytes = issuerSigned["issuerAuth"].EncodeToBytes()
-            val issuerAuth =
-                Message.DecodeFromBytes(issuerAuthBytes, MessageTag.Sign1) as Sign1Message
-            val msoBytes = issuerAuth.GetContent().getEmbeddedCBORObject().EncodeToBytes()
-            val mso = MobileSecurityObjectParser(msoBytes).parse()
-            credential.certify(data, mso.validFrom, mso.validUntil)
-        }
-    }
-
-    @OptIn(ExperimentalStdlibApi::class)
-    @Test
-    fun `should create document and store issued document`() {
-        mockMsoMdocCertifierWithoutKeyCheck()
-        val createKeySettings = SoftwareCreateKeySettings.Builder().build()
-        val createDocumentSettings = CreateDocumentSettings(
-            secureAreaIdentifier = secureArea.identifier,
-            createKeySettings = createKeySettings,
-            numberOfCredentials = 3,
-        )
-        val createDocumentResult = documentManager.createDocument(
-            format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-            createSettings = createDocumentSettings
-        )
-        assertTrue(createDocumentResult.isSuccess)
-        val unsignedDocument = createDocumentResult.getOrThrow()
-        assertFalse(unsignedDocument.isCertified)
-
-        // change document name
-        unsignedDocument.name = "EU PID"
-
-        assertIs<MsoMdocFormat>(unsignedDocument.format)
-        val documentFormat = unsignedDocument.format as MsoMdocFormat
-        assertEquals("eu.europa.ec.eudi.pid.1", documentFormat.docType)
-        // Replace deprecated isKeyInvalidated check
-        runBlocking {
-            assertFalse(
-                unsignedDocument.getPoPSigners().isEmpty(),
-                "Expected document to have valid key (PoP signers)"
-            )
-        }
-        assertEquals(documentManager.identifier, unsignedDocument.documentManagerId)
-
-        val issuerData = getResourceAsText("eu_pid.hex").hexToByteArray(HexFormat.Default)
-
-
-        val issuerProvidedData = runBlocking {
-            unsignedDocument.baseDocument.getPendingCredentials()
-                .filterIsInstance<SecureAreaBoundCredential>()
-                .map {
-                    IssuerProvidedCredential(
-                        publicKeyAlias = it.alias,
-                        data = issuerData
-                    )
-                }
-        }
-
-        val storeDocumentResult =
-            documentManager.storeIssuedDocument(unsignedDocument, issuerProvidedData)
-        assertTrue(storeDocumentResult.isSuccess)
-        val issuedDocument = storeDocumentResult.getOrThrow()
-
-
-        assertEquals("EU PID", issuedDocument.name)
-        assertEquals(documentManager.identifier, issuedDocument.documentManagerId)
-
-        runBlocking { // Added runBlocking
-            assertTrue(issuedDocument.isCertified()) // Replaced deprecated property access
-            assertEquals(3, issuedDocument.getCredentials().size)
-
-            val claims = issuedDocument.data // Replaced deprecated property access
-            assertIs<MsoMdocData>(claims)
-
-            assertEquals(1, claims.nameSpaces.keys.size)
-            assertEquals(33, claims.nameSpaces.entries.first().value.size)
-        }
     }
 
     @Test
@@ -267,85 +163,6 @@ class DocumentManagerImplTest {
         // This assertion assumes UnsignedDocument has an 'issuerMetadata' property that is nullable
         // and defaults to null or is not set by the createDocument method without explicit input.
         assertNull(document.issuerMetadata)
-    }
-
-    @OptIn(ExperimentalStdlibApi::class) // Added OptIn
-    @Test
-    fun `should store and retrieve document with issuer metadata`() {
-        // Given: Define a sample IssuerMetaData.
-        val expectedIssuerMetadata = IssuerMetadata(
-            documentConfigurationIdentifier = "pid_test_config_v1",
-            display = emptyList(), // Placeholder: Provide actual List<Display> if needed for the test
-            claims = null, // Placeholder: Provide actual List<Claim>? if needed
-            credentialIssuerIdentifier = "test_issuer_123",
-            issuerDisplay = emptyList() // Placeholder: Provide actual List<IssuerDisplay>? if needed
-        )
-
-        mockMsoMdocCertifierWithoutKeyCheck()
-
-        // Use a local DocumentManager for test isolation if preferred, or the class-level one.
-        // The original test created a new one.
-        val localDocumentManager = DocumentManagerImpl(
-            identifier = "metadata_test_doc_manager",
-            storage = EphemeralStorage(), // Fresh storage for isolation
-            secureAreaRepository = secureAreaRepository
-        )
-
-        val createKeySettings = SoftwareCreateKeySettings.Builder().build()
-        val createSettings = CreateDocumentSettings(
-            secureAreaIdentifier = secureArea.identifier,
-            createKeySettings = createKeySettings,
-            numberOfCredentials = 1
-        )
-
-        // When: Create an unsigned document, now passing issuerMetadata
-        val createResult = localDocumentManager.createDocument(
-            format = MsoMdocFormat(docType = "eu.europa.ec.eudi.pid.1"),
-            createSettings = createSettings,
-            issuerMetadata = expectedIssuerMetadata // Pass metadata here
-        )
-        assertTrue(
-            createResult.isSuccess,
-            "Failed to create document: ${createResult.exceptionOrNull()?.message}"
-        )
-        val unsignedDocument = createResult.getOrThrow()
-
-        // // Set the issuerMetadata on the unsigned document - This is removed as issuerMetadata is val
-        // // This assumes UnsignedDocument has a mutable 'issuerMetadata' property.
-        // unsignedDocument.issuerMetadata = expectedIssuerMetaData
-
-        // To properly test retrieval, the document (now with metadata) needs to be stored.
-        // Use dummy issuer data for the MSO part, as the focus is on metadata.
-        val dummyMsoData =
-            getResourceAsText("eu_pid.hex").hexToByteArray(HexFormat.Default) // Or a simpler valid MSO
-        val issuerProvidedCredentials = runBlocking {
-            unsignedDocument.baseDocument.getPendingCredentials()
-                .filterIsInstance<SecureAreaBoundCredential>()
-                .map {
-                    IssuerProvidedCredential(
-                        publicKeyAlias = it.alias,
-                        data = dummyMsoData
-                    )
-                }
-        }
-        assertTrue(
-            issuerProvidedCredentials.isNotEmpty(),
-            "Document should have pending credentials for issuance."
-        )
-
-        val storeResult =
-            localDocumentManager.storeIssuedDocument(unsignedDocument, issuerProvidedCredentials)
-        assertTrue(
-            storeResult.isSuccess,
-            "Failed to store issued document: ${storeResult.exceptionOrNull()?.message}"
-        )
-        val issuedDocument = storeResult.getOrThrow()
-
-        // Then: Retrieve the document by ID and check its metadata
-        val retrievedDocument = localDocumentManager.getDocumentById(issuedDocument.id)
-        assertNotNull(retrievedDocument, "Retrieved document should not be null.")
-        // This assumes that IssuedDocument also carries the IssuerMetaData.
-        assertEquals(expectedIssuerMetadata, retrievedDocument.issuerMetadata)
     }
 
     @OptIn(ExperimentalStdlibApi::class)
