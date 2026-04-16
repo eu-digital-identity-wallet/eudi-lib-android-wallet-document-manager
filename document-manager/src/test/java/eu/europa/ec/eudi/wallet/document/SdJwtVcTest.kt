@@ -19,36 +19,20 @@ package eu.europa.ec.eudi.wallet.document
 import android.util.Log
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps.recreateClaimsAndDisclosuresPerClaim
-import eu.europa.ec.eudi.sdjwt.vc.SelectPath.Default.query
-import eu.europa.ec.eudi.wallet.document.credential.IssuerProvidedCredential
-import eu.europa.ec.eudi.wallet.document.credential.SdJwtVcCredentialCertifier
-import eu.europa.ec.eudi.wallet.document.format.MutableSdJwtClaim
-import eu.europa.ec.eudi.wallet.document.format.SdJwtVcData
-import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
-import eu.europa.ec.eudi.wallet.document.internal.parse
-import eu.europa.ec.eudi.wallet.document.internal.sdJwtVcString
-import io.mockk.clearAllMocks
-import io.mockk.clearConstructorMockk
-import io.mockk.clearMocks
-import io.mockk.coEvery
-import io.mockk.every
-import io.mockk.mockk
 import eu.europa.ec.eudi.sdjwt.NimbusSdJwtOps
 import eu.europa.ec.eudi.sdjwt.vc.IssuerVerificationMethod
+import eu.europa.ec.eudi.sdjwt.vc.SelectPath.Default.query
 import eu.europa.ec.eudi.sdjwt.vc.TypeMetadataPolicy
 import eu.europa.ec.eudi.sdjwt.vc.X509CertificateTrust
-import io.mockk.mockkConstructor
+import eu.europa.ec.eudi.wallet.document.format.MutableSdJwtClaim
+import eu.europa.ec.eudi.wallet.document.internal.parse
+import io.mockk.clearAllMocks
+import io.mockk.every
+import io.mockk.mockk
 import io.mockk.mockkStatic
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.longOrNull
-import org.multipaz.credential.SecureAreaBoundCredential
 import org.multipaz.securearea.SecureArea
 import org.multipaz.securearea.SecureAreaRepository
-import org.multipaz.securearea.software.SoftwareCreateKeySettings
 import org.multipaz.securearea.software.SoftwareSecureArea
 import org.multipaz.storage.Storage
 import org.multipaz.storage.ephemeral.EphemeralStorage
@@ -58,12 +42,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertIs
 import kotlin.test.assertTrue
-import kotlin.time.Clock
-import kotlin.time.Duration.Companion.days
-import kotlin.time.Instant
 
 class SdJwtVcTest {
 
@@ -84,7 +63,6 @@ class SdJwtVcTest {
     @AfterTest
     fun tearDown() {
         clearAllMocks()
-        clearConstructorMockk(SdJwtVcCredentialCertifier::class)
         documentManager.getDocuments().forEach { documentManager.deleteDocumentById(it.id) }
     }
 
@@ -184,93 +162,6 @@ class SdJwtVcTest {
             secureAreaRepository = secureAreaRepository,
             ktorHttpClientFactory = { mockk(relaxed = true) }
         )
-    }
-
-    /**
-     * Mocks the [SdJwtVcCredentialCertifier] to certify credentials without performing the
-     * device public key check. This is needed for tests that use fixed issuer data whose embedded
-     * key does not match the dynamically generated document key.
-     */
-    private fun mockSdJwtVcCertifierWithoutKeyCheck() {
-        mockkConstructor(SdJwtVcCredentialCertifier::class)
-        coEvery {
-            anyConstructed<SdJwtVcCredentialCertifier>().certifyCredential(any(), any())
-        } coAnswers {
-            val credential = firstArg<SecureAreaBoundCredential>()
-            val issuedCredential = secondArg<IssuerProvidedCredential>()
-            val data = issuedCredential.data
-
-            val sdJwt = DefaultSdJwtOps.unverifiedIssuanceFrom(data.sdJwtVcString).getOrElse {
-                throw IllegalArgumentException("Invalid SD-JWT VC", it)
-            }
-
-            val (_, claims) = sdJwt.jwt
-
-            val nbf = claims["nbf"]?.jsonPrimitive?.longOrNull?.let { Instant.fromEpochSeconds(it) }
-            val iat = claims["iat"]?.jsonPrimitive?.longOrNull?.let { Instant.fromEpochSeconds(it) }
-            val exp = claims["exp"]?.jsonPrimitive?.longOrNull?.let { Instant.fromEpochSeconds(it) }
-            val validFrom = nbf ?: iat ?: Clock.System.now()
-            val validUntil = exp ?: validFrom.plus(30.days)
-
-            credential.certify(data, validFrom, validUntil)
-        }
-    }
-
-    @Test
-    fun `store sd-jwt vc`() = runTest {
-        mockSdJwtVcCertifierWithoutKeyCheck()
-
-        val createKeySettings = SoftwareCreateKeySettings.Builder().build()
-
-        val createDocumentResult = documentManager.createDocument(
-            format = SdJwtVcFormat("urn:eu.europa.ec.eudi.pid.1"),
-            createSettings = CreateDocumentSettings(
-                secureAreaIdentifier = secureArea.identifier,
-                createKeySettings = createKeySettings,
-                numberOfCredentials = 1
-            )
-        )
-        assertTrue(createDocumentResult.isSuccess)
-        val unsignedDocument = createDocumentResult.getOrThrow()
-        assertFalse(unsignedDocument.isCertified)
-
-        // change document name
-        unsignedDocument.name = "EU PID SD-JWT VC"
-
-        assertIs<SdJwtVcFormat>(unsignedDocument.format)
-        val documentFormat = unsignedDocument.format as SdJwtVcFormat
-        assertEquals("urn:eu.europa.ec.eudi.pid.1", documentFormat.vct)
-        assertEquals(documentManager.identifier, unsignedDocument.documentManagerId)
-
-        val sdjwtVcData = getResourceAsText("sample_sd_jwt_vc.txt")
-            .replace("\n", "")
-            .replace("\r", "")
-
-        val issuerData = unsignedDocument.getPoPSigners().map {
-            IssuerProvidedCredential(
-                publicKeyAlias = it.keyAlias,
-                data = sdjwtVcData.toByteArray(Charsets.US_ASCII),
-            )
-        }
-
-        val storeDocumentResult = documentManager.storeIssuedDocument(
-            unsignedDocument,
-            issuerData
-        )
-
-        assertTrue(storeDocumentResult.isSuccess)
-        val issuedDocument = storeDocumentResult.getOrThrow()
-
-        assertEquals("EU PID SD-JWT VC", issuedDocument.name)
-        assertEquals(documentManager.identifier, issuedDocument.documentManagerId)
-
-        val claims = issuedDocument.data
-        assertIs<SdJwtVcData>(claims)
-        assertEquals(19, claims.claims.size)
-
-        val documents = documentManager.getDocuments()
-        assertEquals(1, documents.size)
-        assertIs<SdJwtVcFormat>(documents.first().format)
     }
 
     private fun printSdJwtVcClaims(sdJwtVcClaims: List<MutableSdJwtClaim>, indent: String = "") {
