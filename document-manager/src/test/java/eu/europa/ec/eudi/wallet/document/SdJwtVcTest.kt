@@ -83,7 +83,8 @@ class SdJwtVcTest {
 
             val verifier = NimbusSdJwtOps.SdJwtVcVerifier(
                 issuerVerificationMethod = issuerVerificationMethod,
-                typeMetadataPolicy = TypeMetadataPolicy.NotUsed
+                typeMetadataPolicy = TypeMetadataPolicy.NotUsed,
+                checkStatus = null
             )
 
             val result = verifier.verify(sdJwtVcString)
