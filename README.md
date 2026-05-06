@@ -82,7 +82,7 @@ dependencies {
 
     // Optional: Use the multipaz-android library if you want to use the implementations for Storage and SecureArea
     // for Android devices, provided by the OpenWallet Foundation
-    implementation("org.multipaz:multipaz-android:0.95.0")
+    implementation("org.multipaz:multipaz-android:0.99.0")
 }
 ```
 
