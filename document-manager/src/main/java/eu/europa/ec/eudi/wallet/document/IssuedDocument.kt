@@ -131,7 +131,13 @@ class IssuedDocument(
     suspend fun getCredentials(): List<SecureAreaBoundCredential> {
         return baseDocument.getCertifiedCredentials()
             .filterIsInstance<SecureAreaBoundCredential>()
-            .filterNot { it.secureArea.getKeyInvalidated(it.alias) }
+            .filterNot {
+                try {
+                    it.secureArea.getKeyInvalidated(it.alias)
+                } catch (_: IllegalArgumentException) {
+                    true // key no longer exists — treat as invalidated
+                }
+            }
             .filter { it.domain == documentManagerId }
             .filter {
                 when (credentialPolicy) {
